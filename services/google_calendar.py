@@ -87,7 +87,7 @@ async def get_valid_access_token(user_id: str) -> str:
     token_row = result.data
 
     # Check expiry (store expires_at as ISO string in DB)
-    expires_at = datetime.fromisoformat(token_row["expires_at"])
+    expires_at = datetime.fromisoformat(token_row["expires_at"].replace("Z", "+00:00")).replace(tzinfo=None)
     if datetime.utcnow() >= expires_at - timedelta(minutes=5):
         # Refresh token
         new_access_token = await refresh_access_token(token_row["refresh_token"])
