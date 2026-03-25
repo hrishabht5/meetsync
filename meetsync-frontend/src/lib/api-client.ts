@@ -20,19 +20,25 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     }
   }
 
-  if (hasBody && !headers["Content-Type"]) {
-    headers["Content-Type"] = "application/json";
-  }
-
   // Cross-domain token fallback (if cookies are blocked)
   if (typeof window !== "undefined") {
-    const token = localStorage.getItem("meetsync_token");
+    let token = localStorage.getItem("meetsync_token");
+    // Backup: If not in storage yet, check URL directly
+    if (!token) {
+      const search = new URLSearchParams(window.location.search);
+      token = search.get("token");
+    }
     if (token) {
       headers["X-MeetSync-User"] = token;
     }
   }
 
-  const res = await fetch(`${BASE_URL}${path}`, {
+  // Ensure trailing slash for all paths to avoid 307 redirects on Render
+  const normalizedPath = path.endsWith("/") || path.includes("?") 
+    ? path 
+    : `${path}/`;
+
+  const res = await fetch(`${BASE_URL}${normalizedPath}`, {
     ...options,
     headers,
     credentials: options?.credentials ?? "include",
@@ -49,46 +55,46 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 // ── Auth ───────────────────────────────────────────────
 export const api = {
   auth: {
-    status: () => request<{ connected: boolean; user_id: string | null }>("/auth/status"),
-    disconnect: () => request<{ status: string }>("/auth/disconnect", { method: "DELETE" }),
-    googleLoginUrl: () => `${BASE_URL}/auth/google`,
+    status: () => request<{ connected: boolean; user_id: string | null }>("/auth/status/"),
+    disconnect: () => request<{ status: string }>("/auth/disconnect/", { method: "DELETE" }),
+    googleLoginUrl: () => `${BASE_URL}/auth/google/`,
   },
 
   // ── Availability ───────────────────────────────────────
   availability: {
     getSlots: (date: string, event_type: string, host_user_id?: string) =>
       request<{ date: string; slots: string[]; timezone: string; reason?: string }>(
-        `/availability/slots?date=${date}&event_type=${encodeURIComponent(event_type)}${
+        `/availability/slots/?date=${date}&event_type=${encodeURIComponent(event_type)}${
           host_user_id ? `&user_id=${encodeURIComponent(host_user_id)}` : ""
         }`
       ),
     getSettings: () =>
-      request<AvailabilitySettingsResponse>("/availability/settings"),
+      request<AvailabilitySettingsResponse>("/availability/settings/"),
     updateSettings: (data: AvailabilitySettingsUpdate) =>
-      request<{ status: string }>("/availability/settings", {
+      request<{ status: string }>("/availability/settings/", {
         method: "PUT",
         body: JSON.stringify(data),
       }),
     // Overrides
-    getOverrides: () => request<AvailabilityOverride[]>("/availability/overrides"),
+    getOverrides: () => request<AvailabilityOverride[]>("/availability/overrides/"),
     createOverride: (data: AvailabilityOverrideCreate) =>
-      request<AvailabilityOverride>("/availability/overrides", {
+      request<AvailabilityOverride>("/availability/overrides/", {
         method: "POST",
         body: JSON.stringify(data),
       }),
     deleteOverride: (id: string) =>
-      request<{ status: string }>(`/availability/overrides/${id}`, { method: "DELETE" }),
+      request<{ status: string }>(`/availability/overrides/${id}/`, { method: "DELETE" }),
   },
 
   // ── Bookings ───────────────────────────────────────────
   bookings: {
     list: (status?: string) =>
-      request<BookingRow[]>(`/bookings${status ? `?status=${status}` : ""}`),
-    get: (id: string) => request<BookingRow>(`/bookings/${id}`),
+      request<BookingRow[]>(`/bookings/${status ? `?status=${status}` : ""}`),
+    get: (id: string) => request<BookingRow>(`/bookings/${id}/`),
     create: (data: BookingCreate) =>
       request<BookingRow>("/bookings/", { method: "POST", body: JSON.stringify(data) }),
     cancel: (id: string, reason?: string) =>
-      request<{ status: string; booking_id: string }>(`/bookings/${id}/cancel`, {
+      request<{ status: string; booking_id: string }>(`/bookings/${id}/cancel/`, {
         method: "PATCH",
         body: JSON.stringify({ reason }),
       }),
@@ -96,16 +102,16 @@ export const api = {
 
   // ── One-Time Links ────────────────────────────────────
   links: {
-    validate: (token: string) => request<OTLRow>(`/links/${token}`),
+    validate: (token: string) => request<OTLRow>(`/links/${token}/`),
     list: (status?: string) =>
-      request<OTLRow[]>(`/links${status ? `?status=${status}` : ""}`),
+      request<OTLRow[]>(`/links/${status ? `?status=${status}` : ""}`),
     create: (data: OTLCreatePayload) =>
       request<OTLRow>("/links/", {
         method: "POST",
         body: JSON.stringify(data),
       }),
     revoke: (token: string) =>
-      request<{ status: string; token: string }>(`/links/${token}`, { method: "DELETE" }),
+      request<{ status: string; token: string }>(`/links/${token}/`, { method: "DELETE" }),
   },
 
   // ── Webhooks ──────────────────────────────────────────
