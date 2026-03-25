@@ -1,0 +1,59 @@
+import hmac
+import hashlib
+from fastapi import HTTPException, Request
+
+from config import SECRET_KEY
+
+
+COOKIE_NAME = "meetsync_user"
+
+
+def _sign_user_id(user_id: str) -> str:
+    digest = hmac.new(SECRET_KEY.encode("utf-8"), user_id.encode("utf-8"), hashlib.sha256).hexdigest()
+    return digest
+
+
+def _parse_cookie_value(value: str) -> str | None:
+    """
+    Cookie format: "<user_id>|<hex_hmac_sha256>"
+    Returns user_id if the signature matches, else None.
+    """
+    try:
+        user_id, sig = value.split("|", 1)
+    except ValueError:
+        return None
+    if not user_id or not sig:
+        return None
+    expected = _sign_user_id(user_id)
+    if not hmac.compare_digest(expected, sig):
+        return None
+    return user_id
+
+
+def get_current_user_id(request: Request) -> str:
+    """
+    Host identity derived from a signed cookie set at /auth/callback.
+    Guests (booking link flow) won't have this cookie, so host-only endpoints
+    should rely on this helper while public endpoints should infer host from
+    the one-time link token.
+    """
+    raw = request.cookies.get(COOKIE_NAME)
+    if not raw:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    user_id = _parse_cookie_value(raw)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid session")
+    return user_id
+
+
+def make_user_session_cookie_value(user_id: str) -> str:
+    """Create signed cookie value for a host user."""
+    return f"{user_id}|{_sign_user_id(user_id)}"
+
+
+def clear_user_session_cookie() -> dict:
+    """Convenience for cookie deletion settings."""
+    return {
+        "key": COOKIE_NAME,
+        "value": "",
+    }

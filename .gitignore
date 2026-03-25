@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# Next.js
+meetsync-frontend/node_modules/
+meetsync-frontend/.next/
+meetsync-frontend/.env.local
+meetsync-frontend/tsconfig.tsbuildinfo
+
+# OS files
+.DS_Store
+Thumbs.db
