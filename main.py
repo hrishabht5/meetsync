@@ -10,12 +10,14 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Clean FRONTEND_URL to avoid CORS issues with trailing slashes
+CLEAN_FRONTEND_URL = FRONTEND_URL.rstrip("/")
+
 app.add_middleware(
     CORSMiddleware,
-    # For cookie-based auth (`credentials: "include"`), CORS must explicitly allow
-    # the requesting origin (cannot be "*").
     allow_origins=[
-        FRONTEND_URL,
+        CLEAN_FRONTEND_URL,
+        f"{CLEAN_FRONTEND_URL}/",
         "http://localhost:3000",
         "http://127.0.0.1:3000",
     ],
