@@ -39,9 +39,11 @@ def get_current_user_id(request: Request) -> str:
     """
     raw = request.cookies.get(COOKIE_NAME)
     if not raw:
+        print(f"DEBUG: AUTH FAILED - Cookie '{COOKIE_NAME}' missing. Keys: {list(request.cookies.keys())}")
         raise HTTPException(status_code=401, detail="Not authenticated")
     user_id = _parse_cookie_value(raw)
     if not user_id:
+        print(f"DEBUG: AUTH FAILED - Invalid cookie signature. Value: {raw[:15]}...")
         raise HTTPException(status_code=401, detail="Invalid session")
     return user_id
 

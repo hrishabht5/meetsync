@@ -69,7 +69,8 @@ async def google_callback(request: Request, code: str = None, error: str = None)
         forwarded_proto = request.headers.get("x-forwarded-proto", "").lower().strip()
         secure = forwarded_proto == "https" or request.url.scheme == "https"
         samesite = "none" if secure else "lax"
-
+        print(f"DEBUG: Setting cookie for user {user_id}. Secure={secure}, SameSite={samesite}")
+        
         redirect.set_cookie(
             key="meetsync_user",
             value=make_user_session_cookie_value(user_id),
@@ -81,6 +82,7 @@ async def google_callback(request: Request, code: str = None, error: str = None)
         )
         return redirect
     except Exception as e:
+        print(f"DEBUG: Auth callback error: {str(e)}")
         return RedirectResponse(url=f"{FRONTEND_URL}/dashboard?auth_error=token_exchange_failed")
 
 
