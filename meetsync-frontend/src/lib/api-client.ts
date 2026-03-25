@@ -24,10 +24,17 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     headers["Content-Type"] = "application/json";
   }
 
+  // Cross-domain token fallback (if cookies are blocked)
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("meetsync_token");
+    if (token) {
+      headers["X-MeetSync-User"] = token;
+    }
+  }
+
   const res = await fetch(`${BASE_URL}${path}`, {
     ...options,
     headers,
-    // Required so host cookie set by `/auth/callback` is sent with subsequent API calls.
     credentials: options?.credentials ?? "include",
   });
   if (!res.ok) {

@@ -58,8 +58,10 @@ async def google_callback(request: Request, code: str = None, error: str = None)
             return RedirectResponse(url=f"{FRONTEND_URL}/dashboard?auth_error=missing_user_identity")
 
         google_calendar.store_tokens(user_id, token_data)
-
-        redirect = RedirectResponse(url=f"{FRONTEND_URL}/dashboard?auth=success")
+        
+        # Token for URL-based auth (backup for 3rd party cookie blocking)
+        token = make_user_session_cookie_value(user_id)
+        redirect = RedirectResponse(url=f"{FRONTEND_URL}/dashboard?auth=success&token={token}")
 
         # Secure cookie setup:
         # - On HTTPS: SameSite=None + Secure (works for cross-origin frontend/backend)

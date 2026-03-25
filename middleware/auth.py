@@ -32,18 +32,24 @@ def _parse_cookie_value(value: str) -> str | None:
 
 def get_current_user_id(request: Request) -> str:
     """
-    Host identity derived from a signed cookie set at /auth/callback.
-    Guests (booking link flow) won't have this cookie, so host-only endpoints
-    should rely on this helper while public endpoints should infer host from
-    the one-time link token.
+    Host identity derived from either:
+    1. A signed cookie (works for same-domain or if 3rd-party cookies allowed)
+    2. An X-MeetSync-User header (fallback for cross-domain/Vercel)
     """
+    # Try cookie first
     raw = request.cookies.get(COOKIE_NAME)
+    
+    # Fallback to header (for cross-domain environments like Vercel/Render)
     if not raw:
-        print(f"DEBUG: AUTH FAILED - Cookie '{COOKIE_NAME}' missing. Keys: {list(request.cookies.keys())}")
+        raw = request.headers.get("X-MeetSync-User")
+
+    if not raw:
+        print(f"DEBUG: AUTH FAILED - No cookie or 'X-MeetSync-User' header found.")
         raise HTTPException(status_code=401, detail="Not authenticated")
+    
     user_id = _parse_cookie_value(raw)
     if not user_id:
-        print(f"DEBUG: AUTH FAILED - Invalid cookie signature. Value: {raw[:15]}...")
+        print(f"DEBUG: AUTH FAILED - Invalid signature. Value: {raw[:15]}...")
         raise HTTPException(status_code=401, detail="Invalid session")
     return user_id
 

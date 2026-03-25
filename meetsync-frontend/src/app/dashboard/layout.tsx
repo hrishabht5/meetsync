@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 
 const nav = [
   { href: "/dashboard", label: "Bookings", icon: "📅" },
@@ -11,6 +12,16 @@ const nav = [
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const path = usePathname();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const token = searchParams.get("token");
+    if (token) {
+      localStorage.setItem("meetsync_token", token);
+      // Optional: Clean the URL by removing the token from the address bar
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, [searchParams]);
 
   return (
     <div className="min-h-screen flex" style={{ background: "#0f1117" }}>
