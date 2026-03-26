@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { api } from "@/lib/api-client";
 
 const nav = [
@@ -11,8 +11,7 @@ const nav = [
   { href: "/dashboard/webhooks", label: "Webhooks", icon: "🔔" },
 ];
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const path = usePathname();
+function SearchParamHandler() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -22,7 +21,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       localStorage.setItem("meetsync_token", token);
       window.history.replaceState({}, "", window.location.pathname);
     }
+  }, [searchParams]);
 
+  return null;
+}
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const path = usePathname();
+
+  useEffect(() => {
     // 2. Protect dashboard routes
     api.auth.status()
       .then((res) => {
@@ -33,10 +40,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       .catch(() => {
         window.location.href = "/";
       });
-  }, [searchParams]);
+  }, []);
 
   return (
     <div className="min-h-screen flex" style={{ background: "#0f1117" }}>
+      <Suspense fallback={null}>
+        <SearchParamHandler />
+      </Suspense>
       {/* Sidebar */}
       <aside className="w-60 flex-shrink-0 border-r border-[#2e3248] flex flex-col">
         {/* Logo */}
