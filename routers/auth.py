@@ -8,7 +8,7 @@ DELETE /auth/disconnect   → remove stored Google tokens
 """
 
 from fastapi import APIRouter, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 import httpx
 from config import supabase, FRONTEND_URL
 from services import google_calendar
@@ -105,10 +105,10 @@ def disconnect_google(request: Request):
     return {"status": "disconnected"}
 
 
-@router.post("/logout")
+@router.post("/logout/")
 async def logout(request: Request):
     """Clear session cookie and log user out."""
-    response = RedirectResponse(url=f"{FRONTEND_URL}/", status_code=303)
+    response = JSONResponse(content={"status": "logged_out"})
     
     # Clear the session cookie
     forwarded_proto = request.headers.get("x-forwarded-proto", "").lower().strip()

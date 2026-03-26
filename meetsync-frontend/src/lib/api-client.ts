@@ -8,6 +8,11 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
   // Normalize headers to a mutable object.
   const headers: Record<string, string> = {};
+  
+  if (hasBody) {
+    headers["Content-Type"] = "application/json";
+  }
+
   if (options?.headers) {
     if (Array.isArray(options.headers)) {
       for (const [k, v] of options.headers) headers[k] = v;
