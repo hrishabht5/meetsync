@@ -103,3 +103,22 @@ def disconnect_google(request: Request):
     user_id = get_current_user_id(request)
     supabase.table("google_tokens").delete().eq("user_id", user_id).execute()
     return {"status": "disconnected"}
+
+
+@router.post("/logout")
+async def logout(request: Request):
+    """Clear session cookie and log user out."""
+    response = RedirectResponse(url=f"{FRONTEND_URL}/", status_code=303)
+    
+    # Clear the session cookie
+    forwarded_proto = request.headers.get("x-forwarded-proto", "").lower().strip()
+    secure = forwarded_proto == "https" or request.url.scheme == "https"
+    samesite = "none" if secure else "lax"
+    
+    response.delete_cookie(
+        key="meetsync_user",
+        path="/",
+        secure=secure,
+        samesite=samesite,
+    )
+    return response

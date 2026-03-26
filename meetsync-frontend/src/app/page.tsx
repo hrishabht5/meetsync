@@ -1,7 +1,31 @@
 "use client";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { api } from "@/lib/api-client";
+import { Spinner } from "@/components/ui";
 
 export default function HomePage() {
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  useEffect(() => {
+    api.auth.status()
+      .then((res) => setIsLoggedIn(res.connected))
+      .catch(() => setIsLoggedIn(false));
+  }, []);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try {
+      await api.auth.logout();
+      setIsLoggedIn(false);
+    } catch (e) {
+      console.error("Logout failed", e);
+    } finally {
+      setLoggingOut(false);
+    }
+  };
+
   return (
     <main className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: "linear-gradient(135deg, #0f1117 0%, #12103a 100%)" }}>
       {/* Glow */}
@@ -32,19 +56,33 @@ export default function HomePage() {
         </div>
 
         {/* CTA */}
-        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-          <a
-            href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/auth/google`}
-            className="px-8 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-xl shadow-indigo-600/30 transition-all hover:shadow-indigo-500/40 hover:-translate-y-0.5"
-          >
-            Connect Google Account →
-          </a>
-          <Link
-            href="/dashboard"
-            className="px-8 py-3 rounded-2xl bg-white/8 hover:bg-white/12 text-zinc-200 font-semibold text-sm ring-1 ring-white/10 transition-all"
-          >
-            Open Dashboard
-          </Link>
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto min-h-[52px] items-center justify-center">
+          {isLoggedIn === null ? (
+            <Spinner size={24} />
+          ) : isLoggedIn ? (
+            <>
+              <Link
+                href="/dashboard"
+                className="px-8 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-xl shadow-indigo-600/30 transition-all hover:shadow-indigo-500/40 hover:-translate-y-0.5"
+              >
+                Open Dashboard →
+              </Link>
+              <button
+                onClick={handleLogout}
+                disabled={loggingOut}
+                className="px-8 py-3 rounded-2xl bg-white/8 hover:bg-white/12 text-zinc-200 font-semibold text-sm ring-1 ring-white/10 transition-all disabled:opacity-50"
+              >
+                {loggingOut ? "Logging out..." : "Logout"}
+              </button>
+            </>
+          ) : (
+            <a
+              href={api.auth.googleLoginUrl()}
+              className="px-8 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-xl shadow-indigo-600/30 transition-all hover:shadow-indigo-500/40 hover:-translate-y-0.5"
+            >
+              Connect Google Account →
+            </a>
+          )}
         </div>
 
         {/* Features */}

@@ -57,6 +57,12 @@ export const api = {
   auth: {
     status: () => request<{ connected: boolean; user_id: string | null }>("/auth/status/"),
     disconnect: () => request<{ status: string }>("/auth/disconnect/", { method: "DELETE" }),
+    logout: async () => {
+      await request<{ status: string }>("/auth/logout/", { method: "POST" });
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("meetsync_token");
+      }
+    },
     googleLoginUrl: () => `${BASE_URL}/auth/google/`,
   },
 

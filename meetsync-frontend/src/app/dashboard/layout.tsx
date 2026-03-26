@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
+import { api } from "@/lib/api-client";
 
 const nav = [
   { href: "/dashboard", label: "Bookings", icon: "📅" },
@@ -15,12 +16,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const searchParams = useSearchParams();
 
   useEffect(() => {
+    // 1. Handle token from URL
     const token = searchParams.get("token");
     if (token) {
       localStorage.setItem("meetsync_token", token);
-      // Optional: Clean the URL by removing the token from the address bar
       window.history.replaceState({}, "", window.location.pathname);
     }
+
+    // 2. Protect dashboard routes
+    api.auth.status()
+      .then((res) => {
+        if (!res.connected) {
+          window.location.href = "/";
+        }
+      })
+      .catch(() => {
+        window.location.href = "/";
+      });
   }, [searchParams]);
 
   return (
@@ -60,13 +72,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </nav>
 
         {/* Footer */}
-        <div className="px-3 py-4 border-t border-[#2e3248]">
+        <div className="px-3 py-4 border-t border-[#2e3248] flex flex-col gap-1">
           <Link
             href="/"
             className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-zinc-500 hover:text-zinc-300 hover:bg-white/5 transition-all"
           >
             ← Home
           </Link>
+          <button
+            onClick={async () => {
+              try {
+                await api.auth.logout();
+                window.location.href = "/";
+              } catch (e) {
+                console.error("Logout failed", e);
+              }
+            }}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-red-500/70 hover:text-red-400 hover:bg-red-500/10 transition-all text-left w-full"
+          >
+            <span className="text-base">🚪</span>
+            Logout
+          </button>
         </div>
       </aside>
 
