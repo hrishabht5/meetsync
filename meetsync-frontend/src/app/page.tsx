@@ -93,6 +93,15 @@ export default function HomePage() {
             </div>
           ))}
         </div>
+
+        {/* Footer */}
+        <footer className="w-full mt-16 pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-zinc-500 text-xs">
+          <p>© {new Date().getFullYear()} MeetSync. All rights reserved.</p>
+          <div className="flex gap-6">
+            <Link href="/privacy" className="hover:text-zinc-300 transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-zinc-300 transition-colors">Terms of Service</Link>
+          </div>
+        </footer>
       </div>
     </main>
   );
