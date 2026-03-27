@@ -138,6 +138,15 @@ export const api = {
     test: () =>
       request<{ status: string; event: string }>("/webhooks/test", { method: "POST" }),
   },
+
+  // ── API Keys ──────────────────────────────────────────
+  apiKeys: {
+    list: () => request<APIKeyRow[]>("/api_keys/"),
+    create: (data: { name: string }) =>
+      request<APIKeyRow>("/api_keys/", { method: "POST", body: JSON.stringify(data) }),
+    delete: (id: string) =>
+      request<{ status: string }>(`/api_keys/${id}`, { method: "DELETE" }),
+  },
 };
 
 // ── Types ─────────────────────────────────────────────
@@ -253,3 +262,14 @@ export const EVENT_TYPES = [
 ] as const;
 
 export type EventType = (typeof EVENT_TYPES)[number];
+
+// API Keys
+export interface APIKeyRow {
+  id: string;
+  name: string;
+  prefix: string;
+  key?: string; // only returned upon creation
+  created_at: string;
+  last_used_at?: string | null;
+  is_active: boolean;
+}
