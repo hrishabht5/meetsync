@@ -23,6 +23,7 @@ export default function BookingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [meetLink, setMeetLink] = useState("");
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [consent, setConsent] = useState(false);
 
   // Step 1: validate OTL
   useEffect(() => {
@@ -74,6 +75,10 @@ export default function BookingPage() {
         errors[field.label] = `${field.label} is required`;
       }
     }
+    if (!consent) {
+      errors["consent"] = "You must agree to the Terms of Service and Privacy Policy.";
+    }
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -261,8 +266,16 @@ export default function BookingPage() {
                 />
               </div>
 
+              <div className="flex flex-col gap-1.5 mt-2">
+                <label className="flex items-start gap-2 text-sm text-zinc-400 cursor-pointer">
+                  <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-1 bg-[#12151f] border-[#2e3248] rounded text-indigo-500 focus:ring-indigo-500/50" />
+                  <span>I agree to the <a href="/terms" target="_blank" className="text-indigo-400 hover:underline">Terms of Service</a> and <a href="/privacy" target="_blank" className="text-indigo-400 hover:underline">Privacy Policy</a>, and I consent to the processing of my booking data.</span>
+                </label>
+                {formErrors["consent"] && <p className="text-xs text-red-400">{formErrors["consent"]}</p>}
+              </div>
+
               <Button onClick={handleBook} loading={submitting}
-                disabled={!form.name || !form.email}>
+                disabled={!form.name || !form.email || !consent}>
                 Confirm Booking
               </Button>
             </div>

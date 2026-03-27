@@ -30,7 +30,46 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization", "X-MeetSync-User"],
 )
 
+from starlette.middleware.base import BaseHTTPMiddleware
+from fastapi import Request
 from fastapi.responses import JSONResponse
+import time
+from collections import defaultdict
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        return response
+
+class RateLimitMiddleware(BaseHTTPMiddleware):
+    def __init__(self, app, requests_per_minute: int = 200):
+        super().__init__(app)
+        self.requests_per_minute = requests_per_minute
+        self.ip_requests = defaultdict(list)
+
+    async def dispatch(self, request: Request, call_next):
+        client_ip = request.client.host if request.client else "127.0.0.1"
+        now = time.time()
+        
+        # Slide window (60 seconds)
+        self.ip_requests[client_ip] = [t for t in self.ip_requests[client_ip] if now - t < 60]
+        
+        if len(self.ip_requests[client_ip]) >= self.requests_per_minute:
+            return JSONResponse(
+                status_code=429,
+                content={"error": True, "message": "Too many requests. Please try again later."}
+            )
+            
+        self.ip_requests[client_ip].append(now)
+        return await call_next(request)
+
+app.add_middleware(RateLimitMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
+
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 

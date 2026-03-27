@@ -22,6 +22,7 @@ from typing import Any
 
 import httpx
 from app.core.config import supabase
+from app.core.logger import logger
 
 
 # ── Signing ───────────────────────────────────────────────
@@ -70,16 +71,33 @@ async def _deliver(endpoint: dict, event_name: str, payload: dict):
         if attempt < 3:
             await asyncio.sleep(2 ** attempt)  # 2s, 4s backoff
 
-    # Log to Supabase
-    supabase.table("webhook_logs").insert({
-        "webhook_id":  endpoint["id"],
-        "event":       event_name,
-        "payload":     payload,
-        "status_code": status_code,
-        "success":     success,
-        "error":       error_msg,
-        "attempts":    attempt,
-    }).execute()
+    if not success:
+        logger.warning(f"Webhook {endpoint['id']} failed out after {attempt} attempts", extra={
+            "webhook_id": endpoint['id'],
+            "event": event_name,
+            "error": error_msg,
+            "status_code": status_code
+        })
+    else:
+        logger.info(f"Webhook {endpoint['id']} delivered on attempt {attempt}", extra={
+            "webhook_id": endpoint['id'],
+            "event": event_name,
+            "status_code": status_code
+        })
+
+    # Log to Supabase for the user dashboard
+    try:
+        supabase.table("webhook_logs").insert({
+            "webhook_id":  endpoint["id"],
+            "event":       event_name,
+            "payload":     payload,
+            "status_code": status_code,
+            "success":     success,
+            "error":       error_msg,
+            "attempts":    attempt,
+        }).execute()
+    except Exception as e:
+        logger.error(f"Failed to write webhook log to DB: {str(e)}", exc_info=True)
 
 
 async def fire_event(event_name: str, data: Any, user_id: str = None):

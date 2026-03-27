@@ -147,6 +147,13 @@ export const api = {
     delete: (id: string) =>
       request<{ status: string }>(`/api_keys/${id}`, { method: "DELETE" }),
   },
+  account: {
+    delete: async (): Promise<void> => {
+      await fetchApi("/auth/account", {
+        method: "DELETE",
+      });
+    },
+  },
 };
 
 // ── Types ─────────────────────────────────────────────

@@ -122,3 +122,38 @@ async def logout(request: Request):
         samesite=samesite,
     )
     return response
+
+
+@router.delete("/account")
+async def delete_account(request: Request):
+    """
+    Permanently delete the host's account and all associated data,
+    compliant with GDPR Right to Erasure.
+    """
+    user_id = get_current_user_id(request)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    # Wipe all identifiable user data from respective tables
+    supabase.table("availability_settings").delete().eq("user_id", user_id).execute()
+    supabase.table("availability_overrides").delete().eq("user_id", user_id).execute()
+    supabase.table("one_time_links").delete().eq("user_id", user_id).execute()
+    supabase.table("api_keys").delete().eq("user_id", user_id).execute()
+    supabase.table("webhooks").delete().eq("user_id", user_id).execute()
+    
+    # We do NOT delete bookings outright to avoid destroying historical meeting data
+    # that guests may rely on, but we can anonymize the host association if needed, 
+    # or just delete them. In this case, we'll cascade delete to comply fully.
+    supabase.table("bookings").delete().eq("user_id", user_id).execute()
+    
+    # Finally, remove Google token
+    supabase.table("google_tokens").delete().eq("user_id", user_id).execute()
+    
+    # Generate logout response explicitly since data is gone
+    response = JSONResponse(content={"status": "account_deleted"})
+    forwarded_proto = request.headers.get("x-forwarded-proto", "").lower().strip()
+    secure = forwarded_proto == "https" or request.url.scheme == "https"
+    samesite = "none" if secure else "lax"
+    response.delete_cookie("meetsync_user", path="/", secure=secure, samesite=samesite)
+    
+    return response
