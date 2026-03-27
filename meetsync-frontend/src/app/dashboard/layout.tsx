@@ -52,12 +52,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <aside className="w-60 flex-shrink-0 border-r border-[#2e3248] flex flex-col">
         {/* Logo */}
         <div className="px-5 py-5 border-b border-[#2e3248] flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center shadow-md shadow-indigo-600/40">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-              <rect x="3" y="4" width="18" height="18" rx="3"/>
-              <path d="M3 9h18M9 4v5M15 4v5"/>
-            </svg>
-          </div>
+          <img src="/logo.png" alt="MeetSync" className="w-8 h-8 rounded-lg shadow-md shadow-indigo-600/20" />
           <span className="font-bold text-white text-sm">MeetSync</span>
         </div>
 

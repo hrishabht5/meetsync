@@ -33,14 +33,8 @@ export default function HomePage() {
            style={{ background: "radial-gradient(circle, #6366f1, transparent 70%)" }} />
 
       <div className="relative z-10 flex flex-col items-center text-center max-w-2xl gap-8">
-        {/* Logo */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/40">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2">
-              <rect x="3" y="4" width="18" height="18" rx="3"/>
-              <path d="M3 9h18M9 4v5M15 4v5"/>
-            </svg>
-          </div>
+          <img src="/logo.png" alt="MeetSync" className="w-10 h-10 rounded-xl shadow-lg shadow-indigo-600/20" />
           <span className="text-2xl font-bold text-white tracking-tight">MeetSync</span>
         </div>
 

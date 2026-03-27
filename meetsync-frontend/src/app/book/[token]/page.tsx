@@ -112,13 +112,8 @@ export default function BookingPage() {
     <main className="min-h-screen flex items-center justify-center px-4 py-12"
           style={{ background: "linear-gradient(135deg, #0f1117 0%, #12103a 100%)" }}>
       <div className="w-full max-w-md">
-        {/* Header */}
         <div className="flex items-center gap-2 mb-8 justify-center">
-          <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center shadow-md shadow-indigo-600/40">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-              <rect x="3" y="4" width="18" height="18" rx="3"/><path d="M3 9h18M9 4v5M15 4v5"/>
-            </svg>
-          </div>
+          <img src="/logo.png" alt="MeetSync" className="w-8 h-8 rounded-lg shadow-md shadow-indigo-600/20" />
           <span className="text-lg font-bold text-white">MeetSync</span>
         </div>
 
