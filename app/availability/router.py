@@ -10,7 +10,8 @@ DELETE /availability/overrides/{id}   → remove an override
 """
 
 from fastapi import APIRouter, HTTPException, Request
-from datetime import datetime, timedelta, time
+from datetime import datetime, timedelta, time, timezone
+from zoneinfo import ZoneInfo
 from typing import List
 from app.core.config import supabase
 from app.core.schemas import AvailabilitySettings, AvailabilityOverrideCreate
@@ -103,11 +104,15 @@ def get_available_slots(
     # Build slots from discrete shifts
     slot_duration = settings["slot_duration"]
     buffer = settings["buffer_minutes"]
+    try:
+        tz = ZoneInfo(settings.get("timezone", "UTC"))
+    except:
+        tz = timezone.utc
 
     slots: List[str] = []
     for shift_time_str in shifts:
         h, m = map(int, shift_time_str.split(":"))
-        slot_dt = datetime.combine(target_date, time(h, m))
+        slot_dt = datetime.combine(target_date, time(h, m), tzinfo=tz)
         slots.append(slot_dt.isoformat())
 
     # Fetch existing bookings on that day
@@ -128,14 +133,18 @@ def get_available_slots(
     def conflicts(slot_start: datetime) -> bool:
         slot_end = slot_start + timedelta(minutes=event_duration)
         for bk in booked:
-            bk_start = datetime.fromisoformat(bk["scheduled_at"].replace("Z", ""))
-            bk_dur = duration_map.get(bk["event_type"], slot_duration)
+            # Parse DB ISO string safely
+            bk_iso = bk["scheduled_at"].replace("Z", "+00:00")
+            bk_start = datetime.fromisoformat(bk_iso)
+            if bk_start.tzinfo is None:
+                bk_start = bk_start.replace(tzinfo=timezone.utc)
+            bk_dur = int(duration_map.get(bk["event_type"], slot_duration) or slot_duration)
             bk_end = bk_start + timedelta(minutes=bk_dur + buffer)
             if not (slot_end <= bk_start - timedelta(minutes=buffer) or slot_start >= bk_end):
                 return True
         return False
 
-    now = datetime.utcnow()
+    now = datetime.now(tz=tz)
     available = [
         s for s in slots
         if not conflicts(datetime.fromisoformat(s)) and datetime.fromisoformat(s) > now
