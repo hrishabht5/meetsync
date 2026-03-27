@@ -7,7 +7,7 @@ GET /auth/status          → check if Google account is connected
 DELETE /auth/disconnect   → remove stored Google tokens
 """
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse
 import httpx
 from app.core.config import supabase, FRONTEND_URL
@@ -135,18 +135,13 @@ async def delete_account(request: Request):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
     # Wipe all identifiable user data from respective tables
-    supabase.table("availability_settings").delete().eq("user_id", user_id).execute()
-    supabase.table("availability_overrides").delete().eq("user_id", user_id).execute()
+    # Order matters due to foreign key constraints (bookings link to one_time_links)
+    supabase.table("bookings").delete().eq("user_id", user_id).execute()
     supabase.table("one_time_links").delete().eq("user_id", user_id).execute()
+    supabase.table("availability_overrides").delete().eq("user_id", user_id).execute()
+    supabase.table("availability_settings").delete().eq("user_id", user_id).execute()
     supabase.table("api_keys").delete().eq("user_id", user_id).execute()
     supabase.table("webhooks").delete().eq("user_id", user_id).execute()
-    
-    # We do NOT delete bookings outright to avoid destroying historical meeting data
-    # that guests may rely on, but we can anonymize the host association if needed, 
-    # or just delete them. In this case, we'll cascade delete to comply fully.
-    supabase.table("bookings").delete().eq("user_id", user_id).execute()
-    
-    # Finally, remove Google token
     supabase.table("google_tokens").delete().eq("user_id", user_id).execute()
     
     # Generate logout response explicitly since data is gone
