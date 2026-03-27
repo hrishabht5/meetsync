@@ -7,6 +7,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "MeetSync — Smart Scheduling",
   description: "Schedule meetings with Google Meet instantly using smart one-time booking links.",
+  verification: {
+    google: "2CACV__s0LZoR8P2xyPxHh0Es8GBtRtxfKI3zEJDzDo",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
