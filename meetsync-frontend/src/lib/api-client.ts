@@ -148,11 +148,7 @@ export const api = {
       request<{ status: string }>(`/api_keys/${id}`, { method: "DELETE" }),
   },
   account: {
-    delete: async (): Promise<void> => {
-      await fetchApi("/auth/account", {
-        method: "DELETE",
-      });
-    },
+    delete: () => request<{ status: string }>("/auth/account/", { method: "DELETE" }),
   },
 };
 
