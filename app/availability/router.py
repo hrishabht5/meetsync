@@ -12,8 +12,8 @@ DELETE /availability/overrides/{id}   → remove an override
 from fastapi import APIRouter, HTTPException, Request
 from datetime import datetime, timedelta, time
 from typing import List
-from config import supabase
-from models.schemas import AvailabilitySettings, AvailabilityOverrideCreate
+from app.core.config import supabase
+from app.core.schemas import AvailabilitySettings, AvailabilityOverrideCreate
 import json
 
 router = APIRouter()
@@ -76,7 +76,7 @@ def get_available_slots(
     # For guests: `user_id` comes from the booking link's host.
     # For hosts/admin dashboard: it comes from the authenticated cookie.
     if not user_id:
-        from middleware.auth import get_current_user_id
+        from app.auth.middleware import get_current_user_id
         user_id = get_current_user_id(request)
 
     settings = _get_settings(user_id)
@@ -148,14 +148,14 @@ def get_available_slots(
 
 @router.get("/settings")
 def get_settings(request: Request):
-    from middleware.auth import get_current_user_id
+    from app.auth.middleware import get_current_user_id
     user_id = get_current_user_id(request)
     return _get_settings(user_id)
 
 
 @router.put("/settings")
 def update_settings(request: Request, payload: AvailabilitySettings):
-    from middleware.auth import get_current_user_id
+    from app.auth.middleware import get_current_user_id
     user_id = get_current_user_id(request)
     settings_dict = payload.dict()
     settings_dict["user_id"] = user_id
@@ -167,7 +167,7 @@ def update_settings(request: Request, payload: AvailabilitySettings):
 
 @router.get("/overrides")
 def list_overrides(request: Request):
-    from middleware.auth import get_current_user_id
+    from app.auth.middleware import get_current_user_id
     user_id = get_current_user_id(request)
     result = supabase.table("availability_overrides") \
         .select("*") \
@@ -179,7 +179,7 @@ def list_overrides(request: Request):
 
 @router.post("/overrides", status_code=201)
 def create_override(request: Request, payload: AvailabilityOverrideCreate):
-    from middleware.auth import get_current_user_id
+    from app.auth.middleware import get_current_user_id
     user_id = get_current_user_id(request)
     row = payload.dict()
     row["user_id"] = user_id
@@ -189,7 +189,7 @@ def create_override(request: Request, payload: AvailabilityOverrideCreate):
 
 @router.delete("/overrides/{override_id}")
 def delete_override(request: Request, override_id: str):
-    from middleware.auth import get_current_user_id
+    from app.auth.middleware import get_current_user_id
     user_id = get_current_user_id(request)
     supabase.table("availability_overrides").delete().eq("id", override_id).eq("user_id", user_id).execute()
     return {"status": "deleted", "id": override_id}

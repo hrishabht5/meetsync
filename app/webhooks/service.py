@@ -21,7 +21,7 @@ from datetime import datetime
 from typing import Any
 
 import httpx
-from config import supabase
+from app.core.config import supabase
 
 
 # ── Signing ───────────────────────────────────────────────

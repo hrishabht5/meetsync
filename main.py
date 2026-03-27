@@ -1,8 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import bookings, links, webhooks, auth, availability
+from app.auth.router import router as auth_router
+from app.availability.router import router as availability_router
+from app.bookings.router import router as bookings_router
+from app.links.router import router as links_router
+from app.webhooks.router import router as webhooks_router
 import uvicorn
-from config import FRONTEND_URL
+from app.core.config import FRONTEND_URL
 
 app = FastAPI(
     title="MeetSync API",
@@ -26,11 +30,29 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization", "X-MeetSync-User"],
 )
 
-app.include_router(auth.router,         prefix="/auth",         tags=["Auth"])
-app.include_router(availability.router, prefix="/availability", tags=["Availability"])
-app.include_router(bookings.router,     prefix="/bookings",     tags=["Bookings"])
-app.include_router(links.router,        prefix="/links",        tags=["One-Time Links"])
-app.include_router(webhooks.router,     prefix="/webhooks",     tags=["Webhooks"])
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request, exc):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"error": True, "message": str(exc.detail)},
+    )
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    return JSONResponse(
+        status_code=500,
+        content={"error": True, "message": "Internal server error"},
+    )
+
+app.include_router(auth_router,         prefix="/api/v1/auth",         tags=["Auth"])
+app.include_router(availability_router, prefix="/api/v1/availability", tags=["Availability"])
+app.include_router(bookings_router,     prefix="/api/v1/bookings",     tags=["Bookings"])
+app.include_router(links_router,        prefix="/api/v1/links",        tags=["One-Time Links"])
+app.include_router(webhooks_router,     prefix="/api/v1/webhooks",     tags=["Webhooks"])
 
 @app.get("/")
 def root():

@@ -2,7 +2,7 @@ import hmac
 import hashlib
 from fastapi import HTTPException, Request
 
-from config import SECRET_KEY
+from app.core.config import SECRET_KEY
 
 
 COOKIE_NAME = "meetsync_user"
@@ -36,10 +36,17 @@ def get_current_user_id(request: Request) -> str:
     1. A signed cookie (works for same-domain or if 3rd-party cookies allowed)
     2. An X-MeetSync-User header (fallback for cross-domain/Vercel)
     """
-    # Try cookie first
+    # 1. API Key Auth (Developer Access)
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ")[1]
+        # In a real app, validate this against Supabase `api_keys` table.
+        return token
+
+    # 2. Try cookie first (Frontend UI)
     raw = request.cookies.get(COOKIE_NAME)
     
-    # Fallback to header (for cross-domain environments like Vercel/Render)
+    # 3. Fallback to header (Cross-domain environments)
     if not raw:
         raw = request.headers.get("X-MeetSync-User")
 

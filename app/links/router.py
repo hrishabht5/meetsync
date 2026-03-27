@@ -8,7 +8,7 @@ DELETE /links/{token}    → revoke a link
 """
 
 from fastapi import APIRouter, HTTPException, Request
-from models.schemas import OTLCreate
+from app.core.schemas import OTLCreate
 from services import otl_service
 
 router = APIRouter()
@@ -17,7 +17,7 @@ router = APIRouter()
 @router.post("/", status_code=201)
 def create_link(request: Request, payload: OTLCreate):
     """Generate a new one-time booking link with optional custom questions."""
-    from middleware.auth import get_current_user_id
+    from app.auth.middleware import get_current_user_id
     user_id = get_current_user_id(request)
     custom_fields = None
     if payload.custom_fields:
@@ -42,7 +42,7 @@ def create_link(request: Request, payload: OTLCreate):
 @router.get("/")
 def list_links(request: Request, status: str = None):
     """List all OTLs. Optional ?status=active|used|expired|revoked"""
-    from middleware.auth import get_current_user_id
+    from app.auth.middleware import get_current_user_id
     user_id = get_current_user_id(request)
     return otl_service.list_otls(user_id, status_filter=status)
 
@@ -55,7 +55,7 @@ def validate_link(token: str):
     """
     try:
         otl = otl_service.validate_otl(token)
-        from config import FRONTEND_URL
+        from app.core.config import FRONTEND_URL
         otl["booking_url"] = f"{FRONTEND_URL}/book/{token}"
         return otl
     except ValueError as e:
@@ -65,7 +65,7 @@ def validate_link(token: str):
 @router.delete("/{token}")
 def revoke_link(request: Request, token: str):
     """Revoke a one-time link so it can no longer be used."""
-    from middleware.auth import get_current_user_id
+    from app.auth.middleware import get_current_user_id
     user_id = get_current_user_id(request)
     try:
         # Prevent hosts from revoking tokens they don't own.

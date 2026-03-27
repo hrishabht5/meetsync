@@ -12,8 +12,8 @@ import string
 from datetime import datetime, timedelta
 from typing import Optional
 
-from config import supabase, FRONTEND_URL
-from models.schemas import OTLStatus
+from app.core.config import supabase, FRONTEND_URL
+from app.core.schemas import OTLStatus
 
 
 def _generate_token(prefix: str = "lnk", length: int = 8) -> str:

@@ -10,8 +10,8 @@ POST /webhooks/test      → send a test event to all endpoints
 
 import uuid
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Request
-from config import supabase
-from models.schemas import WebhookCreate
+from app.core.config import supabase
+from app.core.schemas import WebhookCreate
 from services import webhook_service
 
 router = APIRouter()
@@ -29,7 +29,7 @@ VALID_EVENTS = [
 @router.post("/", status_code=201)
 def register_webhook(request: Request, payload: WebhookCreate):
     """Register a new webhook endpoint."""
-    from middleware.auth import get_current_user_id
+    from app.auth.middleware import get_current_user_id
     user_id = get_current_user_id(request)
     invalid = [e for e in payload.events if e not in VALID_EVENTS]
     if invalid:
@@ -49,7 +49,7 @@ def register_webhook(request: Request, payload: WebhookCreate):
 
 @router.get("/")
 def list_webhooks(request: Request):
-    from middleware.auth import get_current_user_id
+    from app.auth.middleware import get_current_user_id
     user_id = get_current_user_id(request)
     result = supabase.table("webhooks").select("id,url,events,is_active,created_at") \
         .eq("user_id", user_id).execute()
@@ -58,7 +58,7 @@ def list_webhooks(request: Request):
 
 @router.delete("/{webhook_id}")
 def delete_webhook(request: Request, webhook_id: str):
-    from middleware.auth import get_current_user_id
+    from app.auth.middleware import get_current_user_id
     user_id = get_current_user_id(request)
     result = supabase.table("webhooks").select("id").eq("id", webhook_id).execute()
     if not result.data:
@@ -69,7 +69,7 @@ def delete_webhook(request: Request, webhook_id: str):
 
 @router.patch("/{webhook_id}/toggle")
 def toggle_webhook(request: Request, webhook_id: str):
-    from middleware.auth import get_current_user_id
+    from app.auth.middleware import get_current_user_id
     user_id = get_current_user_id(request)
     result = supabase.table("webhooks").select("is_active").eq("id", webhook_id).execute()
     if not result.data:
@@ -92,7 +92,7 @@ def get_webhook_logs(request: Request, limit: int = 50):
 @router.post("/test")
 async def send_test_event(request: Request, background_tasks: BackgroundTasks):
     """Fire a test event to all registered endpoints."""
-    from middleware.auth import get_current_user_id
+    from app.auth.middleware import get_current_user_id
     user_id = get_current_user_id(request)
     test_data = {
         "booking_id":   "test_booking_001",

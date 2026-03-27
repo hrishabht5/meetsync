@@ -11,10 +11,12 @@ import uuid
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Request
 
-from config import supabase
-from models.schemas import BookingCreate, BookingCancel, BookingStatus
-from services import google_calendar, otl_service, webhook_service
-from middleware.auth import get_current_user_id
+from app.core.config import supabase
+from app.core.schemas import BookingCreate, BookingCancel, BookingStatus
+from app.integrations import google_calendar
+from app.links import service as otl_service
+from app.webhooks import service as webhook_service
+from app.auth.middleware import get_current_user_id
 
 router = APIRouter()
 
@@ -40,7 +42,7 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
     else:
         # In the public booking flow, `one_time_link_id` is always provided.
         # This fallback supports any future host-side booking creation.
-        from middleware.auth import get_current_user_id
+        from app.auth.middleware import get_current_user_id
         host_user_id = get_current_user_id(request)
 
     if not host_user_id:
@@ -110,7 +112,7 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
 @router.get("/")
 def list_bookings(request: Request, status: str = None, limit: int = 50):
     """List all bookings. Optional ?status=confirmed|pending|cancelled"""
-    from middleware.auth import get_current_user_id
+    from app.auth.middleware import get_current_user_id
     user_id = get_current_user_id(request)
     query = supabase.table("bookings").select("*").eq("user_id", user_id)
     if status:
@@ -121,7 +123,7 @@ def list_bookings(request: Request, status: str = None, limit: int = 50):
 
 @router.get("/{booking_id}")
 def get_booking(request: Request, booking_id: str):
-    from middleware.auth import get_current_user_id
+    from app.auth.middleware import get_current_user_id
     user_id = get_current_user_id(request)
     result = supabase.table("bookings").select("*").eq("id", booking_id).eq("user_id", user_id).execute()
     if not result.data:
@@ -132,7 +134,7 @@ def get_booking(request: Request, booking_id: str):
 @router.patch("/{booking_id}/cancel")
 async def cancel_booking(request: Request, booking_id: str, payload: BookingCancel, background_tasks: BackgroundTasks):
     """Cancel a booking and delete the Google Calendar event."""
-    from middleware.auth import get_current_user_id
+    from app.auth.middleware import get_current_user_id
     user_id = get_current_user_id(request)
     result = supabase.table("bookings").select("*").eq("id", booking_id).eq("user_id", user_id).execute()
     if not result.data:

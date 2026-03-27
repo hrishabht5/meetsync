@@ -10,9 +10,9 @@ DELETE /auth/disconnect   → remove stored Google tokens
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse, JSONResponse
 import httpx
-from config import supabase, FRONTEND_URL
+from app.core.config import supabase, FRONTEND_URL
 from services import google_calendar
-from middleware.auth import (
+from app.auth.middleware import (
     get_current_user_id,
     make_user_session_cookie_value,
 )
