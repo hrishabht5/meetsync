@@ -48,11 +48,18 @@ async def global_exception_handler(request, exc):
         content={"error": True, "message": "Internal server error"},
     )
 
+from app.auth.api_keys_router import router as api_keys_router
+from app.api.v1.router import api_v1_router
+
 app.include_router(auth_router,         prefix="/auth",         tags=["Auth"])
 app.include_router(availability_router, prefix="/availability", tags=["Availability"])
 app.include_router(bookings_router,     prefix="/bookings",     tags=["Bookings"])
 app.include_router(links_router,        prefix="/links",        tags=["One-Time Links"])
 app.include_router(webhooks_router,     prefix="/webhooks",     tags=["Webhooks"])
+
+# Public API Endpoints
+app.include_router(api_keys_router,     prefix="/api_keys",     tags=["API Keys Management"])
+app.include_router(api_v1_router,       prefix="/api/v1")
 
 @app.get("/")
 def root():

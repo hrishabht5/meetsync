@@ -40,8 +40,19 @@ def get_current_user_id(request: Request) -> str:
     auth_header = request.headers.get("Authorization")
     if auth_header and auth_header.startswith("Bearer "):
         token = auth_header.split(" ")[1]
-        # In a real app, validate this against Supabase `api_keys` table.
-        return token
+        
+        # In a real API-first app, validate actively against DB
+        import hashlib
+        from app.core.config import supabase
+        
+        key_hash = hashlib.sha256(token.encode()).hexdigest()
+        result = supabase.table("api_keys").select("user_id, is_active").eq("key_hash", key_hash).execute()
+        
+        if result.data and result.data[0]["is_active"]:
+            # Optional: Fire background task to update `last_used_at`
+            return result.data[0]["user_id"]
+            
+        raise HTTPException(status_code=401, detail="Invalid or revoked API key")
 
     # 2. Try cookie first (Frontend UI)
     raw = request.cookies.get(COOKIE_NAME)
