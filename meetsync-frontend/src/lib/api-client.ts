@@ -166,6 +166,7 @@ export interface AvailabilitySettingsResponse {
   slot_duration: number;
   buffer_minutes: number;
   timezone: string;
+  default_questions?: CustomField[];
 }
 
 export interface AvailabilitySettingsUpdate {
@@ -174,6 +175,7 @@ export interface AvailabilitySettingsUpdate {
   slot_duration: number;
   buffer_minutes: number;
   timezone: string;
+  default_questions?: CustomField[];
 }
 
 export interface AvailabilityOverride {

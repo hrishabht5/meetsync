@@ -32,6 +32,7 @@ class AvailabilitySettings(BaseModel):
     slot_duration:   int = 30           # minutes
     buffer_minutes:  int = 15           # gap between meetings
     timezone:        str = "Asia/Kolkata"
+    default_questions: Optional[List[CustomField]] = None
 
 
 class AvailabilityOverrideCreate(BaseModel):

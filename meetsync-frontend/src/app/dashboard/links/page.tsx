@@ -18,7 +18,17 @@ export default function LinksPage() {
 
   const load = async () => {
     setLoading(true);
-    try { setLinks(await api.links.list()); }
+    try { 
+      const [fetchedLinks, settings] = await Promise.all([
+        api.links.list(),
+        api.availability.getSettings()
+      ]);
+      setLinks(fetchedLinks);
+      if (settings.default_questions && settings.default_questions.length > 0) {
+        setCustomFields(settings.default_questions);
+        setShowFieldBuilder(true);
+      }
+    }
     catch (e: unknown) { setError((e as Error).message); }
     finally { setLoading(false); }
   };
