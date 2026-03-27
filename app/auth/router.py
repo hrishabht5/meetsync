@@ -11,7 +11,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse, JSONResponse
 import httpx
 from app.core.config import supabase, FRONTEND_URL
-from services import google_calendar
+from app.integrations import google_calendar
 from app.auth.middleware import (
     get_current_user_id,
     make_user_session_cookie_value,

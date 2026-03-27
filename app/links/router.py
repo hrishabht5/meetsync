@@ -9,7 +9,7 @@ DELETE /links/{token}    → revoke a link
 
 from fastapi import APIRouter, HTTPException, Request
 from app.core.schemas import OTLCreate
-from services import otl_service
+from app.links import service as otl_service
 
 router = APIRouter()
 

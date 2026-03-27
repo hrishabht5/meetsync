@@ -12,7 +12,7 @@ import uuid
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Request
 from app.core.config import supabase
 from app.core.schemas import WebhookCreate
-from services import webhook_service
+from app.webhooks import service as webhook_service
 
 router = APIRouter()
 
