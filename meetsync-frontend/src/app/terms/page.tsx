@@ -15,7 +15,7 @@ export default function TermsOfService() {
         <section className="space-y-4">
           <h2 className="text-2xl font-semibold text-white">2. Description of Service</h2>
           <p>
-            MeetSync is a scheduling infrastructure tool that allows hosts to generate booking links and automatically sync meetings with Google Calendar and Google Meet. We act as a data processor for the host.
+            MeetSync is a scheduling infrastructure tool that allows hosts to generate booking links and automatically sync meetings with Google Calendar and Google Meet. The Service reads your availability (Free/Busy status) to prevent scheduling conflicts and writes confirmed bookings to your chosen calendar. We act as a data processor for the host.
           </p>
         </section>
 

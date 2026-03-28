@@ -16,7 +16,8 @@ export default function PrivacyPolicy() {
           <h2 className="text-2xl font-semibold text-white">2. Data We Collect</h2>
           <h3 className="text-xl font-medium text-white mt-4">For Hosts (Account Holders):</h3>
           <ul className="list-disc pl-6 space-y-2">
-            <li><strong>OAuth Data:</strong> We access your Google Calendar to schedule events. We store your basic profile info (email, name) and OAuth access tokens securely via Supabase.</li>
+            <li><strong>OAuth Data:</strong> We access your Google Calendar to manage bookings and check availability. We store your basic profile info (email, name) and OAuth access tokens securely via Supabase.</li>
+            <li><strong>Calendar Scopes:</strong> We request access to <code>auth/calendar.events</code> (to create/edit bookings) and <code>auth/calendar.freebusy</code> (to prevent scheduling conflicts).</li>
             <li><strong>Availability Settings:</strong> Your working hours and timezone configurations.</li>
           </ul>
           
@@ -30,7 +31,8 @@ export default function PrivacyPolicy() {
         <section className="space-y-4">
           <h2 className="text-2xl font-semibold text-white">3. How We Use Your Data</h2>
           <ul className="list-disc pl-6 space-y-2">
-            <li>To generate and manage Google Meet events.</li>
+            <li>To generate and manage Google Meet events for confirmed bookings.</li>
+            <li>To check your availability (Free/Busy status) to prevent double-bookings.</li>
             <li>To send automated notifications and webhook payloads on behalf of the host.</li>
             <li>To prevent fraud, abuse, and secure our API endpoints.</li>
           </ul>
@@ -49,6 +51,21 @@ export default function PrivacyPolicy() {
         <section className="space-y-4">
           <h2 className="text-2xl font-semibold text-white">5. Security</h2>
           <p>We leverage industry-standard security measures (HTTPS, Supabase RLS, encryption at rest for tokens) to ensure your data stays private and protected from unauthorized access.</p>
+        </section>
+
+        <section className="space-y-4 border-t border-[#2e3248] pt-8">
+          <h2 className="text-2xl font-semibold text-white">6. Google API Disclosure</h2>
+          <p>
+            MeetSync’s use and transfer to any other app of information received from Google APIs will adhere to{" "}
+            <a 
+              href="https://developers.google.com/terms/api-services-user-data-policy" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-blue-400 hover:underline"
+            >
+              Google API Services User Data Policy
+            </a>, including the Limited Use requirements.
+          </p>
         </section>
       </div>
     </main>
