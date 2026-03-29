@@ -1,0 +1,15 @@
+﻿
+> meetsync-frontend@0.1.0 lint
+> eslint
+
+
+C:\Users\hrishabh.tiwari_pabb\Downloads\meetsync-backend\meetsync-backend\meetsync-frontend\src\app\dashboard\page.tsx
+  25:32  warning  React Hook useEffect has a missing dependency: 'load'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  88:76  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                          react/no-unescaped-entities
+  88:87  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                          react/no-unescaped-entities
+
+C:\Users\hrishabh.tiwari_pabb\Downloads\meetsync-backend\meetsync-backend\meetsync-frontend\src\app\layout.tsx
+  15:9  warning  Custom fonts not added in `pages/_document.js` will only load for a single page. This is discouraged. See: https://nextjs.org/docs/messages/no-page-custom-font  @next/next/no-page-custom-font
+
+Γ£û 4 problems (2 errors, 2 warnings)
+
