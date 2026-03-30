@@ -122,21 +122,21 @@ async def get_available_slots(
         available = [s for s in slots if datetime.fromisoformat(s) > now]
         return {"date": date, "slots": available, "timezone": settings["timezone"]}
 
-    # Fetch existing local bookings on that day
-    day_start = datetime.combine(target_date, time(0, 0)).isoformat()
-    day_end = datetime.combine(target_date, time(23, 59)).isoformat()
+    # Fetch existing local bookings on that day (query in UTC to match DB storage)
+    day_start_local = datetime.combine(target_date, time(0, 0), tzinfo=tz)
+    day_end_local = datetime.combine(target_date, time(23, 59, 59), tzinfo=tz)
+    start_dt_utc = day_start_local.astimezone(timezone.utc)
+    end_dt_utc = day_end_local.astimezone(timezone.utc)
     booked = supabase.table("bookings") \
         .select("scheduled_at,event_type,status") \
         .eq("user_id", user_id) \
         .neq("status", "cancelled") \
-        .gte("scheduled_at", day_start) \
-        .lte("scheduled_at", day_end) \
+        .gte("scheduled_at", start_dt_utc.isoformat()) \
+        .lte("scheduled_at", end_dt_utc.isoformat()) \
         .execute().data
 
-    # Fetch Google Calendar busy times
+    # Fetch Google Calendar busy times (reuse the UTC range already computed)
     from app.integrations.google_calendar import get_google_busy_times
-    start_dt_utc = datetime.fromisoformat(day_start).replace(tzinfo=tz).astimezone(timezone.utc)
-    end_dt_utc = datetime.fromisoformat(day_end).replace(tzinfo=tz).astimezone(timezone.utc)
     google_busy = await get_google_busy_times(user_id, start_dt_utc, end_dt_utc)
 
     # Remove conflicting slots
