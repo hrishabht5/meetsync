@@ -13,7 +13,6 @@ export default function WebhooksPage() {
   const [apiKeys, setApiKeys] = useState<APIKeyRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Webhook State
   const [url, setUrl] = useState("");
   const [secret, setSecret] = useState("");
   const [selectedEvents, setSelectedEvents] = useState<string[]>(["booking.created"]);
@@ -21,7 +20,6 @@ export default function WebhooksPage() {
   const [testing, setTesting] = useState(false);
   const [showLogs, setShowLogs] = useState(false);
 
-  // API Key State
   const [newKeyName, setNewKeyName] = useState("");
   const [generatingKey, setGeneratingKey] = useState(false);
   const [createdKey, setCreatedKey] = useState<string | null>(null);
@@ -36,7 +34,6 @@ export default function WebhooksPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Webhook Handlers
   const handleRegister = async () => {
     if (!url) return;
     setRegistering(true);
@@ -73,7 +70,6 @@ export default function WebhooksPage() {
   const toggleEvent = (ev: string) =>
     setSelectedEvents((s) => s.includes(ev) ? s.filter((x) => x !== ev) : [...s, ev]);
 
-  // API Key Handlers
   const handleGenerateKey = async () => {
     if (!newKeyName) return;
     setGeneratingKey(true);
@@ -101,11 +97,13 @@ export default function WebhooksPage() {
         title="Developer Settings"
         subtitle="Manage Webhooks and API Keys for programmatic access"
         action={
-          <div className="flex bg-white/5 rounded-lg p-1">
+          <div className="flex bg-[var(--bg-card-hover)] rounded-lg p-1 ring-1 ring-[var(--border)]">
             <button
               onClick={() => setActiveTab("webhooks")}
               className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                activeTab === "webhooks" ? "bg-white/10 text-white" : "text-zinc-400 hover:text-white"
+                activeTab === "webhooks"
+                  ? "bg-brand-gradient text-white shadow-sm"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               }`}
             >
               Webhooks
@@ -113,7 +111,9 @@ export default function WebhooksPage() {
             <button
               onClick={() => setActiveTab("apikeys")}
               className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                activeTab === "apikeys" ? "bg-white/10 text-white" : "text-zinc-400 hover:text-white"
+                activeTab === "apikeys"
+                  ? "bg-brand-gradient text-white shadow-sm"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               }`}
             >
               API Keys
@@ -140,17 +140,20 @@ export default function WebhooksPage() {
             <>
               {/* Register Webhook */}
               <Card className="p-5">
-                <p className="text-sm font-semibold text-zinc-300 mb-4">Register Endpoint</p>
+                <p className="text-sm font-semibold text-[var(--text-primary)] mb-4">Register Endpoint</p>
                 <div className="flex flex-col gap-3">
                   <Input label="Endpoint URL" placeholder="https://your-server.com/webhook" value={url} onChange={(e) => setUrl(e.target.value)} />
                   <Input label="Secret (optional)" placeholder="Used for HMAC signature" value={secret} onChange={(e) => setSecret(e.target.value)} />
                   <div>
-                    <p className="text-sm font-medium text-zinc-300 mb-2">Subscribe to Events</p>
+                    <p className="text-sm font-medium text-[var(--text-primary)] mb-2">Subscribe to Events</p>
                     <div className="flex flex-wrap gap-2">
                       {VALID_EVENTS.map((ev) => (
                         <button key={ev} onClick={() => toggleEvent(ev)}
                           className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all
-                            ${selectedEvents.includes(ev) ? "bg-indigo-600 text-white" : "bg-white/6 text-zinc-400 hover:text-white"}`}>
+                            ${selectedEvents.includes(ev)
+                              ? "bg-brand-gradient text-white"
+                              : "bg-[var(--bg-card-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] ring-1 ring-[var(--border)]"
+                            }`}>
                           {ev}
                         </button>
                       ))}
@@ -173,11 +176,11 @@ export default function WebhooksPage() {
                         <div className="flex flex-col gap-1.5 min-w-0">
                           <div className="flex items-center gap-2">
                             <Badge status={wh.is_active ? "active" : "expired"}>{wh.is_active ? "Active" : "Paused"}</Badge>
-                            <span className="text-sm text-zinc-300 font-mono truncate max-w-xs">{wh.url}</span>
+                            <span className="text-sm text-[var(--text-primary)] font-mono truncate max-w-xs">{wh.url}</span>
                           </div>
                           <div className="flex flex-wrap gap-1.5">
                             {wh.events.map((ev) => (
-                              <span key={ev} className="text-xs bg-white/6 text-zinc-400 px-2 py-0.5 rounded-md">{ev}</span>
+                              <span key={ev} className="text-xs bg-[var(--bg-card-hover)] text-[var(--text-secondary)] px-2 py-0.5 rounded-md ring-1 ring-[var(--border)]">{ev}</span>
                             ))}
                           </div>
                         </div>
@@ -203,9 +206,9 @@ export default function WebhooksPage() {
                   <div className="flex items-center justify-between gap-3 flex-wrap">
                     <div className="flex items-center gap-2">
                       <Badge status={log.success ? "success" : "error"}>{log.success ? "Delivered" : "Failed"}</Badge>
-                      <span className="text-sm font-mono text-zinc-300">{log.event}</span>
+                      <span className="text-sm font-mono text-[var(--text-primary)]">{log.event}</span>
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-zinc-500">
+                    <div className="flex items-center gap-3 text-xs text-[var(--text-secondary)]">
                       {log.status_code && <span>HTTP {log.status_code}</span>}
                       <span>{log.attempts} attempt{log.attempts > 1 ? "s" : ""}</span>
                       {log.error && <span className="text-red-400 truncate max-w-xs">{log.error}</span>}
@@ -220,13 +223,13 @@ export default function WebhooksPage() {
         /* ================= API KEYS TAB ================= */
         <div className="space-y-6">
           <Card className="p-5">
-            <p className="text-sm font-semibold text-zinc-300 mb-4">Generate New API Key</p>
+            <p className="text-sm font-semibold text-[var(--text-primary)] mb-4">Generate New API Key</p>
             <div className="flex flex-col gap-4">
-              <Input 
-                label="Key Name" 
-                placeholder="e.g. Zapier Integration" 
-                value={newKeyName} 
-                onChange={(e) => setNewKeyName(e.target.value)} 
+              <Input
+                label="Key Name"
+                placeholder="e.g. Zapier Integration"
+                value={newKeyName}
+                onChange={(e) => setNewKeyName(e.target.value)}
               />
               <div className="flex justify-end">
                 <Button onClick={handleGenerateKey} loading={generatingKey} disabled={!newKeyName}>
@@ -243,8 +246,8 @@ export default function WebhooksPage() {
                     <code className="flex-1 block p-2 bg-black/40 text-emerald-300 rounded font-mono text-sm break-all">
                       {createdKey}
                     </code>
-                    <Button 
-                      variant="secondary" 
+                    <Button
+                      variant="secondary"
                       onClick={() => navigator.clipboard.writeText(createdKey)}
                     >
                       Copy
@@ -265,11 +268,11 @@ export default function WebhooksPage() {
                     <div className="flex flex-col gap-1.5 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-semibold text-white">{key.name}</span>
-                        <span className="text-xs font-mono text-zinc-400 bg-black/30 px-2 py-0.5 rounded">
+                        <span className="text-xs font-mono text-[var(--text-secondary)] bg-[var(--bg-card-hover)] px-2 py-0.5 rounded ring-1 ring-[var(--border)]">
                           {key.prefix}...
                         </span>
                       </div>
-                      <span className="text-xs text-zinc-500">
+                      <span className="text-xs text-[var(--text-secondary)]">
                         Created: {new Date(key.created_at).toLocaleDateString()}
                       </span>
                     </div>

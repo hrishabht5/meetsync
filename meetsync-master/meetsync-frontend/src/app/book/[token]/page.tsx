@@ -34,7 +34,6 @@ export default function BookingPage() {
         setOtl(data);
         if (data.custom_fields && data.custom_fields.length > 0) {
           setCustomFields(data.custom_fields);
-          // Initialize answers
           const init: Record<string, string> = {};
           data.custom_fields.forEach((f: CustomField) => { init[f.label] = ""; });
           setCustomAnswers(init);
@@ -102,7 +101,7 @@ export default function BookingPage() {
       setMeetLink(booking.meet_link ?? "");
       setStep("success");
     } catch (e: unknown) {
-      setErrorMsg(e instanceof Error ? e.message : "Something went wrong. Please try again.");
+      setErrorMsg(errMsg(e));
     } finally {
       setSubmitting(false);
     }
@@ -111,20 +110,23 @@ export default function BookingPage() {
   const todayStr = new Date().toISOString().split("T")[0];
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-4 py-12"
-          style={{ background: "linear-gradient(135deg, #0f1117 0%, #12103a 100%)" }}>
-      <div className="w-full max-w-md">
+    <main className="min-h-screen flex items-center justify-center px-4 py-12 bg-page-gradient">
+      {/* Background glow */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[400px] rounded-full blur-[120px] opacity-20 pointer-events-none"
+           style={{ background: "radial-gradient(circle, rgba(59,106,232,0.6) 0%, rgba(56,191,255,0.2) 60%, transparent 100%)" }} />
+
+      <div className="relative z-10 w-full max-w-md">
         <div className="flex items-center gap-2 mb-8 justify-center">
-          <img src="/logo.png" alt="MeetSync" className="w-8 h-8 rounded-lg shadow-md shadow-indigo-600/20" />
-          <span className="text-lg font-bold text-white">MeetSync</span>
+          <img src="/logo.png" alt="MeetSync" className="w-8 h-8 rounded-lg glow-brand-sm" />
+          <span className="text-lg font-bold text-[var(--text-primary)]">MeetSync</span>
         </div>
 
-        <div className="bg-[#1a1d27] border border-[#2e3248] rounded-2xl overflow-hidden">
+        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden glow-brand">
           {/* Loading */}
           {step === "loading" && (
             <div className="flex flex-col items-center gap-4 py-16 px-8">
               <Spinner size={36} />
-              <p className="text-zinc-400 text-sm">Validating your booking link…</p>
+              <p className="text-[var(--text-secondary)] text-sm">Validating your booking link…</p>
             </div>
           )}
 
@@ -133,7 +135,7 @@ export default function BookingPage() {
             <div className="flex flex-col items-center gap-4 py-16 px-8 text-center">
               <div className="text-5xl">🔒</div>
               <p className="font-semibold text-white text-lg">Link Unavailable</p>
-              <p className="text-zinc-400 text-sm">{errorMsg}</p>
+              <p className="text-[var(--text-secondary)] text-sm">{errorMsg}</p>
             </div>
           )}
 
@@ -141,9 +143,9 @@ export default function BookingPage() {
           {(step === "pick-date" || step === "pick-slot") && (
             <div className="p-6 flex flex-col gap-5">
               <div>
-                <p className="text-xs text-indigo-400 font-semibold uppercase tracking-wider mb-1">Booking Link</p>
+                <p className="text-xs text-[var(--accent-cyan)] font-semibold uppercase tracking-wider mb-1">Booking Link</p>
                 <h2 className="text-xl font-bold text-white">{otl?.event_type}</h2>
-                <p className="text-sm text-zinc-400 mt-1">Pick a date to see available slots</p>
+                <p className="text-sm text-[var(--text-secondary)] mt-1">Pick a date to see available slots</p>
               </div>
 
               <Input label="Select Date" type="date" min={todayStr} value={selectedDate}
@@ -155,12 +157,12 @@ export default function BookingPage() {
                 <>
                   {slots.length === 0 ? (
                     <div className="text-center py-6">
-                      <p className="text-zinc-400 text-sm">😔 No available slots on this day.</p>
-                      <p className="text-zinc-500 text-xs mt-1">Try picking another date.</p>
+                      <p className="text-[var(--text-secondary)] text-sm">😔 No available slots on this day.</p>
+                      <p className="text-[var(--text-secondary)]/60 text-xs mt-1">Try picking another date.</p>
                     </div>
                   ) : (
                     <div>
-                      <p className="text-sm font-medium text-zinc-300 mb-3">Available Times</p>
+                      <p className="text-sm font-medium text-[var(--text-primary)] mb-3">Available Times</p>
                       <div className="grid grid-cols-3 gap-2">
                         {slots.map((s) => {
                           const time = new Date(s).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
@@ -168,8 +170,10 @@ export default function BookingPage() {
                           return (
                             <button key={s} onClick={() => { setSelectedSlot(s); setStep("form"); }}
                               className={`py-2.5 rounded-xl text-sm font-semibold transition-all
-                                ${chosen ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/30"
-                                  : "bg-white/6 text-zinc-300 hover:bg-indigo-600/20 hover:text-indigo-300"}`}>
+                                ${chosen
+                                  ? "bg-brand-gradient text-white shadow-lg glow-brand-sm"
+                                  : "bg-[var(--bg-card-hover)] text-[var(--text-secondary)] hover:bg-[var(--accent)]/15 hover:text-[var(--text-primary)] border border-[var(--border)] hover:border-[var(--border-accent)]"
+                                }`}>
                               {time}
                             </button>
                           );
@@ -186,11 +190,11 @@ export default function BookingPage() {
           {step === "form" && (
             <div className="p-6 flex flex-col gap-5">
               <div>
-                <button onClick={() => setStep("pick-slot")} className="text-xs text-indigo-400 hover:text-indigo-300 mb-3 flex items-center gap-1">
+                <button onClick={() => setStep("pick-slot")} className="text-xs text-[var(--accent)] hover:text-[var(--accent-cyan)] mb-3 flex items-center gap-1 transition-colors">
                   ← Change time
                 </button>
                 <h2 className="text-xl font-bold text-white">{otl?.event_type}</h2>
-                <p className="text-sm text-indigo-300 mt-1">
+                <p className="text-sm text-[var(--accent-cyan)] mt-1">
                   📅 {new Date(selectedSlot).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
                 </p>
               </div>
@@ -205,7 +209,7 @@ export default function BookingPage() {
               {/* Dynamic Custom Fields */}
               {customFields.map((field) => (
                 <div key={field.label} className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium text-zinc-300">
+                  <label className="text-sm font-medium text-[var(--text-primary)]">
                     {field.label}
                     {field.required && <span className="text-red-400 ml-1">*</span>}
                   </label>
@@ -215,9 +219,9 @@ export default function BookingPage() {
                       placeholder={`Enter ${field.label.toLowerCase()}`}
                       value={customAnswers[field.label] || ""}
                       onChange={(e) => setCustomAnswers((a) => ({ ...a, [field.label]: e.target.value }))}
-                      className={`bg-[#12151f] border rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-500
-                        focus:outline-none focus:ring-2 focus:ring-indigo-500/60 transition-all
-                        ${formErrors[field.label] ? "border-red-500/50" : "border-[#2e3248]"}`}
+                      className={`bg-[var(--bg-input)] border rounded-xl px-4 py-2.5 text-sm text-white placeholder-[var(--text-secondary)]
+                        focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 transition-all
+                        ${formErrors[field.label] ? "border-red-500/50" : "border-[var(--border)]"}`}
                     />
                   )}
 
@@ -227,9 +231,9 @@ export default function BookingPage() {
                       placeholder={`Enter ${field.label.toLowerCase()}`}
                       value={customAnswers[field.label] || ""}
                       onChange={(e) => setCustomAnswers((a) => ({ ...a, [field.label]: e.target.value }))}
-                      className={`bg-[#12151f] border rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-500
-                        focus:outline-none focus:ring-2 focus:ring-indigo-500/60 resize-none transition-all
-                        ${formErrors[field.label] ? "border-red-500/50" : "border-[#2e3248]"}`}
+                      className={`bg-[var(--bg-input)] border rounded-xl px-4 py-2.5 text-sm text-white placeholder-[var(--text-secondary)]
+                        focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 resize-none transition-all
+                        ${formErrors[field.label] ? "border-red-500/50" : "border-[var(--border)]"}`}
                     />
                   )}
 
@@ -237,9 +241,9 @@ export default function BookingPage() {
                     <select
                       value={customAnswers[field.label] || ""}
                       onChange={(e) => setCustomAnswers((a) => ({ ...a, [field.label]: e.target.value }))}
-                      className={`bg-[#12151f] border rounded-xl px-4 py-2.5 text-sm text-white
-                        focus:outline-none focus:ring-2 focus:ring-indigo-500/60 transition-all
-                        ${formErrors[field.label] ? "border-red-500/50" : "border-[#2e3248]"}`}
+                      className={`bg-[var(--bg-input)] border rounded-xl px-4 py-2.5 text-sm text-white
+                        focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 transition-all
+                        ${formErrors[field.label] ? "border-red-500/50" : "border-[var(--border)]"}`}
                     >
                       <option value="">Select…</option>
                       {(field.options || []).map((opt) => (
@@ -253,20 +257,21 @@ export default function BookingPage() {
               ))}
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-zinc-300">Notes (optional)</label>
+                <label className="text-sm font-medium text-[var(--text-primary)]">Notes (optional)</label>
                 <textarea
                   rows={3} placeholder="Anything you'd like to discuss…"
                   value={form.notes}
                   onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-                  className="bg-[#12151f] border border-[#2e3248] rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-500
-                    focus:outline-none focus:ring-2 focus:ring-indigo-500/60 resize-none"
+                  className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm text-white placeholder-[var(--text-secondary)]
+                    focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 resize-none transition-all"
                 />
               </div>
 
               <div className="flex flex-col gap-1.5 mt-2">
-                <label className="flex items-start gap-2 text-sm text-zinc-400 cursor-pointer">
-                  <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-1 bg-[#12151f] border-[#2e3248] rounded text-indigo-500 focus:ring-indigo-500/50" />
-                  <span>I agree to the <a href="/terms" target="_blank" className="text-indigo-400 hover:underline">Terms of Service</a> and <a href="/privacy" target="_blank" className="text-indigo-400 hover:underline">Privacy Policy</a>, and I consent to the processing of my booking data.</span>
+                <label className="flex items-start gap-2 text-sm text-[var(--text-secondary)] cursor-pointer">
+                  <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)}
+                    className="mt-1 bg-[var(--bg-input)] border-[var(--border)] rounded accent-[var(--accent)] focus:ring-[var(--accent)]/40" />
+                  <span>I agree to the <a href="/terms" target="_blank" className="text-[var(--accent)] hover:text-[var(--accent-cyan)] hover:underline transition-colors">Terms of Service</a> and <a href="/privacy" target="_blank" className="text-[var(--accent)] hover:text-[var(--accent-cyan)] hover:underline transition-colors">Privacy Policy</a>, and I consent to the processing of my booking data.</span>
                 </label>
                 {formErrors["consent"] && <p className="text-xs text-red-400">{formErrors["consent"]}</p>}
               </div>
@@ -290,11 +295,11 @@ export default function BookingPage() {
               <div className="text-6xl">🎉</div>
               <div>
                 <p className="font-bold text-white text-xl">Booking Confirmed!</p>
-                <p className="text-zinc-400 text-sm mt-2">{form.name}, check your email for a Google Calendar invite.</p>
+                <p className="text-[var(--text-secondary)] text-sm mt-2">{form.name}, check your email for a Google Calendar invite.</p>
               </div>
               {meetLink && (
                 <a href={meetLink} target="_blank" rel="noopener noreferrer"
-                   className="w-full py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm text-center transition-all shadow-lg shadow-indigo-600/30">
+                   className="w-full py-3 rounded-2xl bg-brand-gradient text-white font-semibold text-sm text-center transition-all shadow-lg shadow-[rgba(59,106,232,0.35)] hover:opacity-90 hover:-translate-y-0.5">
                   🎥 Join Google Meet
                 </a>
               )}

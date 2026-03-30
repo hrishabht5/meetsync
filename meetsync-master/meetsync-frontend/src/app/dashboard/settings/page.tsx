@@ -30,15 +30,15 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-white">Settings</h1>
+      <h1 className="text-2xl font-bold text-[var(--text-primary)]">Settings</h1>
 
-      <div className="bg-[#12151f] border border-[#2e3248] rounded-2xl overflow-hidden p-6 mt-8">
+      <div className="bg-[var(--bg-card)] border border-[var(--danger)]/20 rounded-2xl overflow-hidden p-6 mt-8">
         <h2 className="text-red-400 font-semibold mb-2 text-lg flex items-center gap-2">
           <span className="text-xl">⚠️</span> Danger Zone
         </h2>
-        <p className="text-zinc-400 text-sm mb-6">
+        <p className="text-[var(--text-secondary)] text-sm mb-6">
           Permanently delete your account. This will erase your availability settings,
-          booking links, API keys, and revoke our access to your Google account. Historical 
+          booking links, API keys, and revoke our access to your Google account. Historical
           bookings are wiped to ensure full compliance with the Right to Erasure (GDPR).
         </p>
 
@@ -46,8 +46,8 @@ export default function SettingsPage() {
           onClick={handleDeleteAccount}
           disabled={deleting}
           className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-            deleting 
-              ? "bg-red-500/30 text-red-300 cursor-not-allowed" 
+            deleting
+              ? "bg-red-500/30 text-red-300 cursor-not-allowed"
               : "bg-red-500/10 text-red-500 hover:bg-red-500/20"
           }`}
         >

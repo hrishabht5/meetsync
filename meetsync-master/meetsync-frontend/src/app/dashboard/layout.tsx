@@ -16,7 +16,6 @@ function SearchParamHandler() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    // 1. Handle token from URL
     const token = searchParams.get("token");
     if (token) {
       localStorage.setItem("meetsync_token", token);
@@ -31,7 +30,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const path = usePathname();
 
   useEffect(() => {
-    // 2. Protect dashboard routes
     api.auth.status()
       .then((res) => {
         if (!res.connected) {
@@ -44,16 +42,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, []);
 
   return (
-    <div className="min-h-screen flex" style={{ background: "#0f1117" }}>
+    <div className="min-h-screen flex bg-page-gradient">
       <Suspense fallback={null}>
         <SearchParamHandler />
       </Suspense>
+
       {/* Sidebar */}
-      <aside className="w-60 flex-shrink-0 border-r border-[#2e3248] flex flex-col">
+      <aside className="w-60 flex-shrink-0 border-r border-[var(--border)] flex flex-col bg-[var(--bg-card)]/60 backdrop-blur-sm">
         {/* Logo */}
-        <div className="px-5 py-5 border-b border-[#2e3248] flex items-center gap-2.5">
-          <img src="/logo.png" alt="MeetSync" className="w-8 h-8 rounded-lg shadow-md shadow-indigo-600/20" />
-          <span className="font-bold text-white text-sm">MeetSync</span>
+        <div className="px-5 py-5 border-b border-[var(--border)] flex items-center gap-2.5">
+          <img src="/logo.png" alt="MeetSync" className="w-8 h-8 rounded-lg glow-brand-sm" />
+          <span className="font-bold text-[var(--text-primary)] text-sm">MeetSync</span>
         </div>
 
         {/* Nav */}
@@ -66,8 +65,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 href={item.href}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
                   ${active
-                    ? "bg-indigo-600/20 text-indigo-300 ring-1 ring-indigo-500/30"
-                    : "text-zinc-400 hover:text-zinc-200 hover:bg-white/5"
+                    ? "bg-brand-gradient text-white shadow-sm glow-brand-sm"
+                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--accent)]/8"
                   }`}
               >
                 <span className="text-base">{item.icon}</span>
@@ -78,10 +77,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </nav>
 
         {/* Footer */}
-        <div className="px-3 py-4 border-t border-[#2e3248] flex flex-col gap-1">
+        <div className="px-3 py-4 border-t border-[var(--border)] flex flex-col gap-1">
           <Link
             href="/"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-zinc-500 hover:text-zinc-300 hover:bg-white/5 transition-all"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--accent)]/8 transition-all"
           >
             ← Home
           </Link>

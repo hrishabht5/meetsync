@@ -22,7 +22,6 @@ export default function AvailabilityPage() {
   const [saved, setSaved] = useState(false);
   const [newShift, setNewShift] = useState("09:00");
 
-  // Override form
   const [overrideDate, setOverrideDate] = useState("");
   const [overrideReason, setOverrideReason] = useState("");
   const [addingOverride, setAddingOverride] = useState(false);
@@ -34,7 +33,6 @@ export default function AvailabilityPage() {
         setOverrides(o);
       })
       .catch((e: unknown) => {
-        // Avoid unhandled promise rejection crashing the page.
         console.error("Failed to load availability:", e);
         alert(errMsg(e, "Failed to load availability"));
       })
@@ -125,7 +123,7 @@ export default function AvailabilityPage() {
       <div className="flex flex-col gap-5">
         {/* Working Days */}
         <Card className="p-6">
-          <p className="text-sm font-semibold text-zinc-300 mb-4">Working Days</p>
+          <p className="text-sm font-semibold text-[var(--text-primary)] mb-4">Working Days</p>
           <div className="flex gap-2 flex-wrap">
             {DAYS.map((day) => {
               const active = settings.working_days.includes(day);
@@ -135,8 +133,8 @@ export default function AvailabilityPage() {
                   onClick={() => toggleDay(day)}
                   className={`w-12 h-12 rounded-xl text-sm font-semibold transition-all
                     ${active
-                      ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/30"
-                      : "bg-white/6 text-zinc-400 hover:bg-white/10 hover:text-zinc-200"
+                      ? "bg-brand-gradient text-white shadow-lg glow-brand-sm"
+                      : "bg-[var(--bg-card-hover)] text-[var(--text-secondary)] hover:bg-[var(--accent)]/10 hover:text-[var(--text-primary)]"
                     }`}
                 >
                   {day}
@@ -148,18 +146,18 @@ export default function AvailabilityPage() {
 
         {/* Time Shifts */}
         <Card className="p-6">
-          <p className="text-sm font-semibold text-zinc-300 mb-4">Daily Time Shifts</p>
-          <p className="text-xs text-zinc-500 mb-3">Define the exact times guests can book. Each shift is one bookable slot.</p>
+          <p className="text-sm font-semibold text-[var(--text-primary)] mb-4">Daily Time Shifts</p>
+          <p className="text-xs text-[var(--text-secondary)] mb-3">Define the exact times guests can book. Each shift is one bookable slot.</p>
 
           <div className="flex flex-wrap gap-2 mb-4">
             {settings.daily_shifts.map((shift) => (
-              <div key={shift} className="flex items-center gap-1 bg-indigo-600/20 text-indigo-300 ring-1 ring-indigo-500/30 px-3 py-1.5 rounded-xl text-sm font-semibold">
+              <div key={shift} className="flex items-center gap-1 bg-[var(--accent)]/15 text-[var(--accent-cyan)] ring-1 ring-[var(--accent)]/30 px-3 py-1.5 rounded-xl text-sm font-semibold">
                 {shift}
-                <button onClick={() => removeShift(shift)} className="ml-1 text-indigo-400 hover:text-red-400 transition-colors">×</button>
+                <button onClick={() => removeShift(shift)} className="ml-1 text-[var(--accent)] hover:text-red-400 transition-colors">×</button>
               </div>
             ))}
             {settings.daily_shifts.length === 0 && (
-              <p className="text-zinc-500 text-sm italic">No shifts configured yet.</p>
+              <p className="text-[var(--text-secondary)] text-sm italic">No shifts configured yet.</p>
             )}
           </div>
 
@@ -176,24 +174,24 @@ export default function AvailabilityPage() {
 
         {/* Slot & Buffer */}
         <Card className="p-6">
-          <p className="text-sm font-semibold text-zinc-300 mb-4">Scheduling Preferences</p>
+          <p className="text-sm font-semibold text-[var(--text-primary)] mb-4">Scheduling Preferences</p>
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-zinc-300">Slot Duration (min)</label>
+              <label className="text-sm font-medium text-[var(--text-primary)]">Slot Duration (min)</label>
               <select
                 value={settings.slot_duration}
                 onChange={(e) => setSettings((s) => ({ ...s, slot_duration: Number(e.target.value) }))}
-                className="bg-[#12151f] border border-[#2e3248] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/60"
+                className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
               >
                 {[15, 30, 45, 60].map((v) => <option key={v}>{v}</option>)}
               </select>
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-zinc-300">Buffer Between Meetings (min)</label>
+              <label className="text-sm font-medium text-[var(--text-primary)]">Buffer Between Meetings (min)</label>
               <select
                 value={settings.buffer_minutes}
                 onChange={(e) => setSettings((s) => ({ ...s, buffer_minutes: Number(e.target.value) }))}
-                className="bg-[#12151f] border border-[#2e3248] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/60"
+                className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
               >
                 {[0, 5, 10, 15, 30].map((v) => <option key={v}>{v}</option>)}
               </select>
@@ -211,68 +209,68 @@ export default function AvailabilityPage() {
           />
         </Card>
 
-        {/* Conflict Preferences */}
+        {/* Double Booking Prevention */}
         <Card className="p-6">
-          <p className="text-sm font-semibold text-zinc-300 mb-2">Double Booking Prevention</p>
+          <p className="text-sm font-semibold text-[var(--text-primary)] mb-2">Double Booking Prevention</p>
           <div className="flex items-center justify-between gap-4">
-            <p className="text-xs text-zinc-500 max-w-lg">
-              When enabled, MeetSync will allow multiple bookings at the exact same time, 
+            <p className="text-xs text-[var(--text-secondary)] max-w-lg">
+              When enabled, MeetSync will allow multiple bookings at the exact same time,
               bypassing Google Calendar and internal database conflict checks.
             </p>
             <label className="relative inline-flex flex-shrink-0 items-center cursor-pointer">
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 className="sr-only peer"
                 checked={!!settings.allow_double_booking}
                 onChange={(e) => setSettings(s => ({ ...s, allow_double_booking: e.target.checked }))}
               />
-              <div className="w-11 h-6 bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              <div className="w-11 h-6 bg-[var(--bg-card-hover)] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-gradient"></div>
             </label>
           </div>
         </Card>
 
         {/* Default Booking Questions */}
         <Card className="p-6">
-          <p className="text-sm font-semibold text-zinc-300 mb-4">Default Booking Questions</p>
-          <p className="text-xs text-zinc-500 mb-4">Questions pre-filled when you generate a new booking link.</p>
-          
+          <p className="text-sm font-semibold text-[var(--text-primary)] mb-4">Default Booking Questions</p>
+          <p className="text-xs text-[var(--text-secondary)] mb-4">Questions pre-filled when you generate a new booking link.</p>
+
           <div className="flex flex-col gap-3 mb-4">
             {(settings.default_questions || []).map((field, idx) => (
-              <div key={idx} className="bg-[#12151f] border border-[#2e3248] rounded-xl p-4 flex flex-col gap-3">
+              <div key={idx} className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl p-4 flex flex-col gap-3">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs text-zinc-500 font-semibold">Question {idx + 1}</span>
+                  <span className="text-xs text-[var(--text-secondary)] font-semibold">Question {idx + 1}</span>
                   <button onClick={() => removeField(idx)} className="text-xs text-red-400 hover:text-red-300">Remove</button>
                 </div>
                 <input
                   placeholder="Question label, e.g. Company Name"
                   value={field.label}
                   onChange={(e) => updateField(idx, { label: e.target.value })}
-                  className="bg-[#0b0e18] border border-[#2e3248] rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/60"
+                  className="bg-[var(--bg-deep)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-white placeholder-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
                 />
                 <div className="flex gap-3 items-center flex-wrap">
                   <select
                     value={field.type}
                     onChange={(e) => updateField(idx, { type: e.target.value as CustomField["type"], options: e.target.value === "dropdown" ? [""] : undefined })}
-                    className="bg-[#0b0e18] border border-[#2e3248] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/60"
+                    className="bg-[var(--bg-deep)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
                   >
                     <option value="text">Short Text</option>
                     <option value="textarea">Long Text</option>
                     <option value="dropdown">Dropdown</option>
                   </select>
-                  <label className="flex items-center gap-2 text-sm text-zinc-400">
+                  <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
                     <input
                       type="checkbox"
                       checked={field.required}
                       onChange={(e) => updateField(idx, { required: e.target.checked })}
-                      className="rounded accent-indigo-500"
+                      className="rounded accent-[var(--accent)]"
                     />
                     Required
                   </label>
                 </div>
 
                 {field.type === "dropdown" && (
-                  <div className="flex flex-col gap-2 pl-2 border-l-2 border-indigo-500/30">
-                    <p className="text-xs text-zinc-500">Dropdown Options</p>
+                  <div className="flex flex-col gap-2 pl-2 border-l-2 border-[var(--accent)]/30">
+                    <p className="text-xs text-[var(--text-secondary)]">Dropdown Options</p>
                     {(field.options || []).map((opt, optIdx) => (
                       <div key={optIdx} className="flex gap-2 items-center">
                         <input
@@ -283,7 +281,7 @@ export default function AvailabilityPage() {
                             newOpts[optIdx] = e.target.value;
                             updateField(idx, { options: newOpts });
                           }}
-                          className="bg-[#0b0e18] border border-[#2e3248] rounded-lg px-3 py-1.5 text-sm text-white placeholder-zinc-500 focus:outline-none flex-1"
+                          className="bg-[var(--bg-deep)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm text-white placeholder-[var(--text-secondary)] focus:outline-none flex-1"
                         />
                         <button
                           onClick={() => {
@@ -296,7 +294,7 @@ export default function AvailabilityPage() {
                     ))}
                     <button
                       onClick={() => updateField(idx, { options: [...(field.options || []), ""] })}
-                      className="text-xs text-indigo-400 hover:text-indigo-300 self-start"
+                      className="text-xs text-[var(--accent)] hover:text-[var(--accent-cyan)] self-start transition-colors"
                     >+ Add Option</button>
                   </div>
                 )}
@@ -304,7 +302,7 @@ export default function AvailabilityPage() {
             ))}
             <button
               onClick={addField}
-              className="self-start text-sm font-semibold text-indigo-400 hover:text-indigo-300 px-3 py-2 bg-indigo-600/10 rounded-xl ring-1 ring-indigo-500/20 hover:ring-indigo-500/40 transition-all"
+              className="self-start text-sm font-semibold text-[var(--accent)] hover:text-[var(--accent-cyan)] px-3 py-2 bg-[var(--accent)]/10 rounded-xl ring-1 ring-[var(--accent)]/20 hover:ring-[var(--accent)]/40 transition-all"
             >
               + Add Question
             </button>
@@ -317,8 +315,8 @@ export default function AvailabilityPage() {
           </Button>
         </div>
 
-        {/* ── Date Overrides ─────────────────────────────────── */}
-        <div className="border-t border-[#2e3248] pt-8 mt-4">
+        {/* Date Overrides */}
+        <div className="border-t border-[var(--border)] pt-8 mt-4">
           <SectionHeader
             title="Date Overrides"
             subtitle="Block out specific dates so no one can book on them"
@@ -326,7 +324,7 @@ export default function AvailabilityPage() {
         </div>
 
         <Card className="p-6">
-          <p className="text-sm font-semibold text-zinc-300 mb-4">Block a Date</p>
+          <p className="text-sm font-semibold text-[var(--text-primary)] mb-4">Block a Date</p>
           <div className="flex flex-wrap gap-3 items-end">
             <Input
               label="Date"
@@ -355,7 +353,7 @@ export default function AvailabilityPage() {
                     <span className="text-red-400 text-lg">🚫</span>
                     <div>
                       <p className="text-sm font-semibold text-white">{ov.override_date}</p>
-                      {ov.reason && <p className="text-xs text-zinc-500">{ov.reason}</p>}
+                      {ov.reason && <p className="text-xs text-[var(--text-secondary)]">{ov.reason}</p>}
                     </div>
                   </div>
                   <Button variant="danger" size="sm" onClick={() => handleDeleteOverride(ov.id)}>Remove</Button>

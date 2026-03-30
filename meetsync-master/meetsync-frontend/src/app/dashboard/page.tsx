@@ -50,7 +50,10 @@ export default function BookingsPage() {
                 key={s}
                 onClick={() => setFilter(s)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all
-                  ${filter === s ? "bg-indigo-600 text-white" : "bg-white/6 text-zinc-400 hover:text-white hover:bg-white/10"}`}
+                  ${filter === s
+                    ? "bg-brand-gradient text-white"
+                    : "bg-[var(--bg-card-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] ring-1 ring-[var(--border)]"
+                  }`}
               >
                 {s || "All"}
               </button>
@@ -74,19 +77,19 @@ export default function BookingsPage() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-semibold text-white">{bk.guest_name}</span>
                     <Badge status={bk.status}>{bk.status}</Badge>
-                    <span className="text-xs text-zinc-500 bg-white/5 px-2 py-0.5 rounded-lg">{bk.event_type}</span>
+                    <span className="text-xs text-[var(--text-secondary)] bg-[var(--bg-card-hover)] px-2 py-0.5 rounded-lg">{bk.event_type}</span>
                   </div>
-                  <p className="text-sm text-zinc-400">{bk.guest_email}</p>
-                  <p className="text-sm text-zinc-300">
+                  <p className="text-sm text-[var(--text-secondary)]">{bk.guest_email}</p>
+                  <p className="text-sm text-[var(--text-primary)]">
                     📆 {new Date(bk.scheduled_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
                   </p>
                   {bk.meet_link && (
                     <a href={bk.meet_link} target="_blank" rel="noopener noreferrer"
-                       className="text-sm text-indigo-400 hover:text-indigo-300 inline-flex items-center gap-1 transition-colors">
+                       className="text-sm text-[var(--accent)] hover:text-[var(--accent-cyan)] inline-flex items-center gap-1 transition-colors">
                       🎥 Join Google Meet
                     </a>
                   )}
-                  {bk.notes && <p className="text-xs text-zinc-500 italic">&quot;{bk.notes}&quot;</p>}
+                  {bk.notes && <p className="text-xs text-[var(--text-secondary)] italic">&quot;{bk.notes}&quot;</p>}
                 </div>
                 {bk.status !== "cancelled" && (
                   <Button

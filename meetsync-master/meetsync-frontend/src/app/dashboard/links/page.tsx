@@ -19,7 +19,7 @@ export default function LinksPage() {
 
   const load = async () => {
     setLoading(true);
-    try { 
+    try {
       const [fetchedLinks, settings] = await Promise.all([
         api.links.list(),
         api.availability.getSettings()
@@ -49,7 +49,6 @@ export default function LinksPage() {
   };
 
   const handleCreate = async () => {
-    // Validate fields
     for (const f of customFields) {
       if (!f.label.trim()) { alert("All custom questions must have a label."); return; }
       if (f.type === "dropdown" && (!f.options || f.options.length === 0)) {
@@ -92,21 +91,21 @@ export default function LinksPage() {
 
       {/* Create form */}
       <Card className="p-5 mb-6">
-        <p className="text-sm font-semibold text-zinc-300 mb-4">Create New Link</p>
+        <p className="text-sm font-semibold text-[var(--text-primary)] mb-4">Create New Link</p>
         <div className="flex flex-wrap gap-3 items-end mb-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-zinc-400 font-medium">Meeting Type</label>
+            <label className="text-xs text-[var(--text-secondary)] font-medium">Meeting Type</label>
             <select
               value={eventType} onChange={(e) => setEventType(e.target.value)}
-              className="bg-[#12151f] border border-[#2e3248] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/60">
+              className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50">
               {EVENT_TYPES.map((t) => <option key={t}>{t}</option>)}
             </select>
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-zinc-400 font-medium">Expires In</label>
+            <label className="text-xs text-[var(--text-secondary)] font-medium">Expires In</label>
             <select
               value={expires} onChange={(e) => setExpires(e.target.value)}
-              className="bg-[#12151f] border border-[#2e3248] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/60">
+              className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50">
               <option value="24h">24 hours</option>
               <option value="7d">7 days</option>
               <option value="never">Never</option>
@@ -115,10 +114,10 @@ export default function LinksPage() {
         </div>
 
         {/* Custom Fields Builder */}
-        <div className="border-t border-[#2e3248] pt-4">
+        <div className="border-t border-[var(--border)] pt-4">
           <button
             onClick={() => setShowFieldBuilder(!showFieldBuilder)}
-            className="text-sm text-indigo-400 hover:text-indigo-300 font-semibold flex items-center gap-1 mb-3 transition-colors"
+            className="text-sm text-[var(--accent)] hover:text-[var(--accent-cyan)] font-semibold flex items-center gap-1 mb-3 transition-colors"
           >
             {showFieldBuilder ? "▾ Hide" : "▸ Add"} Custom Questions
           </button>
@@ -126,33 +125,33 @@ export default function LinksPage() {
           {showFieldBuilder && (
             <div className="flex flex-col gap-3 mb-4">
               {customFields.map((field, idx) => (
-                <div key={idx} className="bg-[#12151f] border border-[#2e3248] rounded-xl p-4 flex flex-col gap-3">
+                <div key={idx} className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl p-4 flex flex-col gap-3">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs text-zinc-500 font-semibold">Question {idx + 1}</span>
+                    <span className="text-xs text-[var(--text-secondary)] font-semibold">Question {idx + 1}</span>
                     <button onClick={() => removeField(idx)} className="text-xs text-red-400 hover:text-red-300">Remove</button>
                   </div>
                   <input
                     placeholder="Question label, e.g. Company Name"
                     value={field.label}
                     onChange={(e) => updateField(idx, { label: e.target.value })}
-                    className="bg-[#0b0e18] border border-[#2e3248] rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/60"
+                    className="bg-[var(--bg-deep)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-white placeholder-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
                   />
                   <div className="flex gap-3 items-center flex-wrap">
                     <select
                       value={field.type}
                       onChange={(e) => updateField(idx, { type: e.target.value as CustomField["type"], options: e.target.value === "dropdown" ? [""] : undefined })}
-                      className="bg-[#0b0e18] border border-[#2e3248] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/60"
+                      className="bg-[var(--bg-deep)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
                     >
                       <option value="text">Short Text</option>
                       <option value="textarea">Long Text</option>
                       <option value="dropdown">Dropdown</option>
                     </select>
-                    <label className="flex items-center gap-2 text-sm text-zinc-400">
+                    <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
                       <input
                         type="checkbox"
                         checked={field.required}
                         onChange={(e) => updateField(idx, { required: e.target.checked })}
-                        className="rounded accent-indigo-500"
+                        className="rounded accent-[var(--accent)]"
                       />
                       Required
                     </label>
@@ -160,8 +159,8 @@ export default function LinksPage() {
 
                   {/* Dropdown options */}
                   {field.type === "dropdown" && (
-                    <div className="flex flex-col gap-2 pl-2 border-l-2 border-indigo-500/30">
-                      <p className="text-xs text-zinc-500">Dropdown Options</p>
+                    <div className="flex flex-col gap-2 pl-2 border-l-2 border-[var(--accent)]/30">
+                      <p className="text-xs text-[var(--text-secondary)]">Dropdown Options</p>
                       {(field.options || []).map((opt, optIdx) => (
                         <div key={optIdx} className="flex gap-2 items-center">
                           <input
@@ -172,7 +171,7 @@ export default function LinksPage() {
                               newOpts[optIdx] = e.target.value;
                               updateField(idx, { options: newOpts });
                             }}
-                            className="bg-[#0b0e18] border border-[#2e3248] rounded-lg px-3 py-1.5 text-sm text-white placeholder-zinc-500 focus:outline-none flex-1"
+                            className="bg-[var(--bg-deep)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm text-white placeholder-[var(--text-secondary)] focus:outline-none flex-1"
                           />
                           <button
                             onClick={() => {
@@ -185,7 +184,7 @@ export default function LinksPage() {
                       ))}
                       <button
                         onClick={() => updateField(idx, { options: [...(field.options || []), ""] })}
-                        className="text-xs text-indigo-400 hover:text-indigo-300 self-start"
+                        className="text-xs text-[var(--accent)] hover:text-[var(--accent-cyan)] self-start transition-colors"
                       >+ Add Option</button>
                     </div>
                   )}
@@ -194,7 +193,7 @@ export default function LinksPage() {
 
               <button
                 onClick={addField}
-                className="self-start text-sm font-semibold text-indigo-400 hover:text-indigo-300 px-3 py-2 bg-indigo-600/10 rounded-xl ring-1 ring-indigo-500/20 hover:ring-indigo-500/40 transition-all"
+                className="self-start text-sm font-semibold text-[var(--accent)] hover:text-[var(--accent-cyan)] px-3 py-2 bg-[var(--accent)]/10 rounded-xl ring-1 ring-[var(--accent)]/20 hover:ring-[var(--accent)]/40 transition-all"
               >
                 + Add Question
               </button>
@@ -221,7 +220,7 @@ export default function LinksPage() {
               <div className="flex items-center justify-between gap-4 flex-wrap">
                 <div className="flex flex-col gap-1.5 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-mono text-sm text-zinc-300 truncate">{lk.id}</span>
+                    <span className="font-mono text-sm text-[var(--text-primary)] truncate">{lk.id}</span>
                     <Badge status={lk.status}>{lk.status}</Badge>
                     {lk.custom_fields && lk.custom_fields.length > 0 && (
                       <span className="text-xs bg-purple-500/15 text-purple-400 ring-1 ring-purple-500/30 px-2 py-0.5 rounded-full">
@@ -229,7 +228,7 @@ export default function LinksPage() {
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-zinc-500">{lk.event_type}{lk.expires_at ? ` · Expires ${new Date(lk.expires_at).toLocaleDateString()}` : ""}</p>
+                  <p className="text-xs text-[var(--text-secondary)]">{lk.event_type}{lk.expires_at ? ` · Expires ${new Date(lk.expires_at).toLocaleDateString()}` : ""}</p>
                 </div>
                 <div className="flex gap-2 items-center flex-shrink-0">
                   {lk.booking_url && (

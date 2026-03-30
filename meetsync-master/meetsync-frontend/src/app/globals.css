@@ -3,34 +3,81 @@
 
 @layer base {
   :root {
-    --bg: #0f1117;
-    --bg-card: #1a1d27;
-    --bg-card-hover: #22263a;
-    --border: #2e3248;
-    --accent: #6366f1;
-    --accent-hover: #4f46e5;
-    --accent-glow: rgba(99, 102, 241, 0.25);
-    --text-primary: #e8eaf6;
-    --text-secondary: #8b90b8;
+    /* ── Backgrounds (deep ocean blue, not grey-black) ── */
+    --bg:              #080c18;
+    --bg-card:         #0f1628;
+    --bg-card-hover:   #162040;
+    --bg-input:        #0a1020;
+    --bg-deep:         #060911;
+
+    /* ── Borders ── */
+    --border:          #1e2d52;
+    --border-accent:   rgba(91, 53, 232, 0.35);
+
+    /* ── Brand Gradient (matches logo: purple → blue → cyan) ── */
+    --gradient-brand:  linear-gradient(135deg, #5B35E8 0%, #3B6AE8 55%, #38BFFF 100%);
+    --gradient-bg:     linear-gradient(135deg, #080c18 0%, #0d1535 100%);
+    --gradient-glow:   radial-gradient(circle, rgba(59, 106, 232, 0.35), transparent 70%);
+
+    /* ── Accent ── */
+    --accent:          #3B6AE8;
+    --accent-hover:    #5B35E8;
+    --accent-glow:     rgba(59, 106, 232, 0.25);
+    --accent-cyan:     #38BFFF;
+
+    /* ── Text ── */
+    --text-primary:    #e8edf8;
+    --text-secondary:  #7b8db8;
+
+    /* ── Semantic ── */
     --success: #10b981;
     --warning: #f59e0b;
-    --danger: #ef4444;
+    --danger:  #ef4444;
   }
 
   * { box-sizing: border-box; }
 
   body {
-    background-color: var(--bg);
+    background: var(--gradient-bg);
+    background-attachment: fixed;
     color: var(--text-primary);
     font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
     min-height: 100vh;
   }
 
   a { color: var(--accent); text-decoration: none; }
-  a:hover { color: var(--accent-hover); }
+  a:hover { color: var(--accent-cyan); }
 
   ::selection { background: var(--accent-glow); }
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+}
+
+@layer utilities {
+  .bg-brand-gradient {
+    background: var(--gradient-brand);
+  }
+  .bg-page-gradient {
+    background: var(--gradient-bg);
+  }
+  .text-gradient-brand {
+    background: var(--gradient-brand);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .glow-brand {
+    box-shadow: 0 0 40px 0 rgba(59, 106, 232, 0.18), 0 0 80px 0 rgba(56, 191, 255, 0.08);
+  }
+  .glow-brand-sm {
+    box-shadow: 0 4px 24px 0 rgba(59, 106, 232, 0.28);
+  }
+  .card-glow-hover {
+    transition: box-shadow 0.2s, border-color 0.2s;
+  }
+  .card-glow-hover:hover {
+    border-color: rgba(91, 53, 232, 0.30);
+    box-shadow: 0 0 0 1px rgba(59, 106, 232, 0.15), 0 8px 32px 0 rgba(59, 106, 232, 0.10);
+  }
 }

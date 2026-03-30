@@ -36,10 +36,10 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 const btnBase =
   "inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed";
 const btnVariants: Record<BtnVariant, string> = {
-  primary:   "bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20 hover:shadow-indigo-500/30",
+  primary:   "bg-brand-gradient text-white shadow-lg shadow-[rgba(59,106,232,0.30)] hover:opacity-90 hover:-translate-y-0.5 hover:shadow-[rgba(56,191,255,0.25)]",
   danger:    "bg-red-600/10 hover:bg-red-600/20 text-red-400 ring-1 ring-red-500/30",
-  ghost:     "hover:bg-white/5 text-zinc-300",
-  secondary: "bg-white/8 hover:bg-white/12 text-zinc-200 ring-1 ring-white/10",
+  ghost:     "hover:bg-[var(--accent)]/8 text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+  secondary: "bg-[var(--bg-card-hover)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] ring-1 ring-[var(--border)] hover:ring-[var(--border-accent)]",
 };
 const btnSizes = { sm: "px-3 py-1.5 text-sm", md: "px-5 py-2.5 text-sm" };
 
@@ -64,7 +64,7 @@ export function Button({ variant = "primary", loading, size = "md", children, cl
 // ── Card ──────────────────────────────────────────────
 export function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`bg-[#1a1d27] border border-[#2e3248] rounded-2xl ${className}`}>
+    <div className={`bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl card-glow-hover ${className}`}>
       {children}
     </div>
   );
@@ -78,10 +78,10 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
 export function Input({ label, error, className = "", ...props }: InputProps) {
   return (
     <div className="flex flex-col gap-1.5">
-      {label && <label className="text-sm font-medium text-zinc-300">{label}</label>}
+      {label && <label className="text-sm font-medium text-[var(--text-primary)]">{label}</label>}
       <input
-        className={`w-full bg-[#12151f] border border-[#2e3248] rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-500
-          focus:outline-none focus:ring-2 focus:ring-indigo-500/60 focus:border-indigo-500/50 transition-all
+        className={`w-full bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm text-white placeholder-[var(--text-secondary)]
+          focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 focus:border-[var(--accent)]/40 transition-all
           ${error ? "border-red-500/50 focus:ring-red-500/40" : ""}
           ${className}`}
         {...props}
@@ -94,7 +94,7 @@ export function Input({ label, error, className = "", ...props }: InputProps) {
 // ── Spinner ───────────────────────────────────────────
 export function Spinner({ size = 24 }: { size?: number }) {
   return (
-    <svg className="animate-spin text-indigo-500" style={{ width: size, height: size }} fill="none" viewBox="0 0 24 24">
+    <svg className="animate-spin text-[var(--accent-cyan)]" style={{ width: size, height: size }} fill="none" viewBox="0 0 24 24">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
     </svg>
@@ -106,8 +106,8 @@ export function EmptyState({ icon, title, subtitle }: { icon: string; title: str
   return (
     <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
       <div className="text-5xl">{icon}</div>
-      <p className="font-semibold text-zinc-300 text-lg">{title}</p>
-      {subtitle && <p className="text-sm text-zinc-500 max-w-xs">{subtitle}</p>}
+      <p className="font-semibold text-[var(--text-primary)] text-lg">{title}</p>
+      {subtitle && <p className="text-sm text-[var(--text-secondary)] max-w-xs">{subtitle}</p>}
     </div>
   );
 }
@@ -117,8 +117,8 @@ export function SectionHeader({ title, subtitle, action }: { title: string; subt
   return (
     <div className="flex items-start justify-between gap-4 mb-6">
       <div>
-        <h1 className="text-xl font-bold text-white">{title}</h1>
-        {subtitle && <p className="text-sm text-zinc-400 mt-1">{subtitle}</p>}
+        <h1 className="text-xl font-bold text-[var(--text-primary)]">{title}</h1>
+        {subtitle && <p className="text-sm text-[var(--text-secondary)] mt-1">{subtitle}</p>}
       </div>
       {action}
     </div>
