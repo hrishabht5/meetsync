@@ -175,7 +175,7 @@ async def get_available_slots(
 
     available = [
         s for s in slots
-        if not conflicts(datetime.fromisoformat(s)) and datetime.fromisoformat(s) > now
+        if (dt := datetime.fromisoformat(s)) > now and not conflicts(dt)
     ]
 
     return {"date": date, "slots": available, "timezone": settings["timezone"]}
