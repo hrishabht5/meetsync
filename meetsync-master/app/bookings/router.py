@@ -25,10 +25,11 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
     """
     Full booking flow:
       1. Validate one-time link (if provided)
-      2. Create Google Calendar event with Meet link
-      3. Store booking in Supabase
-      4. Mark OTL as used
-      5. Fire webhooks in background
+      2. Guard against double-booking
+      3. Create Google Calendar event with Meet link
+      4. Store booking in Supabase
+      5. Mark OTL as used
+      6. Fire webhooks in background
     """
     # ── 1. Validate OTL ──────────────────────────────────
     otl = None
@@ -48,7 +49,21 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
     if not host_user_id:
         raise HTTPException(status_code=400, detail="Missing host identity for booking")
 
-    # ── 2. Create Google Meet event ───────────────────────
+    # ── 2. Guard against double-booking ──────────────────
+    scheduled_iso = payload.scheduled_at.isoformat()
+    conflict = supabase.table("bookings") \
+        .select("id") \
+        .eq("user_id", host_user_id) \
+        .eq("scheduled_at", scheduled_iso) \
+        .neq("status", "cancelled") \
+        .execute()
+    if conflict.data:
+        raise HTTPException(
+            status_code=409,
+            detail="This time slot has just been taken. Please go back and choose another time."
+        )
+
+    # ── 3. Create Google Meet event ───────────────────────
     duration_map = {
         "15-min quick chat": 15,
         "30-min intro call": 30,
@@ -69,7 +84,7 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Google Calendar error: {e}")
 
-    # ── 3. Store booking ──────────────────────────────────
+    # ── 4. Store booking ──────────────────────────────────
     booking_id = str(uuid.uuid4())
     booking_row = {
         "id":                booking_id,
@@ -87,11 +102,11 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
     }
     supabase.table("bookings").insert(booking_row).execute()
 
-    # ── 4. Mark OTL used ──────────────────────────────────
+    # ── 5. Mark OTL used ──────────────────────────────────
     if otl:
         otl_service.mark_otl_used(payload.one_time_link_id, booking_id)
 
-    # ── 5. Fire webhooks (background) ─────────────────────
+    # ── 6. Fire webhooks (background) ─────────────────────
     background_tasks.add_task(
         webhook_service.fire_event,
         "booking.created",

@@ -87,6 +87,7 @@ export default function BookingPage() {
   const handleBook = async () => {
     if (!validateForm()) return;
     setSubmitting(true);
+    setErrorMsg("");
     try {
       const booking = await api.bookings.create({
         guest_name: form.name,
@@ -100,7 +101,7 @@ export default function BookingPage() {
       setMeetLink(booking.meet_link ?? "");
       setStep("success");
     } catch (e: unknown) {
-      alert((e as Error).message);
+      setErrorMsg(e instanceof Error ? e.message : "Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -268,6 +269,12 @@ export default function BookingPage() {
                 </label>
                 {formErrors["consent"] && <p className="text-xs text-red-400">{formErrors["consent"]}</p>}
               </div>
+
+              {errorMsg && (
+                <div className="rounded-xl bg-red-500/10 border border-red-500/30 px-4 py-3 text-sm text-red-400">
+                  {errorMsg}
+                </div>
+              )}
 
               <Button onClick={handleBook} loading={submitting}
                 disabled={!form.name || !form.email || !consent}>
