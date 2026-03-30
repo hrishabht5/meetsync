@@ -49,11 +49,13 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     credentials: options?.credentials ?? "include",
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: res.statusText }));
-    const detail = err.detail;
-    const message = Array.isArray(detail)
-      ? detail.map((d: { msg?: string }) => d.msg ?? "Validation error").join("; ")
-      : typeof detail === "string" ? detail : "Something went wrong. Please try again.";
+    const err = await res.json().catch(() => ({ detail: res.statusText || "Request failed" }));
+    const raw = err.detail ?? err.message ?? err.error;
+    const message = Array.isArray(raw)
+      ? raw.map((d: { msg?: string }) => d.msg ?? "Validation error").join("; ")
+      : typeof raw === "string" && raw
+      ? raw
+      : `Request failed (HTTP ${res.status})`;
     throw new Error(message);
   }
   // 204 No Content — return null

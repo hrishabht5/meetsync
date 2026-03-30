@@ -8,7 +8,6 @@ PATCH /bookings/{id}/cancel → cancel + delete Google Calendar event
 """
 
 import uuid
-from datetime import datetime
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Request
 
 from app.core.config import supabase
@@ -81,8 +80,10 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
             duration_min = duration,
             description  = payload.notes,
         )
+    except ValueError as e:
+        raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Google Calendar error: {e}")
+        raise HTTPException(status_code=502, detail=f"Could not create Google Calendar event: {e}")
 
     # ── 4. Store booking ──────────────────────────────────
     booking_id = str(uuid.uuid4())

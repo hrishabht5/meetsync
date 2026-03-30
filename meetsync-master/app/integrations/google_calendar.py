@@ -83,9 +83,16 @@ async def get_valid_access_token(user_id: str) -> str:
     """
     Retrieve stored tokens for a user.
     If the access token is expired, refresh it automatically.
+    Raises ValueError if Google Calendar is not connected.
     """
-    result = supabase.table("google_tokens").select("*").eq("user_id", user_id).single().execute()
-    token_row = result.data
+    try:
+        result = supabase.table("google_tokens").select("*").eq("user_id", user_id).single().execute()
+        token_row = result.data
+    except Exception:
+        raise ValueError("Google Calendar is not connected. Please reconnect your Google account in Settings.")
+
+    if not token_row:
+        raise ValueError("Google Calendar is not connected. Please reconnect your Google account in Settings.")
 
     # Check expiry (store expires_at as ISO string in DB)
     expires_at = datetime.fromisoformat(token_row["expires_at"].replace("Z", "+00:00")).replace(tzinfo=None)
@@ -121,10 +128,14 @@ async def get_google_busy_times(user_id: str, start_dt: datetime, end_dt: dateti
     Returns a list of dicts with 'start' and 'end' datetimes.
     If the user has no Google token, gracefully returns empty list.
     """
+    import logging
     try:
         access_token = await get_valid_access_token(user_id)
-    except Exception:
-        # Expected postgrest APIError if token doesn't exist
+    except ValueError:
+        # Google Calendar not connected — can only check internal bookings
+        return []
+    except Exception as e:
+        logging.warning(f"[GCal] get_valid_access_token failed for user {user_id}: {e}")
         return []
 
     body = {
