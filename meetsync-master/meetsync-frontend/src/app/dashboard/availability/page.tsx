@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { api, AvailabilitySettingsResponse, AvailabilityOverride, CustomField } from "@/lib/api-client";
+import { errMsg } from "@/lib/errors";
 import { Button, Card, Input, SectionHeader, Spinner } from "@/components/ui";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -35,7 +36,7 @@ export default function AvailabilityPage() {
       .catch((e: unknown) => {
         // Avoid unhandled promise rejection crashing the page.
         console.error("Failed to load availability:", e);
-        alert((e as Error).message || "Failed to load availability");
+        alert(errMsg(e, "Failed to load availability"));
       })
       .finally(() => setLoading(false));
   }, []);
@@ -88,7 +89,7 @@ export default function AvailabilityPage() {
       await api.availability.updateSettings(settings);
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
-    } catch (e: unknown) { alert((e as Error).message); }
+    } catch (e: unknown) { alert(errMsg(e)); }
     finally { setSaving(false); }
   };
 
@@ -104,7 +105,7 @@ export default function AvailabilityPage() {
       setOverrides((o) => [...o, ov]);
       setOverrideDate("");
       setOverrideReason("");
-    } catch (e: unknown) { alert((e as Error).message); }
+    } catch (e: unknown) { alert(errMsg(e)); }
     finally { setAddingOverride(false); }
   };
 
@@ -112,7 +113,7 @@ export default function AvailabilityPage() {
     try {
       await api.availability.deleteOverride(id);
       setOverrides((o) => o.filter((x) => x.id !== id));
-    } catch (e: unknown) { alert((e as Error).message); }
+    } catch (e: unknown) { alert(errMsg(e)); }
   };
 
   if (loading) return <div className="flex justify-center py-20"><Spinner /></div>;

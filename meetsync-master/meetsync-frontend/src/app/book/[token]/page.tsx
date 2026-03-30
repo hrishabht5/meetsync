@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { api, OTLRow, EVENT_TYPES, CustomField } from "@/lib/api-client";
+import { errMsg } from "@/lib/errors";
 import { Button, Input, Spinner } from "@/components/ui";
 
 type Step = "loading" | "error" | "pick-date" | "pick-slot" | "form" | "success";
@@ -58,7 +59,7 @@ export default function BookingPage() {
       setSlots(res.slots);
       setStep("pick-slot");
     } catch (e: unknown) {
-      setErrorMsg((e as Error).message);
+      setErrorMsg(errMsg(e));
     } finally {
       setLoadingSlots(false);
     }

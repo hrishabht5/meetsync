@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { api, OTLRow, EVENT_TYPES, CustomField } from "@/lib/api-client";
+import { errMsg } from "@/lib/errors";
 import { Badge, Button, Card, EmptyState, SectionHeader, Spinner } from "@/components/ui";
 
 export default function LinksPage() {
@@ -29,7 +30,7 @@ export default function LinksPage() {
         setShowFieldBuilder(true);
       }
     }
-    catch (e: unknown) { setError((e as Error).message); }
+    catch (e: unknown) { setError(errMsg(e)); }
     finally { setLoading(false); }
   };
 
@@ -67,7 +68,7 @@ export default function LinksPage() {
       setLinks((l) => [link, ...l]);
       setCustomFields([]);
       setShowFieldBuilder(false);
-    } catch (e: unknown) { alert((e as Error).message); }
+    } catch (e: unknown) { alert(errMsg(e)); }
     finally { setCreating(false); }
   };
 
@@ -76,7 +77,7 @@ export default function LinksPage() {
     try {
       await api.links.revoke(token);
       setLinks((l) => l.map((x) => x.id === token ? { ...x, status: "revoked" as const } : x));
-    } catch (e: unknown) { alert((e as Error).message); }
+    } catch (e: unknown) { alert(errMsg(e)); }
   };
 
   const copyLink = (url: string, id: string) => {

@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { api, BookingRow } from "@/lib/api-client";
+import { errMsg } from "@/lib/errors";
 import { Badge, Button, Card, EmptyState, SectionHeader, Spinner } from "@/components/ui";
 
 export default function BookingsPage() {
@@ -16,7 +17,7 @@ export default function BookingsPage() {
       const data = await api.bookings.list(filter || undefined);
       setBookings(data);
     } catch (e: unknown) {
-      setError((e as Error).message);
+      setError(errMsg(e));
     } finally {
       setLoading(false);
     }
@@ -31,7 +32,7 @@ export default function BookingsPage() {
       await api.bookings.cancel(id, "Cancelled by host");
       setBookings((b) => b.map((bk) => bk.id === id ? { ...bk, status: "cancelled" } : bk));
     } catch (e: unknown) {
-      alert((e as Error).message);
+      alert(errMsg(e));
     } finally {
       setCancelling(null);
     }

@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { api, WebhookRow, WebhookLog, APIKeyRow } from "@/lib/api-client";
+import { errMsg } from "@/lib/errors";
 import { Badge, Button, Card, EmptyState, Input, SectionHeader, Spinner } from "@/components/ui";
 
 const VALID_EVENTS = ["booking.created", "booking.confirmed", "booking.cancelled", "link.used", "meet.link.created"];
@@ -43,7 +44,7 @@ export default function WebhooksPage() {
       const wh = await api.webhooks.register({ url, secret: secret || undefined, events: selectedEvents });
       setWebhooks((w) => [wh, ...w]);
       setUrl(""); setSecret("");
-    } catch (e: unknown) { alert((e as Error).message); }
+    } catch (e: unknown) { alert(errMsg(e)); }
     finally { setRegistering(false); }
   };
 
@@ -52,20 +53,20 @@ export default function WebhooksPage() {
     try {
       await api.webhooks.delete(id);
       setWebhooks((w) => w.filter((x) => x.id !== id));
-    } catch (e: unknown) { alert((e as Error).message); }
+    } catch (e: unknown) { alert(errMsg(e)); }
   };
 
   const handleToggle = async (id: string) => {
     try {
       const res = await api.webhooks.toggle(id);
       setWebhooks((w) => w.map((x) => x.id === id ? { ...x, is_active: res.is_active } : x));
-    } catch (e: unknown) { alert((e as Error).message); }
+    } catch (e: unknown) { alert(errMsg(e)); }
   };
 
   const handleTest = async () => {
     setTesting(true);
     try { await api.webhooks.test(); alert("Test event sent to all active endpoints!"); }
-    catch (e: unknown) { alert((e as Error).message); }
+    catch (e: unknown) { alert(errMsg(e)); }
     finally { setTesting(false); }
   };
 
@@ -82,7 +83,7 @@ export default function WebhooksPage() {
       setApiKeys((prev) => [resp, ...prev]);
       setCreatedKey(resp.key || null);
       setNewKeyName("");
-    } catch (e: unknown) { alert((e as Error).message); }
+    } catch (e: unknown) { alert(errMsg(e)); }
     finally { setGeneratingKey(false); }
   };
 
@@ -91,7 +92,7 @@ export default function WebhooksPage() {
     try {
       await api.apiKeys.delete(id);
       setApiKeys((keys) => keys.filter((k) => k.id !== id));
-    } catch (e: unknown) { alert((e as Error).message); }
+    } catch (e: unknown) { alert(errMsg(e)); }
   };
 
   return (
