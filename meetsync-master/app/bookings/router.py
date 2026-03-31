@@ -14,6 +14,7 @@ from app.core.config import supabase
 from app.core.schemas import BookingCreate, BookingCancel, BookingStatus
 from app.integrations import google_calendar
 from app.links import service as otl_service
+from app.profiles import service as profiles_service
 from app.webhooks import service as webhook_service
 from app.auth.middleware import get_current_user_id
 
@@ -30,19 +31,26 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
       5. Mark OTL as used
       6. Fire webhooks in background
     """
-    # ── 1. Validate OTL ──────────────────────────────────
+    # ── 1. Validate OTL or Permanent Link ────────────────
     otl = None
     host_user_id = None
-    if payload.one_time_link_id:
+    if payload.permanent_link_id:
+        # Permanent link path — link is never consumed
+        plink = profiles_service.get_permanent_link_by_id(payload.permanent_link_id)
+        if not plink:
+            raise HTTPException(status_code=400, detail="Booking link not found")
+        if not plink["is_active"]:
+            raise HTTPException(status_code=400, detail="This booking link is no longer active")
+        host_user_id = plink["user_id"]
+    elif payload.one_time_link_id:
         try:
             otl = otl_service.validate_otl(payload.one_time_link_id)
             host_user_id = otl.get("user_id")
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
     else:
-        # In the public booking flow, `one_time_link_id` is always provided.
+        # In the public booking flow, a link id is always provided.
         # This fallback supports any future host-side booking creation.
-        from app.auth.middleware import get_current_user_id
         host_user_id = get_current_user_id(request)
 
     if not host_user_id:
@@ -97,9 +105,10 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
         "status":            BookingStatus.confirmed,
         "meet_link":         meet_data["meet_link"],
         "calendar_event_id": meet_data["calendar_event_id"],
-        "one_time_link_id":  payload.one_time_link_id,
-        "custom_answers":    payload.custom_answers or {},
-        "user_id":           host_user_id,
+        "one_time_link_id":   payload.one_time_link_id,
+        "permanent_link_id":  payload.permanent_link_id,
+        "custom_answers":     payload.custom_answers or {},
+        "user_id":            host_user_id,
     }
     supabase.table("bookings").insert(booking_row).execute()
 

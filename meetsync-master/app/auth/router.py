@@ -58,7 +58,14 @@ async def google_callback(request: Request, code: str = None, error: str = None)
             return RedirectResponse(url=f"{FRONTEND_URL}/dashboard?auth_error=missing_user_identity")
 
         google_calendar.store_tokens(user_id, token_data)
-        
+
+        # Auto-create profile on first login (idempotent)
+        try:
+            from app.profiles.service import ensure_profile_exists
+            ensure_profile_exists(user_id, user_info.get("email", ""))
+        except Exception as profile_err:
+            print(f"DEBUG: Could not create profile for {user_id}: {profile_err}")
+
         # Token for URL-based auth (backup for 3rd party cookie blocking)
         token = make_user_session_cookie_value(user_id)
         redirect = RedirectResponse(url=f"{FRONTEND_URL}/dashboard?auth=success&token={token}")

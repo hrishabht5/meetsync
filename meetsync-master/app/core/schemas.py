@@ -50,8 +50,9 @@ class BookingCreate(BaseModel):
     scheduled_at:    datetime    # ISO 8601 with timezone
     event_type:      str         # "30-min intro", "60-min deep dive", etc.
     notes:           Optional[str] = None
-    one_time_link_id: Optional[str] = None  # lnk_xxxxx if booked via OTL
-    custom_answers:  Optional[dict] = None  # answers to custom questions
+    one_time_link_id:   Optional[str] = None  # lnk_xxxxx if booked via OTL
+    permanent_link_id:  Optional[str] = None  # UUID if booked via permanent link
+    custom_answers:     Optional[dict] = None  # answers to custom questions
 
 
 class BookingResponse(BaseModel):
@@ -110,6 +111,36 @@ class WebhookEvent(BaseModel):
     id:            str
     created_at:    datetime
     data:          dict
+
+
+# ── Profiles ─────────────────────────────────────────────
+class ProfileResponse(BaseModel):
+    user_id:      str
+    username:     str
+    display_name: Optional[str]
+    bio:          Optional[str]
+
+
+class ProfileUpdate(BaseModel):
+    username:     Optional[str] = None
+    display_name: Optional[str] = None
+    bio:          Optional[str] = None
+
+
+class PermanentLinkCreate(BaseModel):
+    slug:          str
+    event_type:    str = "Google Meet"
+    custom_fields: List[CustomField] = []
+
+
+class PermanentLinkRow(BaseModel):
+    id:            str
+    user_id:       str
+    slug:          str
+    event_type:    str
+    is_active:     bool
+    custom_fields: List[CustomField]
+    created_at:    str
 
 
 # ── Auth ──────────────────────────────────────────────────

@@ -156,6 +156,24 @@ export const api = {
   account: {
     delete: () => request<{ status: string }>("/auth/account/", { method: "DELETE" }),
   },
+
+  // ── Profiles & Permanent Links ────────────────────────
+  profiles: {
+    getPublic: (username: string) =>
+      request<ProfileResponse & { links: PermanentLinkRow[] }>(`/profiles/${username}/`),
+    validateSlug: (username: string, slug: string) =>
+      request<PermanentLinkRow & { host_user_id: string }>(`/profiles/${username}/${slug}/validate/`),
+    getMe: () => request<ProfileResponse>("/profiles/me/"),
+    updateMe: (data: ProfileUpdate) =>
+      request<ProfileResponse>("/profiles/me/", { method: "PUT", body: JSON.stringify(data) }),
+    listLinks: () => request<PermanentLinkRow[]>("/profiles/me/links/"),
+    createLink: (data: PermanentLinkCreate) =>
+      request<PermanentLinkRow>("/profiles/me/links/", { method: "POST", body: JSON.stringify(data) }),
+    toggleLink: (id: string) =>
+      request<PermanentLinkRow>(`/profiles/me/links/${id}/toggle/`, { method: "PATCH" }),
+    deleteLink: (id: string) =>
+      request<null>(`/profiles/me/links/${id}/`, { method: "DELETE" }),
+  },
 };
 
 // ── Types ─────────────────────────────────────────────
@@ -212,6 +230,7 @@ export interface BookingCreate {
   event_type: string;
   notes?: string;
   one_time_link_id?: string;
+  permanent_link_id?: string;
   custom_answers?: Record<string, string>;
 }
 
@@ -275,6 +294,36 @@ export const EVENT_TYPES = [
 ] as const;
 
 export type EventType = (typeof EVENT_TYPES)[number];
+
+// Profiles & Permanent Links
+export interface ProfileResponse {
+  user_id: string;
+  username: string;
+  display_name?: string | null;
+  bio?: string | null;
+}
+
+export interface ProfileUpdate {
+  username?: string;
+  display_name?: string;
+  bio?: string;
+}
+
+export interface PermanentLinkRow {
+  id: string;
+  user_id: string;
+  slug: string;
+  event_type: string;
+  is_active: boolean;
+  custom_fields: CustomField[];
+  created_at: string;
+}
+
+export interface PermanentLinkCreate {
+  slug: string;
+  event_type?: string;
+  custom_fields?: CustomField[];
+}
 
 // API Keys
 export interface APIKeyRow {
