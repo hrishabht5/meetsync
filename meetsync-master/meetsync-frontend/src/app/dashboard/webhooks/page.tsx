@@ -420,7 +420,7 @@ export default function WebhooksPage() {
                   <div className="flex items-start justify-between gap-4 flex-wrap">
                     <div className="flex flex-col gap-1.5 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-white">{key.name}</span>
+                        <span className="text-sm font-semibold text-[var(--text-primary)]">{key.name}</span>
                         <span className="text-xs font-mono text-[var(--text-secondary)] bg-[var(--bg-card-hover)] px-2 py-0.5 rounded ring-1 ring-[var(--border)]">
                           {key.prefix}...
                         </span>

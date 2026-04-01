@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api-client";
 import { Spinner } from "@/components/ui";
+import { ThemeToggle } from "@/components/themeToggle";
 
 export default function HomePage() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
@@ -28,6 +29,9 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center px-4 bg-page-gradient">
+      <div className="absolute top-4 right-4 z-20">
+        <ThemeToggle compact />
+      </div>
       {/* Glow orbs */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full blur-[120px] opacity-30 pointer-events-none"
            style={{ background: "radial-gradient(circle, rgba(91,53,232,0.5) 0%, rgba(59,106,232,0.3) 40%, transparent 70%)" }} />
@@ -42,7 +46,7 @@ export default function HomePage() {
 
         {/* Headline */}
         <div className="flex flex-col gap-4">
-          <h1 className="text-5xl font-extrabold text-white leading-tight">
+          <h1 className="text-5xl font-extrabold text-[var(--text-primary)] leading-tight">
             Schedule meetings<br />
             <span className="text-gradient-brand">without the back-and-forth</span>
           </h1>

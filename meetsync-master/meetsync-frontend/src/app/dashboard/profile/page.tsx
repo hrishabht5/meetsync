@@ -87,7 +87,7 @@ export default function ProfilePage() {
                 placeholder="A short description shown on your public profile…"
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
-                className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm text-white placeholder-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 resize-none transition-all"
+                className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 resize-none transition-all"
               />
             </div>
             <div className="flex justify-end">

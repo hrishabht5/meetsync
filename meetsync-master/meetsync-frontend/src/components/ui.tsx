@@ -80,7 +80,7 @@ export function Input({ label, error, className = "", ...props }: InputProps) {
     <div className="flex flex-col gap-1.5">
       {label && <label className="text-sm font-medium text-[var(--text-primary)]">{label}</label>}
       <input
-        className={`w-full bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm text-white placeholder-[var(--text-secondary)]
+        className={`w-full bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-secondary)]
           focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 focus:border-[var(--accent)]/40 transition-all
           ${error ? "border-red-500/50 focus:ring-red-500/40" : ""}
           ${className}`}

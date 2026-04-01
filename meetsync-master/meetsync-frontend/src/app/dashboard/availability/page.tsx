@@ -181,7 +181,7 @@ export default function AvailabilityPage() {
               <select
                 value={settings.slot_duration}
                 onChange={(e) => setSettings((s) => ({ ...s, slot_duration: Number(e.target.value) }))}
-                className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
+                className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
               >
                 {[15, 30, 45, 60].map((v) => <option key={v}>{v}</option>)}
               </select>
@@ -191,7 +191,7 @@ export default function AvailabilityPage() {
               <select
                 value={settings.buffer_minutes}
                 onChange={(e) => setSettings((s) => ({ ...s, buffer_minutes: Number(e.target.value) }))}
-                className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
+                className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
               >
                 {[0, 5, 10, 15, 30].map((v) => <option key={v}>{v}</option>)}
               </select>
@@ -225,13 +225,13 @@ export default function AvailabilityPage() {
                   placeholder="Question label, e.g. Company Name"
                   value={field.label}
                   onChange={(e) => updateField(idx, { label: e.target.value })}
-                  className="bg-[var(--bg-deep)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-white placeholder-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
+                  className="bg-[var(--bg-deep)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
                 />
                 <div className="flex gap-3 items-center flex-wrap">
                   <select
                     value={field.type}
                     onChange={(e) => updateField(idx, { type: e.target.value as CustomField["type"], options: e.target.value === "dropdown" ? [""] : undefined })}
-                    className="bg-[var(--bg-deep)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
+                    className="bg-[var(--bg-deep)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
                   >
                     <option value="text">Short Text</option>
                     <option value="textarea">Long Text</option>
@@ -261,7 +261,7 @@ export default function AvailabilityPage() {
                             newOpts[optIdx] = e.target.value;
                             updateField(idx, { options: newOpts });
                           }}
-                          className="bg-[var(--bg-deep)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm text-white placeholder-[var(--text-secondary)] focus:outline-none flex-1"
+                          className="bg-[var(--bg-deep)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:outline-none flex-1"
                         />
                         <button
                           onClick={() => {
@@ -332,7 +332,7 @@ export default function AvailabilityPage() {
                   <div className="flex items-center gap-3">
                     <span className="text-red-400 text-lg">🚫</span>
                     <div>
-                      <p className="text-sm font-semibold text-white">{ov.override_date}</p>
+                      <p className="text-sm font-semibold text-[var(--text-primary)]">{ov.override_date}</p>
                       {ov.reason && <p className="text-xs text-[var(--text-secondary)]">{ov.reason}</p>}
                     </div>
                   </div>

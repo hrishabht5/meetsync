@@ -134,7 +134,7 @@ export default function BookingPage() {
           {step === "error" && (
             <div className="flex flex-col items-center gap-4 py-16 px-8 text-center">
               <div className="text-5xl">🔒</div>
-              <p className="font-semibold text-white text-lg">Link Unavailable</p>
+              <p className="font-semibold text-[var(--text-primary)] text-lg">Link Unavailable</p>
               <p className="text-[var(--text-secondary)] text-sm">{errorMsg}</p>
             </div>
           )}
@@ -144,7 +144,7 @@ export default function BookingPage() {
             <div className="p-6 flex flex-col gap-5">
               <div>
                 <p className="text-xs text-[var(--accent-cyan)] font-semibold uppercase tracking-wider mb-1">Booking Link</p>
-                <h2 className="text-xl font-bold text-white">{otl?.event_type}</h2>
+                <h2 className="text-xl font-bold text-[var(--text-primary)]">{otl?.event_type}</h2>
                 <p className="text-sm text-[var(--text-secondary)] mt-1">Pick a date to see available slots</p>
               </div>
 
@@ -193,7 +193,7 @@ export default function BookingPage() {
                 <button onClick={() => setStep("pick-slot")} className="text-xs text-[var(--accent)] hover:text-[var(--accent-cyan)] mb-3 flex items-center gap-1 transition-colors">
                   ← Change time
                 </button>
-                <h2 className="text-xl font-bold text-white">{otl?.event_type}</h2>
+                <h2 className="text-xl font-bold text-[var(--text-primary)]">{otl?.event_type}</h2>
                 <p className="text-sm text-[var(--accent-cyan)] mt-1">
                   📅 {new Date(selectedSlot).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
                 </p>
@@ -219,7 +219,7 @@ export default function BookingPage() {
                       placeholder={`Enter ${field.label.toLowerCase()}`}
                       value={customAnswers[field.label] || ""}
                       onChange={(e) => setCustomAnswers((a) => ({ ...a, [field.label]: e.target.value }))}
-                      className={`bg-[var(--bg-input)] border rounded-xl px-4 py-2.5 text-sm text-white placeholder-[var(--text-secondary)]
+                      className={`bg-[var(--bg-input)] border rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-secondary)]
                         focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 transition-all
                         ${formErrors[field.label] ? "border-red-500/50" : "border-[var(--border)]"}`}
                     />
@@ -231,7 +231,7 @@ export default function BookingPage() {
                       placeholder={`Enter ${field.label.toLowerCase()}`}
                       value={customAnswers[field.label] || ""}
                       onChange={(e) => setCustomAnswers((a) => ({ ...a, [field.label]: e.target.value }))}
-                      className={`bg-[var(--bg-input)] border rounded-xl px-4 py-2.5 text-sm text-white placeholder-[var(--text-secondary)]
+                      className={`bg-[var(--bg-input)] border rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-secondary)]
                         focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 resize-none transition-all
                         ${formErrors[field.label] ? "border-red-500/50" : "border-[var(--border)]"}`}
                     />
@@ -241,7 +241,7 @@ export default function BookingPage() {
                     <select
                       value={customAnswers[field.label] || ""}
                       onChange={(e) => setCustomAnswers((a) => ({ ...a, [field.label]: e.target.value }))}
-                      className={`bg-[var(--bg-input)] border rounded-xl px-4 py-2.5 text-sm text-white
+                      className={`bg-[var(--bg-input)] border rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)]
                         focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 transition-all
                         ${formErrors[field.label] ? "border-red-500/50" : "border-[var(--border)]"}`}
                     >
@@ -262,7 +262,7 @@ export default function BookingPage() {
                   rows={3} placeholder="Anything you'd like to discuss…"
                   value={form.notes}
                   onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-                  className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm text-white placeholder-[var(--text-secondary)]
+                  className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-secondary)]
                     focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 resize-none transition-all"
                 />
               </div>
@@ -294,7 +294,7 @@ export default function BookingPage() {
             <div className="flex flex-col items-center gap-5 py-14 px-8 text-center">
               <div className="text-6xl">🎉</div>
               <div>
-                <p className="font-bold text-white text-xl">Booking Confirmed!</p>
+                <p className="font-bold text-[var(--text-primary)] text-xl">Booking Confirmed!</p>
                 <p className="text-[var(--text-secondary)] text-sm mt-2">{form.name}, check your email for a Google Calendar invite.</p>
               </div>
               {meetLink && (

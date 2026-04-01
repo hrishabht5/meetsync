@@ -46,7 +46,7 @@ export default function PublicProfilePage() {
         {!loading && errorMsg && (
           <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-10 text-center glow-brand">
             <div className="text-5xl mb-4">👤</div>
-            <p className="font-semibold text-white text-lg">Profile not found</p>
+            <p className="font-semibold text-[var(--text-primary)] text-lg">Profile not found</p>
             <p className="text-[var(--text-secondary)] text-sm mt-2">{errorMsg}</p>
           </div>
         )}
@@ -60,7 +60,7 @@ export default function PublicProfilePage() {
                   {(data.display_name ?? data.username)[0].toUpperCase()}
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-white">{data.display_name ?? data.username}</h1>
+                  <h1 className="text-xl font-bold text-[var(--text-primary)]">{data.display_name ?? data.username}</h1>
                   <p className="text-sm text-[var(--text-secondary)]">@{data.username}</p>
                 </div>
               </div>
@@ -83,7 +83,7 @@ export default function PublicProfilePage() {
                       className="flex items-center justify-between gap-4 bg-[var(--bg-card-hover)] hover:bg-[var(--accent)]/10 border border-[var(--border)] hover:border-[var(--border-accent)] rounded-xl px-5 py-4 transition-all group"
                     >
                       <div>
-                        <p className="text-sm font-semibold text-white group-hover:text-[var(--accent-cyan)] transition-colors">{lk.event_type}</p>
+                        <p className="text-sm font-semibold text-[var(--text-primary)] group-hover:text-[var(--accent-cyan)] transition-colors">{lk.event_type}</p>
                         <p className="text-xs text-[var(--text-secondary)] mt-0.5">/{data.username}/{lk.slug}</p>
                       </div>
                       <span className="text-[var(--accent)] group-hover:text-[var(--accent-cyan)] text-lg transition-colors">→</span>

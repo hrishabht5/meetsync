@@ -75,7 +75,7 @@ export default function BookingsPage() {
               <div className="flex items-start justify-between gap-4">
                 <div className="flex flex-col gap-2 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-white">{bk.guest_name}</span>
+                    <span className="font-semibold text-[var(--text-primary)]">{bk.guest_name}</span>
                     <Badge status={bk.status}>{bk.status}</Badge>
                     <span className="text-xs text-[var(--text-secondary)] bg-[var(--bg-card-hover)] px-2 py-0.5 rounded-lg">{bk.event_type}</span>
                   </div>

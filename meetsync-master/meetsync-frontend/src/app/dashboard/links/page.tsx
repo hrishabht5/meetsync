@@ -38,7 +38,7 @@ function FieldBuilder({
             placeholder="Question label, e.g. Company Name"
             value={field.label}
             onChange={(e) => onUpdate(idx, { label: e.target.value })}
-            className="bg-[var(--bg-deep)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-white placeholder-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
+            className="bg-[var(--bg-deep)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
           />
           <div className="flex gap-3 items-center flex-wrap">
             <select
@@ -49,7 +49,7 @@ function FieldBuilder({
                   options: e.target.value === "dropdown" ? [""] : undefined,
                 })
               }
-              className="bg-[var(--bg-deep)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
+              className="bg-[var(--bg-deep)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
             >
               <option value="text">Short Text</option>
               <option value="textarea">Long Text</option>
@@ -78,7 +78,7 @@ function FieldBuilder({
                       newOpts[optIdx] = e.target.value;
                       onUpdate(idx, { options: newOpts });
                     }}
-                    className="bg-[var(--bg-deep)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm text-white placeholder-[var(--text-secondary)] focus:outline-none flex-1"
+                    className="bg-[var(--bg-deep)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:outline-none flex-1"
                   />
                   <button
                     onClick={() => onUpdate(idx, { options: (field.options || []).filter((_, i) => i !== optIdx) })}
@@ -176,7 +176,7 @@ function OneTimeLinksTab() {
             <label className="text-xs text-[var(--text-secondary)] font-medium">Meeting Type</label>
             <select
               value={eventType} onChange={(e) => setEventType(e.target.value)}
-              className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50">
+              className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50">
               {EVENT_TYPES.map((t) => <option key={t}>{t}</option>)}
             </select>
           </div>
@@ -184,7 +184,7 @@ function OneTimeLinksTab() {
             <label className="text-xs text-[var(--text-secondary)] font-medium">Expires In</label>
             <select
               value={expires} onChange={(e) => setExpires(e.target.value)}
-              className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50">
+              className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50">
               <option value="24h">24 hours</option>
               <option value="7d">7 days</option>
               <option value="never">Never</option>
@@ -336,7 +336,7 @@ function PermanentLinksTab() {
             <label className="text-xs text-[var(--text-secondary)] font-medium">Meeting Type</label>
             <select
               value={eventType} onChange={(e) => setEventType(e.target.value)}
-              className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50">
+              className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50">
               {EVENT_TYPES.map((t) => <option key={t}>{t}</option>)}
             </select>
           </div>

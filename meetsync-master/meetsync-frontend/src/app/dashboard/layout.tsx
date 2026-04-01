@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, Suspense } from "react";
 import { api } from "@/lib/api-client";
+import { ThemeToggle } from "@/components/themeToggle";
 
 const nav = [
   { href: "/dashboard", label: "Bookings", icon: "📅" },
@@ -79,6 +80,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Footer */}
         <div className="px-3 py-4 border-t border-[var(--border)] flex flex-col gap-1">
+          <ThemeToggle />
           <Link
             href="/"
             className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--accent)]/8 transition-all"
