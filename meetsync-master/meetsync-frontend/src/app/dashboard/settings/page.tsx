@@ -1,59 +1,65 @@
 "use client";
-
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "@/lib/api-client";
+import { errMsg } from "@/lib/errors";
+import { Button, Card, SectionHeader, Spinner } from "@/components/ui";
 
 export default function SettingsPage() {
-  const [deleting, setDeleting] = useState(false);
+  const [allowDoubleBooking, setAllowDoubleBooking] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
-  const handleDeleteAccount = async () => {
-    const confirm1 = window.confirm(
-      "Are you absolutely sure you want to delete your account? This action cannot be undone."
-    );
-    if (!confirm1) return;
+  useEffect(() => {
+    api.availability.getSettings()
+      .then((s) => setAllowDoubleBooking(!!s.allow_double_booking))
+      .catch((e: unknown) => alert(errMsg(e)))
+      .finally(() => setLoading(false));
+  }, []);
 
-    const confirm2 = window.confirm(
-      "This will revoke MeetSync's access to your Google Calendar and wipe your data. Proceed?"
-    );
-    if (!confirm2) return;
-
+  const handleSave = async () => {
+    setSaving(true);
     try {
-      setDeleting(true);
-      await api.account.delete();
-      window.location.href = "/";
-    } catch (e) {
-      console.error("Failed to delete account", e);
-      alert("Error deleting account. Please try again.");
-      setDeleting(false);
-    }
+      // Fetch current settings first so we don't overwrite other fields
+      const current = await api.availability.getSettings();
+      await api.availability.updateSettings({ ...current, allow_double_booking: allowDoubleBooking });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (e: unknown) { alert(errMsg(e)); }
+    finally { setSaving(false); }
   };
 
+  if (loading) return <div className="flex justify-center py-20"><Spinner /></div>;
+
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-[var(--text-primary)]">Settings</h1>
+    <>
+      <SectionHeader title="Settings" subtitle="Application-wide preferences" />
 
-      <div className="bg-[var(--bg-card)] border border-[var(--danger)]/20 rounded-2xl overflow-hidden p-6 mt-8">
-        <h2 className="text-red-400 font-semibold mb-2 text-lg flex items-center gap-2">
-          <span className="text-xl">⚠️</span> Danger Zone
-        </h2>
-        <p className="text-[var(--text-secondary)] text-sm mb-6">
-          Permanently delete your account. This will erase your availability settings,
-          booking links, API keys, and revoke our access to your Google account. Historical
-          bookings are wiped to ensure full compliance with the Right to Erasure (GDPR).
-        </p>
-
-        <button
-          onClick={handleDeleteAccount}
-          disabled={deleting}
-          className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-            deleting
-              ? "bg-red-500/30 text-red-300 cursor-not-allowed"
-              : "bg-red-500/10 text-red-500 hover:bg-red-500/20"
-          }`}
-        >
-          {deleting ? "Deleting Account..." : "Delete Account"}
-        </button>
+      <div className="flex flex-col gap-5">
+        <Card className="p-6">
+          <p className="text-sm font-semibold text-[var(--text-primary)] mb-2">Double Booking Prevention</p>
+          <div className="flex items-center justify-between gap-6">
+            <p className="text-xs text-[var(--text-secondary)] max-w-lg">
+              When <span className="text-white font-medium">OFF</span> (default), MeetSync blocks duplicate bookings at the same time using Google Calendar and database checks.
+              Turn <span className="text-white font-medium">ON</span> to allow multiple bookings at the exact same time slot.
+            </p>
+            <label className="relative inline-flex flex-shrink-0 items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={allowDoubleBooking}
+                onChange={(e) => setAllowDoubleBooking(e.target.checked)}
+              />
+              <div className="w-11 h-6 bg-[var(--bg-card-hover)] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-gradient" />
+            </label>
+          </div>
+          <div className="flex justify-end mt-5">
+            <Button onClick={handleSave} loading={saving}>
+              {saved ? "✓ Saved!" : "Save Settings"}
+            </Button>
+          </div>
+        </Card>
       </div>
-    </div>
+    </>
   );
 }

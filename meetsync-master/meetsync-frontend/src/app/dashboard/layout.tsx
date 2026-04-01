@@ -7,9 +7,9 @@ import { api } from "@/lib/api-client";
 const nav = [
   { href: "/dashboard", label: "Bookings", icon: "📅" },
   { href: "/dashboard/links", label: "Links", icon: "🔗" },
-  { href: "/dashboard/profile", label: "Profile & Links", icon: "👤" },
+  { href: "/dashboard/profile", label: "Profile", icon: "👤" },
   { href: "/dashboard/availability", label: "Availability", icon: "⏰" },
-  { href: "/dashboard/webhooks", label: "Webhooks", icon: "🔔" },
+  { href: "/dashboard/webhooks", label: "API & Webhooks", icon: "🔔" },
   { href: "/dashboard/settings", label: "Settings", icon: "⚙️" },
 ];
 

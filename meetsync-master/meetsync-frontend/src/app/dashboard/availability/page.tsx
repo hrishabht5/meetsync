@@ -209,26 +209,6 @@ export default function AvailabilityPage() {
           />
         </Card>
 
-        {/* Double Booking Prevention */}
-        <Card className="p-6">
-          <p className="text-sm font-semibold text-[var(--text-primary)] mb-2">Double Booking Prevention</p>
-          <div className="flex items-center justify-between gap-4">
-            <p className="text-xs text-[var(--text-secondary)] max-w-lg">
-              When enabled, MeetSync will allow multiple bookings at the exact same time,
-              bypassing Google Calendar and internal database conflict checks.
-            </p>
-            <label className="relative inline-flex flex-shrink-0 items-center cursor-pointer">
-              <input
-                type="checkbox"
-                className="sr-only peer"
-                checked={!!settings.allow_double_booking}
-                onChange={(e) => setSettings(s => ({ ...s, allow_double_booking: e.target.checked }))}
-              />
-              <div className="w-11 h-6 bg-[var(--bg-card-hover)] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-gradient"></div>
-            </label>
-          </div>
-        </Card>
-
         {/* Default Booking Questions */}
         <Card className="p-6">
           <p className="text-sm font-semibold text-[var(--text-primary)] mb-4">Default Booking Questions</p>

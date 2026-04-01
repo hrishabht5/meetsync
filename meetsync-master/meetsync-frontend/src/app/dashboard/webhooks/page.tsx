@@ -1,13 +1,153 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { api, WebhookRow, WebhookLog, APIKeyRow } from "@/lib/api-client";
 import { errMsg } from "@/lib/errors";
 import { Badge, Button, Card, EmptyState, Input, SectionHeader, Spinner } from "@/components/ui";
 
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+function ApiDocsTab() {
+  const endpoints = [
+    {
+      group: "Availability",
+      items: [
+        { method: "GET",   path: "/api/v1/availability/slots/",    auth: false, desc: "Get available booking slots for a date and event type" },
+        { method: "GET",   path: "/api/v1/availability/settings/", auth: true,  desc: "Get your availability configuration" },
+        { method: "PUT",   path: "/api/v1/availability/settings/", auth: true,  desc: "Update working days, shifts, timezone, etc." },
+        { method: "GET",   path: "/api/v1/availability/overrides/",auth: true,  desc: "List blocked dates" },
+        { method: "POST",  path: "/api/v1/availability/overrides/",auth: true,  desc: "Block a date" },
+        { method: "DELETE",path: "/api/v1/availability/overrides/{id}/", auth: true, desc: "Unblock a date" },
+      ],
+    },
+    {
+      group: "Bookings",
+      items: [
+        { method: "POST",  path: "/api/v1/bookings/",          auth: false, desc: "Create a booking (requires a link ID)" },
+        { method: "GET",   path: "/api/v1/bookings/",          auth: true,  desc: "List all bookings (supports ?status= filter)" },
+        { method: "GET",   path: "/api/v1/bookings/{id}/",     auth: true,  desc: "Get single booking detail" },
+        { method: "PATCH", path: "/api/v1/bookings/{id}/cancel/", auth: true, desc: "Cancel a booking and delete the calendar event" },
+      ],
+    },
+    {
+      group: "One-Time Links",
+      items: [
+        { method: "GET",   path: "/api/v1/links/",          auth: true,  desc: "List all your one-time links" },
+        { method: "POST",  path: "/api/v1/links/",          auth: true,  desc: "Create a one-time booking link" },
+        { method: "GET",   path: "/api/v1/links/{token}/",  auth: false, desc: "Validate a link (public — used by the booking page)" },
+        { method: "DELETE",path: "/api/v1/links/{token}/",  auth: true,  desc: "Revoke a link" },
+      ],
+    },
+    {
+      group: "Profiles & Permanent Links",
+      items: [
+        { method: "GET",   path: "/profiles/{username}/",              auth: false, desc: "Public profile + active permanent links" },
+        { method: "GET",   path: "/profiles/{username}/{slug}/validate/", auth: false, desc: "Resolve a permanent link → host_user_id" },
+        { method: "GET",   path: "/profiles/me/",                     auth: true,  desc: "Your profile" },
+        { method: "PUT",   path: "/profiles/me/",                     auth: true,  desc: "Update username, display name, bio" },
+        { method: "GET",   path: "/profiles/me/links/",               auth: true,  desc: "List your permanent links" },
+        { method: "POST",  path: "/profiles/me/links/",               auth: true,  desc: "Create a permanent link" },
+        { method: "PATCH", path: "/profiles/me/links/{id}/toggle/",   auth: true,  desc: "Toggle active/paused" },
+        { method: "DELETE",path: "/profiles/me/links/{id}/",          auth: true,  desc: "Delete a permanent link" },
+      ],
+    },
+    {
+      group: "Webhooks",
+      items: [
+        { method: "GET",   path: "/api/v1/webhooks/",           auth: true, desc: "List registered webhooks" },
+        { method: "POST",  path: "/api/v1/webhooks/",           auth: true, desc: "Register a webhook endpoint" },
+        { method: "DELETE",path: "/api/v1/webhooks/{id}/",      auth: true, desc: "Delete a webhook" },
+        { method: "PATCH", path: "/api/v1/webhooks/{id}/toggle/",auth: true, desc: "Pause / resume a webhook" },
+        { method: "GET",   path: "/api/v1/webhooks/logs/",      auth: true, desc: "Delivery logs for all webhooks" },
+        { method: "POST",  path: "/api/v1/webhooks/test/",      auth: true, desc: "Send a test event to all active endpoints" },
+      ],
+    },
+    {
+      group: "System",
+      items: [
+        { method: "GET", path: "/api/v1/health/", auth: false, desc: "API + database health check" },
+      ],
+    },
+  ];
+
+  const methodColor: Record<string, string> = {
+    GET:    "bg-emerald-500/15 text-emerald-400 ring-emerald-500/30",
+    POST:   "bg-blue-500/15 text-blue-400 ring-blue-500/30",
+    PUT:    "bg-amber-500/15 text-amber-400 ring-amber-500/30",
+    PATCH:  "bg-purple-500/15 text-purple-400 ring-purple-500/30",
+    DELETE: "bg-red-500/15 text-red-400 ring-red-500/30",
+  };
+
+  return (
+    <div className="flex flex-col gap-6">
+      {/* Header banner */}
+      <Card className="p-5 flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <p className="text-sm font-semibold text-[var(--text-primary)] mb-1">MeetSync Public API</p>
+          <p className="text-xs text-[var(--text-secondary)]">Base URL: <code className="font-mono text-[var(--accent-cyan)]">{BASE_URL}</code></p>
+          <p className="text-xs text-[var(--text-secondary)] mt-1">
+            Authenticate with <code className="font-mono text-[var(--accent-cyan)]">Authorization: Bearer &lt;api-key&gt;</code> or the <code className="font-mono text-[var(--accent-cyan)]">X-MeetSync-User</code> session header.
+          </p>
+        </div>
+        <a
+          href={`${BASE_URL}/docs`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-shrink-0 px-4 py-2 rounded-xl bg-brand-gradient text-white text-sm font-semibold shadow-lg hover:opacity-90 transition-opacity"
+        >
+          Open Interactive Docs ↗
+        </a>
+      </Card>
+
+      {/* Endpoint groups */}
+      {endpoints.map((group) => (
+        <Card key={group.group} className="p-5">
+          <p className="text-sm font-semibold text-[var(--text-primary)] mb-3">{group.group}</p>
+          <div className="flex flex-col gap-2">
+            {group.items.map((ep) => (
+              <div key={ep.path + ep.method} className="flex items-start gap-3 flex-wrap py-2 border-b border-[var(--border)] last:border-0">
+                <span className={`flex-shrink-0 text-xs font-bold px-2 py-0.5 rounded ring-1 ${methodColor[ep.method]}`}>
+                  {ep.method}
+                </span>
+                <code className="text-xs font-mono text-[var(--accent-cyan)] break-all flex-1">{ep.path}</code>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {ep.auth && (
+                    <span className="text-xs text-amber-400 bg-amber-500/10 ring-1 ring-amber-500/20 px-2 py-0.5 rounded">🔒 auth</span>
+                  )}
+                  <span className="text-xs text-[var(--text-secondary)]">{ep.desc}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      ))}
+
+      {/* Webhook events reference */}
+      <Card className="p-5">
+        <p className="text-sm font-semibold text-[var(--text-primary)] mb-3">Webhook Events</p>
+        <div className="flex flex-col gap-1.5">
+          {[
+            ["booking.created",   "A new booking was confirmed"],
+            ["booking.confirmed", "Booking status moved to confirmed"],
+            ["booking.cancelled", "A booking was cancelled"],
+            ["link.used",         "A one-time link was consumed"],
+            ["meet.link.created", "A Google Meet link was generated"],
+          ].map(([event, desc]) => (
+            <div key={event} className="flex items-center gap-3 py-1.5 border-b border-[var(--border)] last:border-0">
+              <code className="text-xs font-mono text-[var(--accent-cyan)] flex-shrink-0">{event}</code>
+              <span className="text-xs text-[var(--text-secondary)]">{desc}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 const VALID_EVENTS = ["booking.created", "booking.confirmed", "booking.cancelled", "link.used", "meet.link.created"];
 
 export default function WebhooksPage() {
-  const [activeTab, setActiveTab] = useState<"webhooks" | "apikeys">("webhooks");
+  const [activeTab, setActiveTab] = useState<"webhooks" | "apikeys" | "apidocs">("webhooks");
   const [webhooks, setWebhooks] = useState<WebhookRow[]>([]);
   const [logs, setLogs] = useState<WebhookLog[]>([]);
   const [apiKeys, setApiKeys] = useState<APIKeyRow[]>([]);
@@ -94,8 +234,8 @@ export default function WebhooksPage() {
   return (
     <>
       <SectionHeader
-        title="Developer Settings"
-        subtitle="Manage Webhooks and API Keys for programmatic access"
+        title="API & Webhooks"
+        subtitle="Manage Webhooks, API Keys, and explore the public API"
         action={
           <div className="flex bg-[var(--bg-card-hover)] rounded-lg p-1 ring-1 ring-[var(--border)]">
             <button
@@ -117,6 +257,16 @@ export default function WebhooksPage() {
               }`}
             >
               API Keys
+            </button>
+            <button
+              onClick={() => setActiveTab("apidocs")}
+              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                activeTab === "apidocs"
+                  ? "bg-brand-gradient text-white shadow-sm"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              }`}
+            >
+              API Docs
             </button>
           </div>
         }
@@ -219,6 +369,9 @@ export default function WebhooksPage() {
             </div>
           )}
         </div>
+      ) : activeTab === "apidocs" ? (
+        /* ================= API DOCS TAB ================= */
+        <ApiDocsTab />
       ) : (
         /* ================= API KEYS TAB ================= */
         <div className="space-y-6">
