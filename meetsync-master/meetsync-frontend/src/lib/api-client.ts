@@ -66,7 +66,18 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 // ── Auth ───────────────────────────────────────────────
 export const api = {
   auth: {
-    status: () => request<{ connected: boolean; user_id: string | null }>("/auth/status/"),
+    status: () =>
+      request<AuthStatus>("/auth/status/"),
+    signup: (email: string, password: string) =>
+      request<{ status: string; user_id: string; token: string }>("/auth/signup/", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      }),
+    login: (email: string, password: string) =>
+      request<{ status: string; user_id: string; token: string }>("/auth/login/", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      }),
     disconnect: () => request<{ status: string }>("/auth/disconnect/", { method: "DELETE" }),
     logout: async () => {
       await request<{ status: string }>("/auth/logout/", { method: "POST" });
@@ -74,7 +85,15 @@ export const api = {
         localStorage.removeItem("meetsync_token");
       }
     },
-    googleLoginUrl: () => `${BASE_URL}/auth/google/`,
+    googleLoginUrl: (mode: "signin" | "connect" = "signin") =>
+      `${BASE_URL}/auth/google/?mode=${mode}`,
+    listCalendars: () =>
+      request<{ calendars: CalendarOption[] }>("/auth/calendars/"),
+    setCalendarPreference: (calendar_id: string) =>
+      request<{ status: string; preferred_calendar_id: string }>("/auth/calendar-preference/", {
+        method: "PUT",
+        body: JSON.stringify({ calendar_id }),
+      }),
   },
 
   // ── Availability ───────────────────────────────────────
@@ -177,6 +196,20 @@ export const api = {
 };
 
 // ── Types ─────────────────────────────────────────────
+
+export interface AuthStatus {
+  connected: boolean;
+  user_id: string | null;
+  email?: string | null;
+  calendar_connected: boolean;
+  preferred_calendar_id?: string | null;
+}
+
+export interface CalendarOption {
+  id: string;
+  summary: string;
+  primary: boolean;
+}
 
 // Custom field for link questions
 export interface CustomField {

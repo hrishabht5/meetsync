@@ -37,9 +37,15 @@ def _unique_username(base: str) -> str:
 
 def ensure_profile_exists(user_id: str, email: str) -> dict:
     """
-    Called once per OAuth login.  Creates the profile row if it does not exist.
+    Called once per OAuth login or sign-up.  Creates the profile row if it does not exist.
+    Also upserts into the users identity table.
     Uses the email prefix (before @) as the initial username, de-duplicated.
     """
+    # Upsert into users identity table (no-op if already exists)
+    supabase.table("users").upsert(
+        {"id": user_id, "email": email}, on_conflict="id"
+    ).execute()
+
     result = supabase.table("user_profiles").select("*").eq("user_id", user_id).execute()
     if result.data:
         return result.data[0]

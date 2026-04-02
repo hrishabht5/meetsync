@@ -38,7 +38,7 @@ CALENDAR_API     = "https://www.googleapis.com/calendar/v3"
 
 # ── OAuth2 ────────────────────────────────────────────────
 
-def get_auth_url() -> str:
+def get_auth_url(state: str = "signin") -> str:
     """Return the Google OAuth2 consent screen URL."""
     params = {
         "client_id":     GOOGLE_CLIENT_ID,
@@ -47,6 +47,7 @@ def get_auth_url() -> str:
         "scope":         " ".join(SCOPES),
         "access_type":   "offline",   # request refresh_token
         "prompt":        "consent",   # force consent so we always get refresh_token
+        "state":         state,
     }
     query = urlencode(params)
     return f"{GOOGLE_AUTH_URL}?{query}"
@@ -122,7 +123,31 @@ def store_tokens(user_id: str, token_data: dict):
 
 # ── Calendar Events ───────────────────────────────────────
 
-async def get_google_busy_times(user_id: str, start_dt: datetime, end_dt: datetime) -> list[dict]:
+async def list_calendars(user_id: str) -> list[dict]:
+    """
+    Return all calendars the user has access to.
+    Used to populate the calendar picker in Settings.
+    """
+    access_token = await get_valid_access_token(user_id)
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(
+            f"{CALENDAR_API}/users/me/calendarList",
+            headers={"Authorization": f"Bearer {access_token}"},
+            params={"minAccessRole": "writer"},
+        )
+    resp.raise_for_status()
+    items = resp.json().get("items", [])
+    return [
+        {
+            "id":      c["id"],
+            "summary": c.get("summary", c["id"]),
+            "primary": c.get("primary", False),
+        }
+        for c in items
+    ]
+
+
+async def get_google_busy_times(user_id: str, start_dt: datetime, end_dt: datetime, calendar_id: str = "primary") -> list[dict]:
     """
     Fetch the user's Free/Busy schedule from Google Calendar.
     Returns a list of dicts with 'start' and 'end' datetimes.
@@ -142,7 +167,7 @@ async def get_google_busy_times(user_id: str, start_dt: datetime, end_dt: dateti
         "timeMin": start_dt.isoformat(),
         "timeMax": end_dt.isoformat(),
         "timeZone": "UTC",
-        "items": [{"id": "primary"}]
+        "items": [{"id": calendar_id}]
     }
 
     async with httpx.AsyncClient() as client:
@@ -153,9 +178,9 @@ async def get_google_busy_times(user_id: str, start_dt: datetime, end_dt: dateti
         )
     if resp.status_code != 200:
         return []
-        
+
     data = resp.json()
-    busy_list = data.get("calendars", {}).get("primary", {}).get("busy", [])
+    busy_list = data.get("calendars", {}).get(calendar_id, {}).get("busy", [])
     result = []
     for b in busy_list:
         start = datetime.fromisoformat(b["start"].replace("Z", "+00:00"))
@@ -177,6 +202,7 @@ async def create_meet_event(
     start_dt:     datetime,
     duration_min: int = 30,
     description:  Optional[str] = None,
+    calendar_id:  str = "primary",
 ) -> dict:
     """
     Create a Google Calendar event with a Google Meet link.
@@ -224,7 +250,7 @@ async def create_meet_event(
 
     async with httpx.AsyncClient() as client:
         resp = await client.post(
-            f"{CALENDAR_API}/calendars/primary/events",
+            f"{CALENDAR_API}/calendars/{calendar_id}/events",
             headers={"Authorization": f"Bearer {access_token}"},
             params={"conferenceDataVersion": 1},
             json=event_body,
@@ -246,12 +272,12 @@ async def create_meet_event(
     }
 
 
-async def delete_calendar_event(user_id: str, event_id: str):
+async def delete_calendar_event(user_id: str, event_id: str, calendar_id: str = "primary"):
     """Cancel/delete a Google Calendar event."""
     access_token = await get_valid_access_token(user_id)
     async with httpx.AsyncClient() as client:
         resp = await client.delete(
-            f"{CALENDAR_API}/calendars/primary/events/{event_id}",
+            f"{CALENDAR_API}/calendars/{calendar_id}/events/{event_id}",
             headers={"Authorization": f"Bearer {access_token}"},
             params={"sendUpdates": "all"},
         )

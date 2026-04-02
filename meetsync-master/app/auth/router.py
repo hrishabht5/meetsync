@@ -1,16 +1,27 @@
 """
 Auth router
 -----------
-GET /auth/google          → redirect to Google consent screen
-GET /auth/callback        → handle OAuth2 code, store tokens, redirect to frontend
-GET /auth/status          → check if Google account is connected
-DELETE /auth/disconnect   → remove stored Google tokens
+GET  /auth/google?mode=signin   → redirect to Google (identity only, no calendar tokens)
+GET  /auth/google?mode=connect  → redirect to Google (calendar connect for logged-in user)
+GET  /auth/callback             → handle OAuth2 code; behaviour depends on mode in state
+POST /auth/signup               → email + password account creation
+POST /auth/login                → email + password login
+GET  /auth/status               → account info + whether calendar is connected
+GET  /auth/calendars            → list user's Google Calendars (requires calendar connected)
+PUT  /auth/calendar-preference  → set preferred calendar for new events
+DELETE /auth/disconnect         → remove stored Google tokens (unlinks calendar)
+POST /auth/logout               → clear session cookie
+DELETE /auth/account            → GDPR account deletion
 """
 
+import uuid
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse
 import httpx
+from passlib.context import CryptContext
+
 from app.core.config import supabase, FRONTEND_URL
+from app.core.schemas import SignupRequest, LoginRequest, CalendarPreferenceRequest
 from app.integrations import google_calendar
 from app.auth.middleware import (
     get_current_user_id,
@@ -18,21 +29,77 @@ from app.auth.middleware import (
 )
 
 router = APIRouter()
-HOST_USER_ID = "default_host"
 
+_pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+# ── Helpers ───────────────────────────────────────────────
+
+def _set_session_cookie(response, user_id: str, secure: bool):
+    samesite = "none" if secure else "lax"
+    response.set_cookie(
+        key="meetsync_user",
+        value=make_user_session_cookie_value(user_id),
+        httponly=True,
+        secure=secure,
+        samesite=samesite,
+        path="/",
+        max_age=60 * 60 * 24 * 30,  # 30 days
+    )
+
+
+def _clear_session_cookie(response, secure: bool):
+    samesite = "none" if secure else "lax"
+    response.delete_cookie(key="meetsync_user", path="/", secure=secure, samesite=samesite)
+
+
+def _is_secure(request: Request) -> bool:
+    forwarded_proto = request.headers.get("x-forwarded-proto", "").lower().strip()
+    return forwarded_proto == "https" or request.url.scheme == "https"
+
+
+def _upsert_user(user_id: str, email: str, password_hash: str = None):
+    """Create or update a row in the users table."""
+    row = {"id": user_id, "email": email}
+    if password_hash:
+        row["password_hash"] = password_hash
+    supabase.table("users").upsert(row, on_conflict="id").execute()
+
+
+def _ensure_profile(user_id: str, email: str):
+    try:
+        from app.profiles.service import ensure_profile_exists
+        ensure_profile_exists(user_id, email)
+    except Exception as e:
+        print(f"DEBUG: Could not create profile for {user_id}: {e}")
+
+
+# ── Google OAuth ──────────────────────────────────────────
 
 @router.get("/google")
-def google_auth():
-    """Redirect user to Google OAuth2 consent screen."""
-    auth_url = google_calendar.get_auth_url()
+def google_auth(request: Request, mode: str = "signin"):
+    """
+    Redirect to Google consent screen.
+    mode=signin  → identity only (login / sign-up), no calendar tokens stored
+    mode=connect → calendar connect for an already-logged-in user
+    """
+    if mode == "connect":
+        # Must be logged in to connect a calendar
+        try:
+            get_current_user_id(request)
+        except Exception:
+            raise HTTPException(status_code=401, detail="Must be logged in to connect Google Calendar")
+
+    auth_url = google_calendar.get_auth_url(state=mode)
     return RedirectResponse(url=auth_url)
 
 
 @router.get("/callback")
-async def google_callback(request: Request, code: str = None, error: str = None):
+async def google_callback(request: Request, code: str = None, error: str = None, state: str = "signin"):
     """
-    Google redirects here after user grants permission.
-    Exchange code for tokens and redirect back to frontend.
+    Google redirects here after the user grants permission.
+    state == 'signin'  → upsert users row, set session, do NOT store calendar tokens
+    state == 'connect' → store calendar tokens for the logged-in user, redirect to settings
     """
     if error or not code:
         return RedirectResponse(url=f"{FRONTEND_URL}?auth_error={error or 'no_code'}")
@@ -41,10 +108,8 @@ async def google_callback(request: Request, code: str = None, error: str = None)
         token_data = await google_calendar.exchange_code(code)
         access_token = token_data.get("access_token")
         if not access_token:
-            return RedirectResponse(url=f"{FRONTEND_URL}/dashboard?auth_error=missing_access_token")
+            return RedirectResponse(url=f"{FRONTEND_URL}?auth_error=missing_access_token")
 
-        # Fetch the Google user identity so we can create per-user calendars/tokens.
-        # (We use the stable `sub` as user_id.)
         async with httpx.AsyncClient() as client:
             resp = await client.get(
                 "https://www.googleapis.com/oauth2/v1/userinfo?alt=json",
@@ -53,96 +118,161 @@ async def google_callback(request: Request, code: str = None, error: str = None)
             resp.raise_for_status()
             user_info = resp.json()
 
-        user_id = user_info.get("sub") or user_info.get("id") or user_info.get("email")
-        if not user_id:
-            return RedirectResponse(url=f"{FRONTEND_URL}/dashboard?auth_error=missing_user_identity")
+        google_sub = user_info.get("sub") or user_info.get("id") or user_info.get("email")
+        email = user_info.get("email", "")
+        if not google_sub:
+            return RedirectResponse(url=f"{FRONTEND_URL}?auth_error=missing_user_identity")
 
-        google_calendar.store_tokens(user_id, token_data)
+        secure = _is_secure(request)
 
-        # Auto-create profile on first login (idempotent)
-        try:
-            from app.profiles.service import ensure_profile_exists
-            ensure_profile_exists(user_id, user_info.get("email", ""))
-        except Exception as profile_err:
-            print(f"DEBUG: Could not create profile for {user_id}: {profile_err}")
+        if state == "connect":
+            # ── Calendar connect ──────────────────────────────────
+            # User is already logged in; store tokens against their session user_id
+            try:
+                session_user_id = get_current_user_id(request)
+            except Exception:
+                return RedirectResponse(url=f"{FRONTEND_URL}/dashboard/settings?auth_error=not_logged_in")
 
-        # Token for URL-based auth (backup for 3rd party cookie blocking)
-        token = make_user_session_cookie_value(user_id)
-        redirect = RedirectResponse(url=f"{FRONTEND_URL}/dashboard?auth=success&token={token}")
+            google_calendar.store_tokens(session_user_id, token_data)
+            # Update the users row with the real email if we had a placeholder
+            _upsert_user(session_user_id, email)
+            redirect = RedirectResponse(url=f"{FRONTEND_URL}/dashboard/settings?calendar=connected")
+            return redirect
 
-        # Secure cookie setup:
-        # - On HTTPS: SameSite=None + Secure (works for cross-origin frontend/backend)
-        # - On HTTP (local dev): SameSite=Lax + non-secure
-        # When deployed behind a reverse proxy, `request.url.scheme` can be "http"
-        # even if the external scheme is HTTPS. Prefer X-Forwarded-Proto when present.
-        forwarded_proto = request.headers.get("x-forwarded-proto", "").lower().strip()
-        secure = forwarded_proto == "https" or request.url.scheme == "https"
-        samesite = "none" if secure else "lax"
-        print(f"DEBUG: Setting cookie for user {user_id}. Secure={secure}, SameSite={samesite}")
-        
-        redirect.set_cookie(
-            key="meetsync_user",
-            value=make_user_session_cookie_value(user_id),
-            httponly=True,
-            secure=secure,
-            samesite=samesite,
-            path="/",
-            max_age=60 * 60 * 24 * 30,  # 30 days
-        )
-        return redirect
+        else:
+            # ── Sign-in / Sign-up ─────────────────────────────────
+            # Use google_sub as user_id (consistent with existing data)
+            _upsert_user(google_sub, email)
+            _ensure_profile(google_sub, email)
+
+            token = make_user_session_cookie_value(google_sub)
+            redirect = RedirectResponse(url=f"{FRONTEND_URL}/dashboard?auth=success&token={token}")
+            _set_session_cookie(redirect, google_sub, secure)
+            print(f"DEBUG: Google sign-in for {google_sub}. Secure={secure}")
+            return redirect
+
     except Exception as e:
-        print(f"DEBUG: Auth callback error: {str(e)}")
-        return RedirectResponse(url=f"{FRONTEND_URL}/dashboard?auth_error=token_exchange_failed")
+        print(f"DEBUG: Auth callback error: {e}")
+        return RedirectResponse(url=f"{FRONTEND_URL}?auth_error=token_exchange_failed")
 
+
+# ── Email / Password ──────────────────────────────────────
+
+@router.post("/signup")
+async def signup(request: Request, payload: SignupRequest):
+    """Create a new account with email + password. Session is set immediately."""
+    # Check if email already exists
+    existing = supabase.table("users").select("id").eq("email", payload.email).execute()
+    if existing.data:
+        raise HTTPException(status_code=409, detail="An account with this email already exists.")
+
+    user_id = "usr_" + uuid.uuid4().hex[:16]
+    password_hash = _pwd_ctx.hash(payload.password)
+    _upsert_user(user_id, payload.email, password_hash)
+    _ensure_profile(user_id, payload.email)
+
+    secure = _is_secure(request)
+    token = make_user_session_cookie_value(user_id)
+    response = JSONResponse(content={"status": "created", "user_id": user_id, "token": token})
+    _set_session_cookie(response, user_id, secure)
+    return response
+
+
+@router.post("/login")
+async def login(request: Request, payload: LoginRequest):
+    """Log in with email + password."""
+    result = supabase.table("users").select("id,password_hash").eq("email", payload.email).execute()
+    if not result.data:
+        raise HTTPException(status_code=401, detail="Invalid email or password.")
+
+    user = result.data[0]
+    if not user.get("password_hash"):
+        raise HTTPException(status_code=401, detail="This account uses Google Sign-In. Please log in with Google.")
+
+    if not _pwd_ctx.verify(payload.password, user["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid email or password.")
+
+    secure = _is_secure(request)
+    token = make_user_session_cookie_value(user["id"])
+    response = JSONResponse(content={"status": "ok", "user_id": user["id"], "token": token})
+    _set_session_cookie(response, user["id"], secure)
+    return response
+
+
+# ── Calendar management ───────────────────────────────────
 
 @router.get("/status")
 def auth_status(request: Request):
-    """Check whether a Google account is connected."""
+    """Account info + whether Google Calendar is connected."""
     user_id = get_current_user_id(request)
-    result = supabase.table("google_tokens").select("user_id,expires_at").eq("user_id", user_id).execute()
-    connected = bool(result.data)
-    return {"connected": connected, "user_id": user_id if connected else None}
+
+    user_row = supabase.table("users").select("email").eq("id", user_id).execute()
+    email = user_row.data[0]["email"] if user_row.data else None
+
+    cal_row = supabase.table("google_tokens").select("user_id,preferred_calendar_id").eq("user_id", user_id).execute()
+    calendar_connected = bool(cal_row.data)
+    preferred_calendar_id = cal_row.data[0].get("preferred_calendar_id", "primary") if cal_row.data else None
+
+    return {
+        "connected": True,
+        "user_id": user_id,
+        "email": email,
+        "calendar_connected": calendar_connected,
+        "preferred_calendar_id": preferred_calendar_id,
+    }
+
+
+@router.get("/calendars")
+async def list_calendars(request: Request):
+    """List all Google Calendars the user has write access to."""
+    user_id = get_current_user_id(request)
+    try:
+        calendars = await google_calendar.list_calendars(user_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"calendars": calendars}
+
+
+@router.put("/calendar-preference")
+def set_calendar_preference(request: Request, payload: CalendarPreferenceRequest):
+    """Save the user's preferred calendar for new meeting events."""
+    user_id = get_current_user_id(request)
+    result = supabase.table("google_tokens").select("user_id").eq("user_id", user_id).execute()
+    if not result.data:
+        raise HTTPException(status_code=400, detail="Google Calendar is not connected.")
+    supabase.table("google_tokens").update(
+        {"preferred_calendar_id": payload.calendar_id}
+    ).eq("user_id", user_id).execute()
+    return {"status": "ok", "preferred_calendar_id": payload.calendar_id}
 
 
 @router.delete("/disconnect")
 def disconnect_google(request: Request):
-    """Remove stored Google tokens (user must re-authenticate to book again)."""
+    """Remove stored Google tokens — unlinks Google Calendar from this account."""
     user_id = get_current_user_id(request)
     supabase.table("google_tokens").delete().eq("user_id", user_id).execute()
     return {"status": "disconnected"}
 
 
+# ── Session management ────────────────────────────────────
+
 @router.post("/logout/")
 async def logout(request: Request):
-    """Clear session cookie and log user out."""
+    """Clear session cookie."""
+    secure = _is_secure(request)
     response = JSONResponse(content={"status": "logged_out"})
-    
-    # Clear the session cookie
-    forwarded_proto = request.headers.get("x-forwarded-proto", "").lower().strip()
-    secure = forwarded_proto == "https" or request.url.scheme == "https"
-    samesite = "none" if secure else "lax"
-    
-    response.delete_cookie(
-        key="meetsync_user",
-        path="/",
-        secure=secure,
-        samesite=samesite,
-    )
+    _clear_session_cookie(response, secure)
     return response
 
 
 @router.delete("/account")
 async def delete_account(request: Request):
-    """
-    Permanently delete the host's account and all associated data,
-    compliant with GDPR Right to Erasure.
-    """
+    """GDPR Right to Erasure — wipes all user data and clears session."""
     user_id = get_current_user_id(request)
     if not user_id:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
-    # Wipe all identifiable user data from respective tables
-    # Order matters due to foreign key constraints (bookings link to one_time_links)
+    # Order matters: bookings → links → everything else → identity tables
     supabase.table("bookings").delete().eq("user_id", user_id).execute()
     supabase.table("one_time_links").delete().eq("user_id", user_id).execute()
     supabase.table("availability_overrides").delete().eq("user_id", user_id).execute()
@@ -150,12 +280,10 @@ async def delete_account(request: Request):
     supabase.table("api_keys").delete().eq("user_id", user_id).execute()
     supabase.table("webhooks").delete().eq("user_id", user_id).execute()
     supabase.table("google_tokens").delete().eq("user_id", user_id).execute()
-    
-    # Generate logout response explicitly since data is gone
+    supabase.table("user_profiles").delete().eq("user_id", user_id).execute()
+    supabase.table("users").delete().eq("id", user_id).execute()
+
+    secure = _is_secure(request)
     response = JSONResponse(content={"status": "account_deleted"})
-    forwarded_proto = request.headers.get("x-forwarded-proto", "").lower().strip()
-    secure = forwarded_proto == "https" or request.url.scheme == "https"
-    samesite = "none" if secure else "lax"
-    response.delete_cookie("meetsync_user", path="/", secure=secure, samesite=samesite)
-    
+    _clear_session_cookie(response, secure)
     return response

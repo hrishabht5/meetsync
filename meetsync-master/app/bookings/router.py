@@ -78,6 +78,16 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
     }
     duration = duration_map.get(payload.event_type, 30)
 
+    # Fetch preferred calendar for this host (falls back to "primary")
+    cal_row = supabase.table("google_tokens") \
+        .select("preferred_calendar_id") \
+        .eq("user_id", host_user_id) \
+        .execute()
+    preferred_calendar_id = (
+        cal_row.data[0].get("preferred_calendar_id") or "primary"
+        if cal_row.data else "primary"
+    )
+
     try:
         meet_data = await google_calendar.create_meet_event(
             user_id      = host_user_id,
@@ -87,6 +97,7 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
             start_dt     = payload.scheduled_at,
             duration_min = duration,
             description  = payload.notes,
+            calendar_id  = preferred_calendar_id,
         )
     except ValueError as e:
         raise HTTPException(status_code=503, detail=str(e))
@@ -172,7 +183,17 @@ async def cancel_booking(request: Request, booking_id: str, payload: BookingCanc
     # Delete Google Calendar event
     if booking.get("calendar_event_id"):
         try:
-            await google_calendar.delete_calendar_event(user_id, booking["calendar_event_id"])
+            cal_row = supabase.table("google_tokens") \
+                .select("preferred_calendar_id") \
+                .eq("user_id", user_id) \
+                .execute()
+            cancel_calendar_id = (
+                cal_row.data[0].get("preferred_calendar_id") or "primary"
+                if cal_row.data else "primary"
+            )
+            await google_calendar.delete_calendar_event(
+                user_id, booking["calendar_event_id"], cancel_calendar_id
+            )
         except Exception:
             pass  # Don't block cancellation if Google API fails
 

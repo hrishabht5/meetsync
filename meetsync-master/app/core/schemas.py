@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional, List, Any
+from typing import Optional, List
 from datetime import datetime
 from enum import Enum
 
@@ -151,3 +151,17 @@ class GoogleAuthURL(BaseModel):
 class TokenResponse(BaseModel):
     access_token:  str
     token_type:    str = "bearer"
+
+
+class SignupRequest(BaseModel):
+    email:    EmailStr
+    password: str = Field(min_length=8)
+
+
+class LoginRequest(BaseModel):
+    email:    EmailStr
+    password: str
+
+
+class CalendarPreferenceRequest(BaseModel):
+    calendar_id: str
