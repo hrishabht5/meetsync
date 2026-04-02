@@ -140,14 +140,21 @@ async def google_callback(request: Request, code: str = None, error: str = None,
 
         else:
             # ── Sign-in / Sign-up ─────────────────────────────────
-            # Use google_sub as user_id (consistent with existing data)
-            _upsert_user(google_sub, email)
-            _ensure_profile(google_sub, email)
+            # If this Google email already belongs to an email/password account,
+            # log in as that existing account instead of creating a duplicate.
+            existing = supabase.table("users").select("id").eq("email", email).execute()
+            if existing.data:
+                actual_user_id = existing.data[0]["id"]
+            else:
+                actual_user_id = google_sub
+                _upsert_user(actual_user_id, email)
 
-            token = make_user_session_cookie_value(google_sub)
+            _ensure_profile(actual_user_id, email)
+
+            token = make_user_session_cookie_value(actual_user_id)
             redirect = RedirectResponse(url=f"{FRONTEND_URL}/dashboard?auth=success&token={token}")
-            _set_session_cookie(redirect, google_sub, secure)
-            print(f"DEBUG: Google sign-in for {google_sub}. Secure={secure}")
+            _set_session_cookie(redirect, actual_user_id, secure)
+            print(f"DEBUG: Google sign-in for {actual_user_id}. Secure={secure}")
             return redirect
 
     except Exception as e:
