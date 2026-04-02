@@ -101,15 +101,24 @@ def upsert_profile(user_id: str, display_name: str | None, bio: str | None, user
 
 # ── Permanent Links ───────────────────────────────────────────────────────────
 
-def list_permanent_links(user_id: str) -> list[dict]:
-    result = (
+def list_permanent_links(
+    user_id: str,
+    page: int = 1,
+    limit: int = 10,
+    search: str = "",
+) -> dict:
+    """List permanent links with pagination and optional search."""
+    offset = (page - 1) * limit
+    query = (
         supabase.table("permanent_links")
-        .select("*")
+        .select("*", count="exact")
         .eq("user_id", user_id)
-        .order("created_at", desc=True)
-        .execute()
     )
-    return result.data or []
+    if search:
+        query = query.or_(f"slug.ilike.%{search}%,custom_title.ilike.%{search}%")
+    result = query.order("created_at", desc=True).range(offset, offset + limit - 1).execute()
+    total = result.count or 0
+    return {"items": result.data or [], "total": total, "page": page, "has_more": offset + limit < total}
 
 
 def create_permanent_link(user_id: str, slug: str, event_type: str, custom_fields: list, custom_title: str = None) -> dict:

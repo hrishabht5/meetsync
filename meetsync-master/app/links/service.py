@@ -112,12 +112,35 @@ def revoke_otl(token: str):
     supabase.table("one_time_links").update({"status": OTLStatus.revoked}).eq("id", token).execute()
 
 
-def list_otls(user_id: str, status_filter: Optional[str] = None) -> list:
-    """List all OTLs for a user, optionally filtered by status."""
-    query = supabase.table("one_time_links").select("*").eq("user_id", user_id)
+def list_otls(
+    user_id: str,
+    status_filter: Optional[str] = None,
+    page: int = 1,
+    limit: int = 10,
+    search: str = "",
+) -> dict:
+    """List OTLs for a user with pagination and optional search/status filter."""
+    offset = (page - 1) * limit
+    query = supabase.table("one_time_links").select("*", count="exact").eq("user_id", user_id)
     if status_filter:
         query = query.eq("status", status_filter)
-    result = query.order("created_at", desc=True).execute()
+    if search:
+        query = query.or_(f"id.ilike.%{search}%,event_type.ilike.%{search}%,custom_title.ilike.%{search}%")
+    result = query.order("created_at", desc=True).range(offset, offset + limit - 1).execute()
+    total = result.count or 0
     for row in result.data:
         row["booking_url"] = f"{FRONTEND_URL}/book/{row['id']}"
-    return result.data
+    return {"items": result.data, "total": total, "page": page, "has_more": offset + limit < total}
+
+
+def delete_otl(token: str, user_id: str):
+    """Hard-delete a non-active OTL. Raises ValueError if active or not found/owned."""
+    result = supabase.table("one_time_links").select("status,user_id").eq("id", token).execute()
+    if not result.data:
+        raise ValueError("Link not found.")
+    row = result.data[0]
+    if row.get("user_id") != user_id:
+        raise ValueError("Forbidden.")
+    if row["status"] == OTLStatus.active:
+        raise ValueError("Cannot delete an active link. Revoke it first.")
+    supabase.table("one_time_links").delete().eq("id", token).execute()

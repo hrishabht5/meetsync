@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   api,
   OTLRow,
@@ -106,7 +106,15 @@ function FieldBuilder({
 
 // ── One-Time Links Tab ────────────────────────────────────────────────────────
 function OneTimeLinksTab() {
-  const [links, setLinks] = useState<OTLRow[]>([]);
+  const [items, setItems] = useState<OTLRow[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [total, setTotal] = useState(0);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [loadingMore, setLoadingMore] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [eventType, setEventType] = useState<string>(EVENT_TYPES[1]);
@@ -117,18 +125,45 @@ function OneTimeLinksTab() {
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [showFieldBuilder, setShowFieldBuilder] = useState(false);
 
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const fetchPage = async (p: number, s: string, sf: string, append = false) => {
+    if (!append) setLoading(true); else setLoadingMore(true);
+    try {
+      const res = await api.links.list({ page: p, limit: 10, search: s, status: sf || undefined });
+      setItems((prev) => append ? [...prev, ...res.items] : res.items);
+      setTotal(res.total);
+      setHasMore(res.has_more);
+      setPage(p);
+    } catch (e: unknown) { setError(errMsg(e)); }
+    finally { if (!append) setLoading(false); else setLoadingMore(false); }
+  };
+
   useEffect(() => {
-    Promise.all([api.links.list(), api.availability.getSettings()])
-      .then(([fetchedLinks, settings]) => {
-        setLinks(fetchedLinks);
+    Promise.all([fetchPage(1, "", "", false), api.availability.getSettings()])
+      .then(([, settings]) => {
         if (settings.default_questions && settings.default_questions.length > 0) {
           setCustomFields(settings.default_questions);
           setShowFieldBuilder(true);
         }
       })
-      .catch((e: unknown) => setError(errMsg(e)))
-      .finally(() => setLoading(false));
+      .catch((e: unknown) => setError(errMsg(e)));
   }, []);
+
+  const handleSearchChange = (val: string) => {
+    setSearch(val);
+    setSelected(new Set());
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => fetchPage(1, val, statusFilter, false), 300);
+  };
+
+  const handleStatusChange = (val: string) => {
+    setStatusFilter(val);
+    setSelected(new Set());
+    fetchPage(1, search, val, false);
+  };
+
+  const handleLoadMore = () => fetchPage(page + 1, search, statusFilter, true);
 
   const handleCreate = async () => {
     for (const f of customFields) {
@@ -139,16 +174,16 @@ function OneTimeLinksTab() {
     }
     setCreating(true);
     try {
-      const link = await api.links.create({
+      await api.links.create({
         event_type: eventType,
         expires_in: expires,
         custom_fields: customFields.length > 0 ? customFields : undefined,
         custom_title: meetingTitle.trim() || undefined,
       });
-      setLinks((l) => [link, ...l]);
       setMeetingTitle("");
       setCustomFields([]);
       setShowFieldBuilder(false);
+      fetchPage(1, search, statusFilter, false);
     } catch (e: unknown) { alert(errMsg(e)); }
     finally { setCreating(false); }
   };
@@ -157,9 +192,48 @@ function OneTimeLinksTab() {
     if (!confirm("Revoke this link?")) return;
     try {
       await api.links.revoke(token);
-      setLinks((l) => l.map((x) => x.id === token ? { ...x, status: "revoked" as const } : x));
+      setItems((l) => l.map((x) => x.id === token ? { ...x, status: "revoked" as const } : x));
+      setSelected((s) => { const n = new Set(s); n.delete(token); return n; });
     } catch (e: unknown) { alert(errMsg(e)); }
   };
+
+  const handleDelete = async (token: string) => {
+    if (!confirm("Permanently delete this link? This cannot be undone.")) return;
+    try {
+      await api.links.deletePermanently(token);
+      setItems((l) => l.filter((x) => x.id !== token));
+      setTotal((t) => t - 1);
+      setSelected((s) => { const n = new Set(s); n.delete(token); return n; });
+    } catch (e: unknown) { alert(errMsg(e)); }
+  };
+
+  const handleBulkRevoke = async () => {
+    const tokens = Array.from(selected);
+    if (!confirm(`Revoke ${tokens.length} link(s)?`)) return;
+    try {
+      const res = await api.links.bulkAction(tokens, "revoke");
+      setItems((l) => l.map((x) => tokens.includes(x.id) ? { ...x, status: "revoked" as const } : x));
+      setSelected(new Set());
+      if (res.skipped > 0) alert(`${res.succeeded} revoked, ${res.skipped} skipped.`);
+    } catch (e: unknown) { alert(errMsg(e)); }
+  };
+
+  const handleBulkDelete = async () => {
+    const tokens = Array.from(selected);
+    if (!confirm(`Permanently delete ${tokens.length} link(s)?`)) return;
+    try {
+      await api.links.bulkAction(tokens, "delete");
+      fetchPage(1, search, statusFilter, false);
+      setSelected(new Set());
+    } catch (e: unknown) { alert(errMsg(e)); }
+  };
+
+  const toggleSelect = (id: string) =>
+    setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
+  const allSelected = items.length > 0 && items.every((x) => selected.has(x.id));
+  const toggleAll = () =>
+    setSelected(allSelected ? new Set() : new Set(items.map((x) => x.id)));
 
   const copyLink = (url: string, id: string) => {
     navigator.clipboard.writeText(url);
@@ -172,6 +246,7 @@ function OneTimeLinksTab() {
 
   return (
     <div className="flex flex-col gap-5">
+      {/* Create form */}
       <Card className="p-5">
         <p className="text-sm font-semibold text-[var(--text-primary)] mb-4">Create One-Time Link</p>
         <div className="mb-4">
@@ -226,20 +301,60 @@ function OneTimeLinksTab() {
         </div>
       </Card>
 
-      {links.length === 0 ? (
-        <EmptyState icon="🔗" title="No links yet" subtitle="Generate a one-time link to share with guests" />
+      {/* Search + filter bar */}
+      <div className="flex flex-wrap gap-3 items-center">
+        <input
+          placeholder="Search by ID, type or title…"
+          value={search}
+          onChange={(e) => handleSearchChange(e.target.value)}
+          className="flex-1 min-w-[180px] bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
+        />
+        <select
+          value={statusFilter}
+          onChange={(e) => handleStatusChange(e.target.value)}
+          className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
+        >
+          <option value="">All statuses</option>
+          <option value="active">Active</option>
+          <option value="used">Used</option>
+          <option value="revoked">Revoked</option>
+          <option value="expired">Expired</option>
+        </select>
+        <span className="text-xs text-[var(--text-secondary)]">{total} total</span>
+      </div>
+
+      {/* List */}
+      {items.length === 0 ? (
+        <EmptyState icon="🔗" title="No links found" subtitle={search || statusFilter ? "Try adjusting your filters" : "Generate a one-time link to share with guests"} />
       ) : (
         <div className="flex flex-col gap-3">
-          {links.map((lk) => (
+          {/* Select-all header */}
+          <div className="flex items-center gap-3 px-1">
+            <input
+              type="checkbox"
+              checked={allSelected}
+              onChange={toggleAll}
+              className="rounded accent-[var(--accent)] w-4 h-4 cursor-pointer"
+            />
+            <span className="text-xs text-[var(--text-secondary)]">Select all on this page</span>
+          </div>
+
+          {items.map((lk) => (
             <Card key={lk.id} className="p-5">
-              <div className="flex items-center justify-between gap-4 flex-wrap">
-                <div className="flex flex-col gap-1.5 min-w-0">
+              <div className="flex items-center gap-3 flex-wrap">
+                <input
+                  type="checkbox"
+                  checked={selected.has(lk.id)}
+                  onChange={() => toggleSelect(lk.id)}
+                  className="rounded accent-[var(--accent)] w-4 h-4 cursor-pointer flex-shrink-0"
+                />
+                <div className="flex flex-col gap-1.5 min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-mono text-sm text-[var(--text-primary)] truncate">{lk.id}</span>
                     <Badge status={lk.status}>{lk.status}</Badge>
                     {lk.custom_fields && lk.custom_fields.length > 0 && (
                       <span className="text-xs bg-purple-500/15 text-purple-400 ring-1 ring-purple-500/30 px-2 py-0.5 rounded-full">
-                        {lk.custom_fields.length} custom Q{lk.custom_fields.length > 1 ? "s" : ""}
+                        {lk.custom_fields.length} Q{lk.custom_fields.length > 1 ? "s" : ""}
                       </span>
                     )}
                   </div>
@@ -251,16 +366,40 @@ function OneTimeLinksTab() {
                 <div className="flex gap-2 items-center flex-shrink-0">
                   {lk.booking_url && (
                     <Button variant="secondary" size="sm" onClick={() => copyLink(lk.booking_url, lk.id)}>
-                      {copied === lk.id ? "✓ Copied!" : "Copy Link"}
+                      {copied === lk.id ? "✓ Copied!" : "Copy"}
                     </Button>
                   )}
                   {lk.status === "active" && (
                     <Button variant="danger" size="sm" onClick={() => handleRevoke(lk.id)}>Revoke</Button>
                   )}
+                  {lk.status !== "active" && (
+                    <Button variant="danger" size="sm" onClick={() => handleDelete(lk.id)}>Delete</Button>
+                  )}
                 </div>
               </div>
             </Card>
           ))}
+
+          {hasMore && (
+            <div className="flex justify-center pt-2">
+              <Button variant="secondary" onClick={handleLoadMore} loading={loadingMore}>
+                Load More
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Bulk action bar */}
+      {selected.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 bg-[var(--bg-card)] border border-[var(--border-accent)] rounded-2xl px-5 py-3 shadow-2xl shadow-black/30">
+          <span className="text-sm font-medium text-[var(--text-primary)]">{selected.size} selected</span>
+          <Button size="sm" variant="danger" onClick={handleBulkRevoke}>Revoke Selected</Button>
+          <Button size="sm" variant="danger" onClick={handleBulkDelete}>Delete Selected</Button>
+          <button
+            onClick={() => setSelected(new Set())}
+            className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+          >Clear</button>
         </div>
       )}
     </div>
@@ -270,7 +409,14 @@ function OneTimeLinksTab() {
 // ── Permanent Links Tab ───────────────────────────────────────────────────────
 function PermanentLinksTab() {
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
-  const [links, setLinks] = useState<PermanentLinkRow[]>([]);
+  const [items, setItems] = useState<PermanentLinkRow[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [total, setTotal] = useState(0);
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [loadingMore, setLoadingMore] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [slug, setSlug] = useState("");
@@ -280,12 +426,34 @@ function PermanentLinksTab() {
   const [showFields, setShowFields] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
 
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const fetchPage = async (p: number, s: string, append = false) => {
+    if (!append) setLoading(true); else setLoadingMore(true);
+    try {
+      const res = await api.profiles.listLinks({ page: p, limit: 10, search: s });
+      setItems((prev) => append ? [...prev, ...res.items] : res.items);
+      setTotal(res.total);
+      setHasMore(res.has_more);
+      setPage(p);
+    } catch (e: unknown) { alert(errMsg(e)); }
+    finally { if (!append) setLoading(false); else setLoadingMore(false); }
+  };
+
   useEffect(() => {
-    Promise.all([api.profiles.getMe(), api.profiles.listLinks()])
-      .then(([p, l]) => { setProfile(p); setLinks(l); })
-      .catch((e: unknown) => alert(errMsg(e)))
-      .finally(() => setLoading(false));
+    Promise.all([api.profiles.getMe(), fetchPage(1, "", false)])
+      .then(([p]) => setProfile(p))
+      .catch((e: unknown) => alert(errMsg(e)));
   }, []);
+
+  const handleSearchChange = (val: string) => {
+    setSearch(val);
+    setSelected(new Set());
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => fetchPage(1, val, false), 300);
+  };
+
+  const handleLoadMore = () => fetchPage(page + 1, search, true);
 
   const handleCreate = async () => {
     if (!slug) return;
@@ -303,12 +471,12 @@ function PermanentLinksTab() {
         custom_fields: customFields.length > 0 ? customFields : undefined,
         custom_title: meetingTitle.trim() || undefined,
       };
-      const link = await api.profiles.createLink(payload);
-      setLinks((l) => [link, ...l]);
+      await api.profiles.createLink(payload);
       setSlug("");
       setMeetingTitle("");
       setCustomFields([]);
       setShowFields(false);
+      fetchPage(1, search, false);
     } catch (e: unknown) { alert(errMsg(e)); }
     finally { setCreating(false); }
   };
@@ -316,7 +484,7 @@ function PermanentLinksTab() {
   const handleToggle = async (id: string) => {
     try {
       const updated = await api.profiles.toggleLink(id);
-      setLinks((l) => l.map((x) => x.id === id ? updated : x));
+      setItems((l) => l.map((x) => x.id === id ? updated : x));
     } catch (e: unknown) { alert(errMsg(e)); }
   };
 
@@ -324,9 +492,28 @@ function PermanentLinksTab() {
     if (!confirm("Delete this permanent link? Visitors will see a 404.")) return;
     try {
       await api.profiles.deleteLink(id);
-      setLinks((l) => l.filter((x) => x.id !== id));
+      setItems((l) => l.filter((x) => x.id !== id));
+      setTotal((t) => t - 1);
+      setSelected((s) => { const n = new Set(s); n.delete(id); return n; });
     } catch (e: unknown) { alert(errMsg(e)); }
   };
+
+  const handleBulkDelete = async () => {
+    const ids = Array.from(selected);
+    if (!confirm(`Delete ${ids.length} link(s)?`)) return;
+    try {
+      await api.profiles.bulkDeleteLinks(ids);
+      fetchPage(1, search, false);
+      setSelected(new Set());
+    } catch (e: unknown) { alert(errMsg(e)); }
+  };
+
+  const toggleSelect = (id: string) =>
+    setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
+  const allSelected = items.length > 0 && items.every((x) => selected.has(x.id));
+  const toggleAll = () =>
+    setSelected(allSelected ? new Set() : new Set(items.map((x) => x.id)));
 
   const copyLink = (slug: string, id: string) => {
     if (!profile) return;
@@ -339,6 +526,7 @@ function PermanentLinksTab() {
 
   return (
     <div className="flex flex-col gap-5">
+      {/* Create form */}
       <Card className="p-5">
         <p className="text-sm font-semibold text-[var(--text-primary)] mb-4">Create Permanent Link</p>
         <div className="mb-4">
@@ -389,14 +577,42 @@ function PermanentLinksTab() {
         </div>
       </Card>
 
-      {links.length === 0 ? (
-        <EmptyState icon="♾️" title="No permanent links yet" subtitle="Create a reusable link that never expires" />
+      {/* Search bar */}
+      <div className="flex flex-wrap gap-3 items-center">
+        <input
+          placeholder="Search by slug or title…"
+          value={search}
+          onChange={(e) => handleSearchChange(e.target.value)}
+          className="flex-1 min-w-[180px] bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
+        />
+        <span className="text-xs text-[var(--text-secondary)]">{total} total</span>
+      </div>
+
+      {/* List */}
+      {items.length === 0 ? (
+        <EmptyState icon="♾️" title="No permanent links found" subtitle={search ? "Try adjusting your search" : "Create a reusable link that never expires"} />
       ) : (
         <div className="flex flex-col gap-3">
-          {links.map((lk) => (
+          <div className="flex items-center gap-3 px-1">
+            <input
+              type="checkbox"
+              checked={allSelected}
+              onChange={toggleAll}
+              className="rounded accent-[var(--accent)] w-4 h-4 cursor-pointer"
+            />
+            <span className="text-xs text-[var(--text-secondary)]">Select all on this page</span>
+          </div>
+
+          {items.map((lk) => (
             <Card key={lk.id} className="p-5">
-              <div className="flex items-start justify-between gap-4 flex-wrap">
-                <div className="flex flex-col gap-1.5 min-w-0">
+              <div className="flex items-start gap-3 flex-wrap">
+                <input
+                  type="checkbox"
+                  checked={selected.has(lk.id)}
+                  onChange={() => toggleSelect(lk.id)}
+                  className="rounded accent-[var(--accent)] w-4 h-4 cursor-pointer flex-shrink-0 mt-1"
+                />
+                <div className="flex flex-col gap-1.5 min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <Badge status={lk.is_active ? "active" : "expired"}>{lk.is_active ? "Active" : "Paused"}</Badge>
                     <span className="font-mono text-sm text-[var(--text-primary)]">
@@ -404,7 +620,7 @@ function PermanentLinksTab() {
                     </span>
                     {lk.custom_fields.length > 0 && (
                       <span className="text-xs bg-purple-500/15 text-purple-400 ring-1 ring-purple-500/30 px-2 py-0.5 rounded-full">
-                        {lk.custom_fields.length} custom Q{lk.custom_fields.length > 1 ? "s" : ""}
+                        {lk.custom_fields.length} Q{lk.custom_fields.length > 1 ? "s" : ""}
                       </span>
                     )}
                   </div>
@@ -427,6 +643,26 @@ function PermanentLinksTab() {
               </div>
             </Card>
           ))}
+
+          {hasMore && (
+            <div className="flex justify-center pt-2">
+              <Button variant="secondary" onClick={handleLoadMore} loading={loadingMore}>
+                Load More
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Bulk action bar */}
+      {selected.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 bg-[var(--bg-card)] border border-[var(--border-accent)] rounded-2xl px-5 py-3 shadow-2xl shadow-black/30">
+          <span className="text-sm font-medium text-[var(--text-primary)]">{selected.size} selected</span>
+          <Button size="sm" variant="danger" onClick={handleBulkDelete}>Delete Selected</Button>
+          <button
+            onClick={() => setSelected(new Set())}
+            className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+          >Clear</button>
         </div>
       )}
     </div>

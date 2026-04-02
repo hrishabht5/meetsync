@@ -1,17 +1,26 @@
 """
-One-Time Links router (V2 — with Custom Fields)
--------------------------------------------------
-POST /links              → generate a new OTL (with optional custom questions)
-GET  /links              → list all OTLs
-GET  /links/{token}      → validate a link (returns custom_fields for the booking form)
-DELETE /links/{token}    → revoke a link
+One-Time Links router
+---------------------
+POST /links                  → generate a new OTL (with optional custom questions)
+GET  /links                  → list OTLs (paginated, searchable, filterable)
+GET  /links/{token}          → validate a link (returns custom_fields for the booking form)
+DELETE /links/{token}        → revoke an active link
+DELETE /links/{token}/permanent → hard-delete a non-active link
+POST /links/bulk             → bulk revoke or hard-delete
 """
 
 from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel
+from typing import List, Literal
 from app.core.schemas import OTLCreate
 from app.links import service as otl_service
 
 router = APIRouter()
+
+
+class BulkAction(BaseModel):
+    tokens: List[str]
+    action: Literal["revoke", "delete"]
 
 
 @router.post("/", status_code=201)
@@ -21,7 +30,6 @@ def create_link(request: Request, payload: OTLCreate):
     user_id = get_current_user_id(request)
     custom_fields = None
     if payload.custom_fields:
-        # Validate: dropdowns must have at least 1 option
         for field in payload.custom_fields:
             if field.type == "dropdown" and (not field.options or len(field.options) == 0):
                 raise HTTPException(
@@ -41,19 +49,52 @@ def create_link(request: Request, payload: OTLCreate):
 
 
 @router.get("/")
-def list_links(request: Request, status: str = None):
-    """List all OTLs. Optional ?status=active|used|expired|revoked"""
+def list_links(
+    request: Request,
+    status: str = None,
+    page: int = 1,
+    limit: int = 10,
+    search: str = "",
+):
+    """List OTLs with pagination, search, and status filter."""
     from app.auth.middleware import get_current_user_id
     user_id = get_current_user_id(request)
-    return otl_service.list_otls(user_id, status_filter=status)
+    return otl_service.list_otls(
+        user_id,
+        status_filter=status,
+        page=page,
+        limit=limit,
+        search=search,
+    )
+
+
+@router.post("/bulk")
+def bulk_action(request: Request, payload: BulkAction):
+    """Bulk revoke or hard-delete OTLs."""
+    from app.auth.middleware import get_current_user_id
+    user_id = get_current_user_id(request)
+    succeeded = 0
+    skipped = 0
+    for token in payload.tokens:
+        try:
+            if payload.action == "revoke":
+                otl = otl_service.validate_otl(token)
+                if otl.get("user_id") != user_id:
+                    skipped += 1
+                    continue
+                otl_service.revoke_otl(token)
+                succeeded += 1
+            else:
+                otl_service.delete_otl(token, user_id)
+                succeeded += 1
+        except (ValueError, Exception):
+            skipped += 1
+    return {"succeeded": succeeded, "skipped": skipped}
 
 
 @router.get("/{token}")
 def validate_link(token: str):
-    """
-    Called by the booking page before showing the calendar.
-    Returns link details including custom_fields if any.
-    """
+    """Called by the booking page before showing the calendar."""
     try:
         otl = otl_service.validate_otl(token)
         from app.core.config import FRONTEND_URL
@@ -65,11 +106,10 @@ def validate_link(token: str):
 
 @router.delete("/{token}")
 def revoke_link(request: Request, token: str):
-    """Revoke a one-time link so it can no longer be used."""
+    """Revoke an active one-time link."""
     from app.auth.middleware import get_current_user_id
     user_id = get_current_user_id(request)
     try:
-        # Prevent hosts from revoking tokens they don't own.
         otl = otl_service.validate_otl(token)
         if otl.get("user_id") != user_id:
             raise HTTPException(status_code=403, detail="Forbidden")
@@ -77,3 +117,16 @@ def revoke_link(request: Request, token: str):
         return {"status": "revoked", "token": token}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.delete("/{token}/permanent")
+def delete_link_permanent(request: Request, token: str):
+    """Hard-delete a non-active OTL (used/expired/revoked)."""
+    from app.auth.middleware import get_current_user_id
+    user_id = get_current_user_id(request)
+    try:
+        otl_service.delete_otl(token, user_id)
+        return {"status": "deleted", "token": token}
+    except ValueError as e:
+        status_code = 403 if "Forbidden" in str(e) else 400
+        raise HTTPException(status_code=status_code, detail=str(e))

@@ -139,8 +139,15 @@ export const api = {
   // ── One-Time Links ────────────────────────────────────
   links: {
     validate: (token: string) => request<OTLRow>(`/links/${token}/`),
-    list: (status?: string) =>
-      request<OTLRow[]>(`/links/${status ? `?status=${status}` : ""}`),
+    list: (params?: { page?: number; limit?: number; search?: string; status?: string }) => {
+      const q = new URLSearchParams();
+      if (params?.page) q.set("page", String(params.page));
+      if (params?.limit) q.set("limit", String(params.limit));
+      if (params?.search) q.set("search", params.search);
+      if (params?.status) q.set("status", params.status);
+      const qs = q.toString();
+      return request<PaginatedResult<OTLRow>>(`/links/${qs ? `?${qs}` : ""}`);
+    },
     create: (data: OTLCreatePayload) =>
       request<OTLRow>("/links/", {
         method: "POST",
@@ -148,6 +155,13 @@ export const api = {
       }),
     revoke: (token: string) =>
       request<{ status: string; token: string }>(`/links/${token}/`, { method: "DELETE" }),
+    deletePermanently: (token: string) =>
+      request<{ status: string; token: string }>(`/links/${token}/permanent/`, { method: "DELETE" }),
+    bulkAction: (tokens: string[], action: "revoke" | "delete") =>
+      request<{ succeeded: number; skipped: number }>("/links/bulk/", {
+        method: "POST",
+        body: JSON.stringify({ tokens, action }),
+      }),
   },
 
   // ── Webhooks ──────────────────────────────────────────
@@ -185,17 +199,36 @@ export const api = {
     getMe: () => request<ProfileResponse>("/profiles/me/"),
     updateMe: (data: ProfileUpdate) =>
       request<ProfileResponse>("/profiles/me/", { method: "PUT", body: JSON.stringify(data) }),
-    listLinks: () => request<PermanentLinkRow[]>("/profiles/me/links/"),
+    listLinks: (params?: { page?: number; limit?: number; search?: string }) => {
+      const q = new URLSearchParams();
+      if (params?.page) q.set("page", String(params.page));
+      if (params?.limit) q.set("limit", String(params.limit));
+      if (params?.search) q.set("search", params.search);
+      const qs = q.toString();
+      return request<PaginatedResult<PermanentLinkRow>>(`/profiles/me/links/${qs ? `?${qs}` : ""}`);
+    },
     createLink: (data: PermanentLinkCreate) =>
       request<PermanentLinkRow>("/profiles/me/links/", { method: "POST", body: JSON.stringify(data) }),
     toggleLink: (id: string) =>
       request<PermanentLinkRow>(`/profiles/me/links/${id}/toggle/`, { method: "PATCH" }),
     deleteLink: (id: string) =>
       request<null>(`/profiles/me/links/${id}/`, { method: "DELETE" }),
+    bulkDeleteLinks: (ids: string[]) =>
+      request<{ succeeded: number; skipped: number }>("/profiles/me/links/bulk/", {
+        method: "DELETE",
+        body: JSON.stringify({ ids }),
+      }),
   },
 };
 
 // ── Types ─────────────────────────────────────────────
+
+export interface PaginatedResult<T> {
+  items: T[];
+  total: number;
+  page: number;
+  has_more: boolean;
+}
 
 export interface AuthStatus {
   connected: boolean;

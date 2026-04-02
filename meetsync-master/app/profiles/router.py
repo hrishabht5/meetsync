@@ -15,10 +15,16 @@ Authenticated (host):
 """
 
 from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel
+from typing import List
 
 from app.auth.middleware import get_current_user_id
 from app.core.schemas import ProfileUpdate, PermanentLinkCreate
 from app.profiles import service
+
+
+class BulkDeleteLinksPayload(BaseModel):
+    ids: List[str]
 
 router = APIRouter()
 
@@ -50,9 +56,30 @@ def update_my_profile(request: Request, payload: ProfileUpdate):
 
 
 @router.get("/me/links")
-def list_my_links(request: Request):
+def list_my_links(
+    request: Request,
+    page: int = 1,
+    limit: int = 10,
+    search: str = "",
+):
     user_id = get_current_user_id(request)
-    return service.list_permanent_links(user_id)
+    return service.list_permanent_links(user_id, page=page, limit=limit, search=search)
+
+
+@router.delete("/me/links/bulk", status_code=200)
+def bulk_delete_links(request: Request, payload: BulkDeleteLinksPayload):
+    """Hard-delete multiple permanent links by id. Skips any not owned by the user."""
+    user_id = get_current_user_id(request)
+    ids = payload.ids
+    succeeded = 0
+    skipped = 0
+    for link_id in ids:
+        try:
+            service.delete_permanent_link(user_id, link_id)
+            succeeded += 1
+        except (ValueError, Exception):
+            skipped += 1
+    return {"succeeded": succeeded, "skipped": skipped}
 
 
 @router.post("/me/links", status_code=201)
@@ -96,8 +123,8 @@ def get_public_profile(username: str):
     profile = service.get_profile_by_username(username)
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
-    links = service.list_permanent_links(profile["user_id"])
-    active_links = [lk for lk in links if lk["is_active"]]
+    result = service.list_permanent_links(profile["user_id"], page=1, limit=100)
+    active_links = [lk for lk in result["items"] if lk["is_active"]]
     return {**profile, "links": active_links}
 
 
