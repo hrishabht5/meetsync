@@ -17,8 +17,8 @@ DELETE /auth/account            → GDPR account deletion
 import uuid
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse
+import bcrypt
 import httpx
-from passlib.context import CryptContext
 
 from app.core.config import supabase, FRONTEND_URL
 from app.core.schemas import SignupRequest, LoginRequest, CalendarPreferenceRequest
@@ -30,7 +30,6 @@ from app.auth.middleware import (
 
 router = APIRouter()
 
-_pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 # ── Helpers ───────────────────────────────────────────────
@@ -167,7 +166,7 @@ async def signup(request: Request, payload: SignupRequest):
         raise HTTPException(status_code=409, detail="An account with this email already exists.")
 
     user_id = "usr_" + uuid.uuid4().hex[:16]
-    password_hash = _pwd_ctx.hash(payload.password)
+    password_hash = bcrypt.hashpw(payload.password.encode(), bcrypt.gensalt()).decode()
     _upsert_user(user_id, payload.email, password_hash)
     _ensure_profile(user_id, payload.email)
 
@@ -189,7 +188,7 @@ async def login(request: Request, payload: LoginRequest):
     if not user.get("password_hash"):
         raise HTTPException(status_code=401, detail="This account uses Google Sign-In. Please log in with Google.")
 
-    if not _pwd_ctx.verify(payload.password, user["password_hash"]):
+    if not bcrypt.checkpw(payload.password.encode(), user["password_hash"].encode()):
         raise HTTPException(status_code=401, detail="Invalid email or password.")
 
     secure = _is_secure(request)
