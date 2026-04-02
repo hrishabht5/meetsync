@@ -14,6 +14,7 @@ export default function PermanentLinkBookingPage() {
 
   const [step, setStep] = useState<Step>("loading");
   const [eventType, setEventType] = useState("");
+  const [customTitle, setCustomTitle] = useState<string | null>(null);
   const [hostUserId, setHostUserId] = useState("");
   const [permanentLinkId, setPermanentLinkId] = useState("");
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
@@ -34,6 +35,7 @@ export default function PermanentLinkBookingPage() {
     api.profiles.validateSlug(username, slug)
       .then((data) => {
         setEventType(data.event_type);
+        setCustomTitle(data.custom_title ?? null);
         setHostUserId(data.host_user_id);
         setPermanentLinkId(data.id);
         if (data.custom_fields && data.custom_fields.length > 0) {
@@ -140,7 +142,7 @@ export default function PermanentLinkBookingPage() {
                 <p className="text-xs text-[var(--accent-cyan)] font-semibold uppercase tracking-wider mb-1">
                   @{username}
                 </p>
-                <h2 className="text-xl font-bold text-[var(--text-primary)]">{eventType}</h2>
+                <h2 className="text-xl font-bold text-[var(--text-primary)]">{customTitle || eventType}</h2>
                 <p className="text-sm text-[var(--text-secondary)] mt-1">Pick a date to see available slots</p>
               </div>
 
@@ -200,7 +202,7 @@ export default function PermanentLinkBookingPage() {
                 >
                   ← Change time
                 </button>
-                <h2 className="text-xl font-bold text-[var(--text-primary)]">{eventType}</h2>
+                <h2 className="text-xl font-bold text-[var(--text-primary)]">{customTitle || eventType}</h2>
                 <p className="text-sm text-[var(--accent-cyan)] mt-1">
                   📅 {new Date(selectedSlot).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
                 </p>

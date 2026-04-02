@@ -144,7 +144,7 @@ export default function BookingPage() {
             <div className="p-6 flex flex-col gap-5">
               <div>
                 <p className="text-xs text-[var(--accent-cyan)] font-semibold uppercase tracking-wider mb-1">Booking Link</p>
-                <h2 className="text-xl font-bold text-[var(--text-primary)]">{otl?.event_type}</h2>
+                <h2 className="text-xl font-bold text-[var(--text-primary)]">{otl?.custom_title || otl?.event_type}</h2>
                 <p className="text-sm text-[var(--text-secondary)] mt-1">Pick a date to see available slots</p>
               </div>
 
@@ -193,7 +193,7 @@ export default function BookingPage() {
                 <button onClick={() => setStep("pick-slot")} className="text-xs text-[var(--accent)] hover:text-[var(--accent-cyan)] mb-3 flex items-center gap-1 transition-colors">
                   ← Change time
                 </button>
-                <h2 className="text-xl font-bold text-[var(--text-primary)]">{otl?.event_type}</h2>
+                <h2 className="text-xl font-bold text-[var(--text-primary)]">{otl?.custom_title || otl?.event_type}</h2>
                 <p className="text-sm text-[var(--accent-cyan)] mt-1">
                   📅 {new Date(selectedSlot).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
                 </p>

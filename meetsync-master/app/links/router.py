@@ -35,6 +35,7 @@ def create_link(request: Request, payload: OTLCreate):
         expires_in=payload.expires_in,
         user_id=user_id,
         custom_fields=custom_fields,
+        custom_title=payload.custom_title or None,
     )
     return otl
 

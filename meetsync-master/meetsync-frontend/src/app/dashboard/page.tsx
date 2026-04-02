@@ -77,7 +77,7 @@ export default function BookingsPage() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-semibold text-[var(--text-primary)]">{bk.guest_name}</span>
                     <Badge status={bk.status}>{bk.status}</Badge>
-                    <span className="text-xs text-[var(--text-secondary)] bg-[var(--bg-card-hover)] px-2 py-0.5 rounded-lg">{bk.event_type}</span>
+                    <span className="text-xs text-[var(--text-secondary)] bg-[var(--bg-card-hover)] px-2 py-0.5 rounded-lg">{bk.custom_title || bk.event_type}</span>
                   </div>
                   <p className="text-sm text-[var(--text-secondary)]">{bk.guest_email}</p>
                   <p className="text-sm text-[var(--text-primary)]">

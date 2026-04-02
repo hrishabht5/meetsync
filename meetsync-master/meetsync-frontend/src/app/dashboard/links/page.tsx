@@ -111,6 +111,7 @@ function OneTimeLinksTab() {
   const [creating, setCreating] = useState(false);
   const [eventType, setEventType] = useState<string>(EVENT_TYPES[1]);
   const [expires, setExpires] = useState("7d");
+  const [meetingTitle, setMeetingTitle] = useState("");
   const [error, setError] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
@@ -142,8 +143,10 @@ function OneTimeLinksTab() {
         event_type: eventType,
         expires_in: expires,
         custom_fields: customFields.length > 0 ? customFields : undefined,
+        custom_title: meetingTitle.trim() || undefined,
       });
       setLinks((l) => [link, ...l]);
+      setMeetingTitle("");
       setCustomFields([]);
       setShowFieldBuilder(false);
     } catch (e: unknown) { alert(errMsg(e)); }
@@ -171,6 +174,15 @@ function OneTimeLinksTab() {
     <div className="flex flex-col gap-5">
       <Card className="p-5">
         <p className="text-sm font-semibold text-[var(--text-primary)] mb-4">Create One-Time Link</p>
+        <div className="mb-4">
+          <label className="text-xs text-[var(--text-secondary)] font-medium block mb-1.5">Meeting Title <span className="opacity-60">(optional)</span></label>
+          <input
+            placeholder="e.g. Discovery Call — Acme Corp"
+            value={meetingTitle}
+            onChange={(e) => setMeetingTitle(e.target.value)}
+            className="w-full bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
+          />
+        </div>
         <div className="flex flex-wrap gap-3 items-end mb-4">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs text-[var(--text-secondary)] font-medium">Meeting Type</label>
@@ -232,6 +244,7 @@ function OneTimeLinksTab() {
                     )}
                   </div>
                   <p className="text-xs text-[var(--text-secondary)]">
+                    {lk.custom_title ? <span className="text-[var(--text-primary)] font-medium">{lk.custom_title} · </span> : null}
                     {lk.event_type}{lk.expires_at ? ` · Expires ${new Date(lk.expires_at).toLocaleDateString()}` : ""}
                   </p>
                 </div>
@@ -262,6 +275,7 @@ function PermanentLinksTab() {
   const [creating, setCreating] = useState(false);
   const [slug, setSlug] = useState("");
   const [eventType, setEventType] = useState<string>(EVENT_TYPES[1]);
+  const [meetingTitle, setMeetingTitle] = useState("");
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [showFields, setShowFields] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
@@ -287,10 +301,12 @@ function PermanentLinksTab() {
         slug,
         event_type: eventType,
         custom_fields: customFields.length > 0 ? customFields : undefined,
+        custom_title: meetingTitle.trim() || undefined,
       };
       const link = await api.profiles.createLink(payload);
       setLinks((l) => [link, ...l]);
       setSlug("");
+      setMeetingTitle("");
       setCustomFields([]);
       setShowFields(false);
     } catch (e: unknown) { alert(errMsg(e)); }
@@ -325,6 +341,15 @@ function PermanentLinksTab() {
     <div className="flex flex-col gap-5">
       <Card className="p-5">
         <p className="text-sm font-semibold text-[var(--text-primary)] mb-4">Create Permanent Link</p>
+        <div className="mb-4">
+          <label className="text-xs text-[var(--text-secondary)] font-medium block mb-1.5">Meeting Title <span className="opacity-60">(optional)</span></label>
+          <input
+            placeholder="e.g. Discovery Call — Acme Corp"
+            value={meetingTitle}
+            onChange={(e) => setMeetingTitle(e.target.value)}
+            className="w-full bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
+          />
+        </div>
         <div className="flex flex-wrap gap-3 items-end mb-4">
           <Input
             label="Slug"
@@ -383,7 +408,10 @@ function PermanentLinksTab() {
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-[var(--text-secondary)]">{lk.event_type} · Permanent</p>
+                  <p className="text-xs text-[var(--text-secondary)]">
+                    {lk.custom_title ? <span className="text-[var(--text-primary)] font-medium">{lk.custom_title} · </span> : null}
+                    {lk.event_type} · Permanent
+                  </p>
                 </div>
                 <div className="flex gap-2 flex-shrink-0">
                   {lk.is_active && (

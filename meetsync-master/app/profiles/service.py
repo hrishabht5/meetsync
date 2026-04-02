@@ -112,7 +112,7 @@ def list_permanent_links(user_id: str) -> list[dict]:
     return result.data or []
 
 
-def create_permanent_link(user_id: str, slug: str, event_type: str, custom_fields: list) -> dict:
+def create_permanent_link(user_id: str, slug: str, event_type: str, custom_fields: list, custom_title: str = None) -> dict:
     """
     Raises ValueError on duplicate (user_id, slug).
     slug is validated to contain only safe characters.
@@ -137,6 +137,7 @@ def create_permanent_link(user_id: str, slug: str, event_type: str, custom_field
         "event_type":    event_type,
         "is_active":     True,
         "custom_fields": custom_fields,
+        "custom_title":  custom_title or None,
     }
     result = supabase.table("permanent_links").insert(row).execute()
     return result.data[0]

@@ -64,6 +64,7 @@ def create_link(request: Request, payload: PermanentLinkCreate):
             slug=payload.slug,
             event_type=payload.event_type,
             custom_fields=[f.model_dump() for f in payload.custom_fields],
+            custom_title=payload.custom_title or None,
         )
     except ValueError as e:
         status = 409 if "already have" in str(e) else 400

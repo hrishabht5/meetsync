@@ -34,6 +34,7 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
     # ── 1. Validate OTL or Permanent Link ────────────────
     otl = None
     host_user_id = None
+    link_custom_title = None
     if payload.permanent_link_id:
         # Permanent link path — link is never consumed
         plink = profiles_service.get_permanent_link_by_id(payload.permanent_link_id)
@@ -42,10 +43,12 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
         if not plink["is_active"]:
             raise HTTPException(status_code=400, detail="This booking link is no longer active")
         host_user_id = plink["user_id"]
+        link_custom_title = plink.get("custom_title")
     elif payload.one_time_link_id:
         try:
             otl = otl_service.validate_otl(payload.one_time_link_id)
             host_user_id = otl.get("user_id")
+            link_custom_title = otl.get("custom_title")
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
     else:
@@ -88,12 +91,14 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
         if cal_row.data else "primary"
     )
 
+    display_title = link_custom_title or payload.event_type
+
     try:
         meet_data = await google_calendar.create_meet_event(
             user_id      = host_user_id,
             guest_name   = payload.guest_name,
             guest_email  = payload.guest_email,
-            summary      = f"{payload.event_type} — {payload.guest_name}",
+            summary      = f"{display_title} — {payload.guest_name}",
             start_dt     = payload.scheduled_at,
             duration_min = duration,
             description  = payload.notes,
@@ -112,6 +117,7 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
         "guest_email":       payload.guest_email,
         "scheduled_at":      payload.scheduled_at.isoformat(),
         "event_type":        payload.event_type,
+        "custom_title":      link_custom_title or None,
         "notes":             payload.notes,
         "status":            BookingStatus.confirmed,
         "meet_link":         meet_data["meet_link"],

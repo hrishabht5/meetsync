@@ -36,7 +36,7 @@ def _parse_expiry(expires_in: Optional[str]) -> Optional[datetime]:
 
 # ── Public API ────────────────────────────────────────────
 
-def create_otl(event_type: str, expires_in: Optional[str] = "7d", user_id: str = None, custom_fields: list = None) -> dict:
+def create_otl(event_type: str, expires_in: Optional[str] = "7d", user_id: str = None, custom_fields: list = None, custom_title: Optional[str] = None) -> dict:
     """
     Generate a new one-time booking link and persist it.
 
@@ -52,6 +52,7 @@ def create_otl(event_type: str, expires_in: Optional[str] = "7d", user_id: str =
         "expires_at":    expires_at.isoformat() if expires_at else None,
         "user_id":       user_id,
         "custom_fields": custom_fields or [],
+        "custom_title":  custom_title or None,
     }
     result = supabase.table("one_time_links").insert(row).execute()
     data   = result.data[0]

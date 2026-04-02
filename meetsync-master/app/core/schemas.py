@@ -78,6 +78,7 @@ class OTLCreate(BaseModel):
     event_type:    str
     expires_in:    Optional[str] = "7d"  # "24h", "7d", "never"
     custom_fields: Optional[List[CustomField]] = None
+    custom_title:  Optional[str] = None
 
 
 class OTLResponse(BaseModel):
@@ -131,6 +132,7 @@ class PermanentLinkCreate(BaseModel):
     slug:          str
     event_type:    str = "Google Meet"
     custom_fields: List[CustomField] = []
+    custom_title:  Optional[str] = None
 
 
 class PermanentLinkRow(BaseModel):

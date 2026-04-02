@@ -273,6 +273,7 @@ export interface BookingRow {
   guest_email: string;
   scheduled_at: string;
   event_type: string;
+  custom_title?: string | null;
   status: "pending" | "confirmed" | "cancelled";
   meet_link?: string;
   calendar_event_id?: string;
@@ -286,6 +287,7 @@ export interface OTLRow {
   id: string;
   booking_url: string;
   event_type: string;
+  custom_title?: string | null;
   status: "active" | "used" | "expired" | "revoked";
   user_id: string;
   expires_at?: string;
@@ -298,6 +300,7 @@ export interface OTLCreatePayload {
   event_type: string;
   expires_in?: string;
   custom_fields?: CustomField[];
+  custom_title?: string;
 }
 
 // Webhooks
@@ -347,6 +350,7 @@ export interface PermanentLinkRow {
   user_id: string;
   slug: string;
   event_type: string;
+  custom_title?: string | null;
   is_active: boolean;
   custom_fields: CustomField[];
   created_at: string;
@@ -356,6 +360,7 @@ export interface PermanentLinkCreate {
   slug: string;
   event_type?: string;
   custom_fields?: CustomField[];
+  custom_title?: string;
 }
 
 // API Keys
