@@ -17,6 +17,7 @@ export default function SettingsPage() {
   const [calPrefSaving, setCalPrefSaving] = useState(false);
   const [calPrefSaved, setCalPrefSaved] = useState(false);
   const [calListLoading, setCalListLoading] = useState(false);
+  const [calListError, setCalListError] = useState<string | null>(null);
   const [disconnecting, setDisconnecting] = useState(false);
 
   useEffect(() => {
@@ -46,11 +47,12 @@ export default function SettingsPage() {
 
   const loadCalendars = async () => {
     setCalListLoading(true);
+    setCalListError(null);
     try {
       const res = await api.auth.listCalendars();
       setCalendars(res.calendars);
-    } catch {
-      // Not fatal — calendar list is optional
+    } catch (e: unknown) {
+      setCalListError(errMsg(e));
     } finally {
       setCalListLoading(false);
     }
@@ -131,9 +133,20 @@ export default function SettingsPage() {
           {calendarConnected && (
             <div className="flex flex-col gap-3 pt-4 border-t border-[var(--border)]">
               <p className="text-xs font-medium text-[var(--text-primary)]">Calendar for new events</p>
+              {calListError && (
+                <div className="flex flex-col gap-2 bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-4 py-3">
+                  <p className="text-xs text-yellow-400">Could not load your calendars — your Google token may be missing calendar permissions.</p>
+                  <button
+                    onClick={handleConnectCalendar}
+                    className="self-start text-xs px-3 py-1.5 rounded-lg bg-brand-gradient text-white font-medium hover:opacity-90 transition-all"
+                  >
+                    Reconnect Google Calendar
+                  </button>
+                </div>
+              )}
               {calListLoading ? (
                 <Spinner size={16} />
-              ) : (
+              ) : !calListError && (
                 <div className="flex items-center gap-3">
                   <select
                     value={preferredCalendarId}

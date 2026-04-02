@@ -133,10 +133,9 @@ async def list_calendars(user_id: str) -> list[dict]:
         resp = await client.get(
             f"{CALENDAR_API}/users/me/calendarList",
             headers={"Authorization": f"Bearer {access_token}"},
-            params={"minAccessRole": "writer"},
         )
     if resp.status_code in (401, 403):
-        raise ValueError("Google Calendar access was denied. Please reconnect your Google account in Settings.")
+        raise ValueError("Google Calendar access was denied. Please disconnect and reconnect your Google Calendar in Settings.")
     resp.raise_for_status()
     items = resp.json().get("items", [])
     return [
