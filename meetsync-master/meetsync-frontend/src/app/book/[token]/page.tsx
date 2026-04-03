@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { api, OTLRow, EVENT_TYPES, CustomField } from "@/lib/api-client";
 import { errMsg } from "@/lib/errors";
-import { Button, Input, Spinner } from "@/components/ui";
+import { Button, Input, Spinner } from "@/components/ui"; // Input used in booking form
+import { BookingCalendar } from "@/components/BookingCalendar";
 
 type Step = "loading" | "error" | "pick-date" | "pick-slot" | "form" | "success";
 
@@ -107,8 +108,6 @@ export default function BookingPage() {
     }
   };
 
-  const todayStr = new Date().toISOString().split("T")[0];
-
   return (
     <main className="min-h-screen flex items-center justify-center px-4 py-12 bg-page-gradient">
       {/* Background glow */}
@@ -148,16 +147,19 @@ export default function BookingPage() {
                 <p className="text-sm text-[var(--text-secondary)] mt-1">Pick a date to see available slots</p>
               </div>
 
-              <Input label="Select Date" type="date" min={todayStr} value={selectedDate}
-                onChange={(e) => fetchSlots(e.target.value)} />
+              <BookingCalendar
+                selectedDate={selectedDate}
+                onSelectDate={fetchSlots}
+                loading={loadingSlots}
+              />
 
-              {loadingSlots && <div className="flex justify-center py-4"><Spinner /></div>}
+              {loadingSlots && <div className="flex justify-center py-2"><Spinner /></div>}
 
               {step === "pick-slot" && !loadingSlots && (
                 <>
                   {slots.length === 0 ? (
-                    <div className="text-center py-6">
-                      <p className="text-[var(--text-secondary)] text-sm">😔 No available slots on this day.</p>
+                    <div className="text-center py-4 bg-[var(--bg-card-hover)] rounded-xl border border-[var(--border)]">
+                      <p className="text-[var(--text-secondary)] text-sm">No available slots on this day.</p>
                       <p className="text-[var(--text-secondary)]/60 text-xs mt-1">Try picking another date.</p>
                     </div>
                   ) : (
