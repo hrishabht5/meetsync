@@ -140,15 +140,26 @@ function OneTimeLinksTab() {
   };
 
   useEffect(() => {
-    Promise.all([fetchPage(1, "", "", false), api.availability.getSettings()])
-      .then(([, settings]) => {
-        if (settings.default_questions && settings.default_questions.length > 0) {
-          setCustomFields(settings.default_questions);
+    // Load saved questions from localStorage
+    try {
+      const saved = localStorage.getItem("meetsync_saved_questions");
+      if (saved) {
+        const parsed: CustomField[] = JSON.parse(saved);
+        if (parsed.length > 0) {
+          setCustomFields(parsed);
           setShowFieldBuilder(true);
         }
-      })
-      .catch((e: unknown) => setError(errMsg(e)));
+      }
+    } catch { /* ignore */ }
+    fetchPage(1, "", "", false).catch((e: unknown) => setError(errMsg(e)));
   }, []);
+
+  // Auto-save questions to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem("meetsync_saved_questions", JSON.stringify(customFields));
+    } catch { /* ignore */ }
+  }, [customFields]);
 
   const handleSearchChange = (val: string) => {
     setSearch(val);
@@ -181,8 +192,7 @@ function OneTimeLinksTab() {
         custom_title: meetingTitle.trim() || undefined,
       });
       setMeetingTitle("");
-      setCustomFields([]);
-      setShowFieldBuilder(false);
+      // Keep customFields — user can reuse same questions for next link
       fetchPage(1, search, statusFilter, false);
     } catch (e: unknown) { alert(errMsg(e)); }
     finally { setCreating(false); }
@@ -280,12 +290,27 @@ function OneTimeLinksTab() {
         </div>
 
         <div className="border-t border-[var(--border)] pt-4">
-          <button
-            onClick={() => setShowFieldBuilder(!showFieldBuilder)}
-            className="text-sm text-[var(--accent)] hover:text-[var(--accent-cyan)] font-semibold flex items-center gap-1 mb-3 transition-colors"
-          >
-            {showFieldBuilder ? "▾ Hide" : "▸ Add"} Custom Questions
-          </button>
+          <div className="flex items-center justify-between mb-3">
+            <button
+              onClick={() => setShowFieldBuilder(!showFieldBuilder)}
+              className="text-sm text-[var(--accent)] hover:text-[var(--accent-cyan)] font-semibold flex items-center gap-1 transition-colors"
+            >
+              {showFieldBuilder ? "▾ Hide" : "▸ Add"} Custom Questions
+              {customFields.length > 0 && (
+                <span className="ml-1 text-xs bg-purple-500/15 text-purple-400 ring-1 ring-purple-500/30 px-2 py-0.5 rounded-full">
+                  {customFields.length} saved
+                </span>
+              )}
+            </button>
+            {customFields.length > 0 && (
+              <button
+                onClick={() => { setCustomFields([]); setShowFieldBuilder(false); }}
+                className="text-xs text-[var(--text-secondary)] hover:text-red-400 transition-colors"
+              >
+                Clear all
+              </button>
+            )}
+          </div>
           {showFieldBuilder && (
             <FieldBuilder
               fields={customFields}
@@ -441,10 +466,28 @@ function PermanentLinksTab() {
   };
 
   useEffect(() => {
+    // Load saved questions from localStorage (shared with OTL tab)
+    try {
+      const saved = localStorage.getItem("meetsync_saved_questions");
+      if (saved) {
+        const parsed: CustomField[] = JSON.parse(saved);
+        if (parsed.length > 0) {
+          setCustomFields(parsed);
+          setShowFields(true);
+        }
+      }
+    } catch { /* ignore */ }
     Promise.all([api.profiles.getMe(), fetchPage(1, "", false)])
       .then(([p]) => setProfile(p))
       .catch((e: unknown) => alert(errMsg(e)));
   }, []);
+
+  // Auto-save questions to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem("meetsync_saved_questions", JSON.stringify(customFields));
+    } catch { /* ignore */ }
+  }, [customFields]);
 
   const handleSearchChange = (val: string) => {
     setSearch(val);
@@ -474,8 +517,7 @@ function PermanentLinksTab() {
       await api.profiles.createLink(payload);
       setSlug("");
       setMeetingTitle("");
-      setCustomFields([]);
-      setShowFields(false);
+      // Keep customFields — user can reuse same questions for next link
       fetchPage(1, search, false);
     } catch (e: unknown) { alert(errMsg(e)); }
     finally { setCreating(false); }
@@ -556,12 +598,27 @@ function PermanentLinksTab() {
         </div>
 
         <div className="border-t border-[var(--border)] pt-4">
-          <button
-            onClick={() => setShowFields(!showFields)}
-            className="text-sm text-[var(--accent)] hover:text-[var(--accent-cyan)] font-semibold flex items-center gap-1 mb-3 transition-colors"
-          >
-            {showFields ? "▾ Hide" : "▸ Add"} Custom Questions
-          </button>
+          <div className="flex items-center justify-between mb-3">
+            <button
+              onClick={() => setShowFields(!showFields)}
+              className="text-sm text-[var(--accent)] hover:text-[var(--accent-cyan)] font-semibold flex items-center gap-1 transition-colors"
+            >
+              {showFields ? "▾ Hide" : "▸ Add"} Custom Questions
+              {customFields.length > 0 && (
+                <span className="ml-1 text-xs bg-purple-500/15 text-purple-400 ring-1 ring-purple-500/30 px-2 py-0.5 rounded-full">
+                  {customFields.length} saved
+                </span>
+              )}
+            </button>
+            {customFields.length > 0 && (
+              <button
+                onClick={() => { setCustomFields([]); setShowFields(false); }}
+                className="text-xs text-[var(--text-secondary)] hover:text-red-400 transition-colors"
+              >
+                Clear all
+              </button>
+            )}
+          </div>
           {showFields && (
             <FieldBuilder
               fields={customFields}
