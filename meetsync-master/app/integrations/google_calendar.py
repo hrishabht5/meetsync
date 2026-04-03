@@ -23,11 +23,18 @@ from app.core.config import (
     supabase,
 )
 
-SCOPES = [
+# Identity-only scopes — used for Google Sign-In (no calendar access)
+SCOPES_SIGNIN = [
+    "openid",
+    "https://www.googleapis.com/auth/userinfo.email",
+    "https://www.googleapis.com/auth/userinfo.profile",
+]
+
+# Calendar scopes — used only when user explicitly connects Google Calendar
+SCOPES_CALENDAR = [
     "https://www.googleapis.com/auth/calendar",  # covers events, freebusy, and calendarList
     "openid",
-    "email",
-    "profile",
+    "https://www.googleapis.com/auth/userinfo.email",
 ]
 
 GOOGLE_AUTH_URL  = "https://accounts.google.com/o/oauth2/v2/auth"
@@ -38,12 +45,17 @@ CALENDAR_API     = "https://www.googleapis.com/calendar/v3"
 # ── OAuth2 ────────────────────────────────────────────────
 
 def get_auth_url(state: str = "signin") -> str:
-    """Return the Google OAuth2 consent screen URL."""
+    """
+    Return the Google OAuth2 consent screen URL.
+    state='signin'  → identity-only scopes (email + profile, no calendar)
+    state='connect' → calendar scope (+ email so callback can upsert the user row)
+    """
+    scopes = SCOPES_CALENDAR if state == "connect" else SCOPES_SIGNIN
     params = {
         "client_id":     GOOGLE_CLIENT_ID,
         "redirect_uri":  GOOGLE_REDIRECT_URI,
         "response_type": "code",
-        "scope":         " ".join(SCOPES),
+        "scope":         " ".join(scopes),
         "access_type":   "offline",   # request refresh_token
         "prompt":        "consent",   # force consent so we always get refresh_token
         "state":         state,
