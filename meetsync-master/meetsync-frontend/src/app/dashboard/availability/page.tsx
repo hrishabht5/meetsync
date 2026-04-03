@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
-import { api, AvailabilitySettingsResponse, AvailabilityOverride, CustomField } from "@/lib/api-client";
+import { api, AvailabilitySettingsResponse, AvailabilityOverride, AvailabilityOverrideCreate } from "@/lib/api-client";
 import { errMsg } from "@/lib/errors";
 import { Button, Card, Input, SectionHeader, Spinner } from "@/components/ui";
+import { DateOverridePicker } from "@/components/DateOverridePicker";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -22,9 +23,6 @@ export default function AvailabilityPage() {
   const [saved, setSaved] = useState(false);
   const [newShift, setNewShift] = useState("09:00");
 
-  const [overrideDate, setOverrideDate] = useState("");
-  const [overrideReason, setOverrideReason] = useState("");
-  const [addingOverride, setAddingOverride] = useState(false);
 
   useEffect(() => {
     Promise.all([api.availability.getSettings(), api.availability.getOverrides()])
@@ -63,24 +61,6 @@ export default function AvailabilityPage() {
     }));
   };
 
-  const addField = () => {
-    setSettings(s => ({ ...s, default_questions: [...(s.default_questions || []), { label: "", type: "text", required: true }] }));
-  };
-
-  const updateField = (idx: number, updates: Partial<CustomField>) => {
-    setSettings(s => ({
-      ...s,
-      default_questions: (s.default_questions || []).map((f, i) => i === idx ? { ...f, ...updates } : f)
-    }));
-  };
-
-  const removeField = (idx: number) => {
-    setSettings(s => ({
-      ...s,
-      default_questions: (s.default_questions || []).filter((_, i) => i !== idx)
-    }));
-  };
-
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -91,20 +71,9 @@ export default function AvailabilityPage() {
     finally { setSaving(false); }
   };
 
-  const handleAddOverride = async () => {
-    if (!overrideDate) return;
-    setAddingOverride(true);
-    try {
-      const ov = await api.availability.createOverride({
-        override_date: overrideDate,
-        is_available: false,
-        reason: overrideReason || undefined,
-      });
-      setOverrides((o) => [...o, ov]);
-      setOverrideDate("");
-      setOverrideReason("");
-    } catch (e: unknown) { alert(errMsg(e)); }
-    finally { setAddingOverride(false); }
+  const handleAddOverride = async (data: AvailabilityOverrideCreate) => {
+    const ov = await api.availability.createOverride(data);
+    setOverrides((o) => [...o, ov]);
   };
 
   const handleDeleteOverride = async (id: string) => {
@@ -209,86 +178,6 @@ export default function AvailabilityPage() {
           />
         </Card>
 
-        {/* Default Booking Questions */}
-        <Card className="p-6">
-          <p className="text-sm font-semibold text-[var(--text-primary)] mb-4">Default Booking Questions</p>
-          <p className="text-xs text-[var(--text-secondary)] mb-4">Questions pre-filled when you generate a new booking link.</p>
-
-          <div className="flex flex-col gap-3 mb-4">
-            {(settings.default_questions || []).map((field, idx) => (
-              <div key={idx} className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl p-4 flex flex-col gap-3">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs text-[var(--text-secondary)] font-semibold">Question {idx + 1}</span>
-                  <button onClick={() => removeField(idx)} className="text-xs text-red-400 hover:text-red-300">Remove</button>
-                </div>
-                <input
-                  placeholder="Question label, e.g. Company Name"
-                  value={field.label}
-                  onChange={(e) => updateField(idx, { label: e.target.value })}
-                  className="bg-[var(--bg-deep)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
-                />
-                <div className="flex gap-3 items-center flex-wrap">
-                  <select
-                    value={field.type}
-                    onChange={(e) => updateField(idx, { type: e.target.value as CustomField["type"], options: e.target.value === "dropdown" ? [""] : undefined })}
-                    className="bg-[var(--bg-deep)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
-                  >
-                    <option value="text">Short Text</option>
-                    <option value="textarea">Long Text</option>
-                    <option value="dropdown">Dropdown</option>
-                  </select>
-                  <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                    <input
-                      type="checkbox"
-                      checked={field.required}
-                      onChange={(e) => updateField(idx, { required: e.target.checked })}
-                      className="rounded accent-[var(--accent)]"
-                    />
-                    Required
-                  </label>
-                </div>
-
-                {field.type === "dropdown" && (
-                  <div className="flex flex-col gap-2 pl-2 border-l-2 border-[var(--accent)]/30">
-                    <p className="text-xs text-[var(--text-secondary)]">Dropdown Options</p>
-                    {(field.options || []).map((opt, optIdx) => (
-                      <div key={optIdx} className="flex gap-2 items-center">
-                        <input
-                          placeholder={`Option ${optIdx + 1}`}
-                          value={opt}
-                          onChange={(e) => {
-                            const newOpts = [...(field.options || [])];
-                            newOpts[optIdx] = e.target.value;
-                            updateField(idx, { options: newOpts });
-                          }}
-                          className="bg-[var(--bg-deep)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:outline-none flex-1"
-                        />
-                        <button
-                          onClick={() => {
-                            const newOpts = (field.options || []).filter((_, i) => i !== optIdx);
-                            updateField(idx, { options: newOpts });
-                          }}
-                          className="text-xs text-red-400 hover:text-red-300"
-                        >×</button>
-                      </div>
-                    ))}
-                    <button
-                      onClick={() => updateField(idx, { options: [...(field.options || []), ""] })}
-                      className="text-xs text-[var(--accent)] hover:text-[var(--accent-cyan)] self-start transition-colors"
-                    >+ Add Option</button>
-                  </div>
-                )}
-              </div>
-            ))}
-            <button
-              onClick={addField}
-              className="self-start text-sm font-semibold text-[var(--accent)] hover:text-[var(--accent-cyan)] px-3 py-2 bg-[var(--accent)]/10 rounded-xl ring-1 ring-[var(--accent)]/20 hover:ring-[var(--accent)]/40 transition-all"
-            >
-              + Add Question
-            </button>
-          </div>
-        </Card>
-
         <div className="flex justify-end">
           <Button onClick={handleSave} loading={saving}>
             {saved ? "✓ Saved!" : "Save Settings"}
@@ -299,49 +188,16 @@ export default function AvailabilityPage() {
         <div className="border-t border-[var(--border)] pt-8 mt-4">
           <SectionHeader
             title="Date Overrides"
-            subtitle="Block out specific dates so no one can book on them"
+            subtitle="Block specific dates or customize available slots. Click a date on the calendar to configure it."
           />
         </div>
 
-        <Card className="p-6">
-          <p className="text-sm font-semibold text-[var(--text-primary)] mb-4">Block a Date</p>
-          <div className="flex flex-wrap gap-3 items-end">
-            <Input
-              label="Date"
-              type="date"
-              value={overrideDate}
-              onChange={(e) => setOverrideDate(e.target.value)}
-            />
-            <Input
-              label="Reason (optional)"
-              placeholder="e.g. Holiday, Out of Office"
-              value={overrideReason}
-              onChange={(e) => setOverrideReason(e.target.value)}
-            />
-            <Button onClick={handleAddOverride} loading={addingOverride} disabled={!overrideDate}>
-              Block Date
-            </Button>
-          </div>
-        </Card>
-
-        {overrides.length > 0 && (
-          <div className="flex flex-col gap-2">
-            {overrides.map((ov) => (
-              <Card key={ov.id} className="p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <span className="text-red-400 text-lg">🚫</span>
-                    <div>
-                      <p className="text-sm font-semibold text-[var(--text-primary)]">{ov.override_date}</p>
-                      {ov.reason && <p className="text-xs text-[var(--text-secondary)]">{ov.reason}</p>}
-                    </div>
-                  </div>
-                  <Button variant="danger" size="sm" onClick={() => handleDeleteOverride(ov.id)}>Remove</Button>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
+        <DateOverridePicker
+          overrides={overrides}
+          shifts={settings.daily_shifts}
+          onAdd={handleAddOverride}
+          onDelete={handleDeleteOverride}
+        />
       </div>
     </>
   );
