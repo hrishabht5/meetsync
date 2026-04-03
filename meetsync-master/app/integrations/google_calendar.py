@@ -24,8 +24,7 @@ from app.core.config import (
 )
 
 SCOPES = [
-    "https://www.googleapis.com/auth/calendar.events",
-    "https://www.googleapis.com/auth/calendar.freebusy",
+    "https://www.googleapis.com/auth/calendar",  # covers events, freebusy, and calendarList
     "openid",
     "email",
     "profile",
