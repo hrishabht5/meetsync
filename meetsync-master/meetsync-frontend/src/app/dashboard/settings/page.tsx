@@ -180,15 +180,23 @@ export default function SettingsPage() {
               When <span className="text-[var(--text-primary)] font-medium">OFF</span> (default), MeetSync blocks duplicate bookings at the same time using Google Calendar and database checks.
               Turn <span className="text-[var(--text-primary)] font-medium">ON</span> to allow multiple bookings at the exact same time slot.
             </p>
-            <label className="relative inline-flex flex-shrink-0 items-center cursor-pointer">
-              <input
-                type="checkbox"
-                className="sr-only peer"
-                checked={allowDoubleBooking}
-                onChange={(e) => setAllowDoubleBooking(e.target.checked)}
+            <button
+              type="button"
+              role="switch"
+              aria-checked={allowDoubleBooking}
+              onClick={() => setAllowDoubleBooking(!allowDoubleBooking)}
+              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${
+                allowDoubleBooking
+                  ? "bg-gradient-to-r from-[#3b6ae8] to-[#38bfff]"
+                  : "bg-[var(--bg-card-hover)]"
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white border border-gray-300 shadow transition-transform duration-200 ease-in-out ${
+                  allowDoubleBooking ? "translate-x-5" : "translate-x-0.5"
+                } mt-[2px]`}
               />
-              <div className="w-11 h-6 bg-[var(--bg-card-hover)] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-gradient" />
-            </label>
+            </button>
           </div>
           <div className="flex justify-end mt-5">
             <Button onClick={handleSave} loading={saving}>

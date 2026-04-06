@@ -12,6 +12,7 @@ PATCH /bookings/manage/{token}/cancel      → guest-initiated cancellation
 PATCH /bookings/manage/{token}/reschedule  → guest-initiated reschedule
 """
 
+import logging
 import secrets
 import uuid
 from datetime import datetime, timezone
@@ -89,18 +90,28 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
         raise HTTPException(status_code=400, detail="Missing host identity for booking")
 
     # ── 2. Guard against double-booking ──────────────────
-    scheduled_iso = payload.scheduled_at.isoformat()
-    conflict = supabase.table("bookings") \
-        .select("id") \
+    host_settings = supabase.table("availability_settings") \
+        .select("allow_double_booking") \
         .eq("user_id", host_user_id) \
-        .eq("scheduled_at", scheduled_iso) \
-        .neq("status", "cancelled") \
         .execute()
-    if conflict.data:
-        raise HTTPException(
-            status_code=409,
-            detail="This time slot has just been taken. Please go back and choose another time."
-        )
+    allow_double = (
+        host_settings.data[0].get("allow_double_booking", False)
+        if host_settings.data else False
+    )
+
+    if not allow_double:
+        scheduled_iso = payload.scheduled_at.isoformat()
+        conflict = supabase.table("bookings") \
+            .select("id") \
+            .eq("user_id", host_user_id) \
+            .eq("scheduled_at", scheduled_iso) \
+            .neq("status", "cancelled") \
+            .execute()
+        if conflict.data:
+            raise HTTPException(
+                status_code=409,
+                detail="This time slot has just been taken. Please go back and choose another time."
+            )
 
     # ── 3. Create Google Meet event ───────────────────────
     duration_map = {
@@ -112,6 +123,16 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
     preferred_cal = _preferred_calendar_id(host_user_id)
     display_title = link_custom_title or payload.event_type
 
+    # Build calendar description with management link (will be filled after token is generated)
+    management_token = secrets.token_hex(16)  # 32-char hex, 128-bit entropy
+    manage_url = f"{request.headers.get('origin', 'https://meetsync.vercel.app')}/manage/{management_token}"
+    cal_description = (
+        f"{payload.notes or ''}\n\n"
+        f"──────────────────\n"
+        f"Manage this booking (cancel or reschedule):\n"
+        f"{manage_url}"
+    ).strip()
+
     try:
         meet_data = await google_calendar.create_meet_event(
             user_id      = host_user_id,
@@ -120,7 +141,7 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
             summary      = f"{display_title} — {payload.guest_name}",
             start_dt     = payload.scheduled_at,
             duration_min = duration,
-            description  = payload.notes,
+            description  = cal_description,
             calendar_id  = preferred_cal,
         )
     except ValueError as e:
@@ -130,7 +151,7 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
 
     # ── 4. Store booking ──────────────────────────────────
     booking_id = str(uuid.uuid4())
-    management_token = secrets.token_hex(16)  # 32-char hex, 128-bit entropy
+    # management_token was already generated above for the calendar description
     booking_row = {
         "id":                booking_id,
         "guest_name":        payload.guest_name,
@@ -250,15 +271,15 @@ async def guest_cancel_booking(
     if scheduled_dt <= datetime.now(timezone.utc):
         raise HTTPException(status_code=400, detail="Cannot cancel a booking that has already passed")
 
-    # Delete Google Calendar event (best-effort)
+    # Delete Google Calendar event
     if booking.get("calendar_event_id"):
         try:
             cal_id = _preferred_calendar_id(host_user_id)
             await google_calendar.delete_calendar_event(
                 host_user_id, booking["calendar_event_id"], cal_id
             )
-        except Exception:
-            pass  # Don't block cancellation if Google API fails
+        except Exception as e:
+            logging.error(f"Failed to delete GCal event {booking['calendar_event_id']} for booking {booking['id']}: {e}")
 
     # Update booking status
     supabase.table("bookings").update({
@@ -432,8 +453,8 @@ async def cancel_booking(request: Request, booking_id: str, payload: BookingCanc
             await google_calendar.delete_calendar_event(
                 user_id, booking["calendar_event_id"], cancel_calendar_id
             )
-        except Exception:
-            pass  # Don't block cancellation if Google API fails
+        except Exception as e:
+            logging.error(f"Failed to delete GCal event {booking['calendar_event_id']} for booking {booking_id}: {e}")
 
     supabase.table("bookings").update({
         "status":            BookingStatus.cancelled,
