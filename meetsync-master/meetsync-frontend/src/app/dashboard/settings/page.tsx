@@ -177,23 +177,23 @@ export default function SettingsPage() {
           <p className="text-sm font-semibold text-[var(--text-primary)] mb-2">Double Booking Prevention</p>
           <div className="flex items-center justify-between gap-6">
             <p className="text-xs text-[var(--text-secondary)] max-w-lg">
-              When <span className="text-[var(--text-primary)] font-medium">OFF</span> (default), MeetSync blocks duplicate bookings at the same time using Google Calendar and database checks.
-              Turn <span className="text-[var(--text-primary)] font-medium">ON</span> to allow multiple bookings at the exact same time slot.
+              When <span className="text-[var(--text-primary)] font-medium">ON</span> (default), MeetSync blocks duplicate bookings at the same time using Google Calendar and database checks.
+              Turn <span className="text-[var(--text-primary)] font-medium">OFF</span> to allow multiple bookings at the exact same time slot.
             </p>
             <button
               type="button"
               role="switch"
-              aria-checked={allowDoubleBooking}
+              aria-checked={!allowDoubleBooking}
               onClick={() => setAllowDoubleBooking(!allowDoubleBooking)}
               className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${
-                allowDoubleBooking
+                !allowDoubleBooking
                   ? "bg-gradient-to-r from-[#3b6ae8] to-[#38bfff]"
                   : "bg-[var(--bg-card-hover)]"
               }`}
             >
               <span
                 className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white border border-gray-300 shadow transition-transform duration-200 ease-in-out ${
-                  allowDoubleBooking ? "translate-x-5" : "translate-x-0.5"
+                  !allowDoubleBooking ? "translate-x-5" : "translate-x-0.5"
                 } mt-[2px]`}
               />
             </button>

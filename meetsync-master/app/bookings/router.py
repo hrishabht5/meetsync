@@ -98,6 +98,7 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
         host_settings.data[0].get("allow_double_booking", False)
         if host_settings.data else False
     )
+    logging.info(f"Double-booking check: allow_double={allow_double}, host={host_user_id}")
 
     if not allow_double:
         scheduled_iso = payload.scheduled_at.isoformat()
@@ -107,6 +108,7 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
             .eq("scheduled_at", scheduled_iso) \
             .neq("status", "cancelled") \
             .execute()
+        logging.info(f"Conflict check: scheduled_at={scheduled_iso}, conflicts={len(conflict.data)}")
         if conflict.data:
             raise HTTPException(
                 status_code=409,
