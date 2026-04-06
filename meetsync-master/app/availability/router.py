@@ -117,12 +117,8 @@ async def get_available_slots(
         slots.append(slot_dt.isoformat())
 
     now = datetime.now(tz=tz)
-    
-    if allow_double:
-        available = [s for s in slots if datetime.fromisoformat(s) > now]
-        return {"date": date, "slots": available, "timezone": settings["timezone"]}
 
-    # Fetch existing local bookings on that day (query in UTC to match DB storage)
+    # Always check MeetSync DB bookings (these are always managed)
     day_start_local = datetime.combine(target_date, time(0, 0), tzinfo=tz)
     day_end_local = datetime.combine(target_date, time(23, 59, 59), tzinfo=tz)
     start_dt_utc = day_start_local.astimezone(timezone.utc)
@@ -135,9 +131,12 @@ async def get_available_slots(
         .lte("scheduled_at", end_dt_utc.isoformat()) \
         .execute().data
 
-    # Fetch Google Calendar busy times (reuse the UTC range already computed)
-    from app.integrations.google_calendar import get_google_busy_times
-    google_busy = await get_google_busy_times(user_id, start_dt_utc, end_dt_utc)
+    # Only check Google Calendar when Double Booking Prevention is ON
+    # (allow_double=False means prevention is active → check external calendar)
+    google_busy = []
+    if not allow_double:
+        from app.integrations.google_calendar import get_google_busy_times
+        google_busy = await get_google_busy_times(user_id, start_dt_utc, end_dt_utc)
 
     # Remove conflicting slots
     duration_map = {"15-min quick chat": 15, "30-min intro call": 30, "60-min deep dive": 60}
@@ -146,7 +145,7 @@ async def get_available_slots(
     def conflicts(slot_start: datetime) -> bool:
         slot_end = slot_start + timedelta(minutes=event_duration)
         
-        # Check local bookings
+        # Check local MeetSync bookings (always)
         for bk in booked:
             # Parse DB ISO string safely
             bk_iso = bk["scheduled_at"].replace("Z", "+00:00")
@@ -158,14 +157,10 @@ async def get_available_slots(
             if not (slot_end <= bk_start - timedelta(minutes=buffer) or slot_start >= bk_end):
                 return True
                 
-        # Check Google Calendar busy blocks
-        # Google Calendar returns exact busy blocks, so we add buffer here just like local bookings if needed
-        # Or we can just check strict overlap
+        # Check Google Calendar busy blocks (only when prevention is ON)
         for busy in google_busy:
             busy_start = busy["start"]
             busy_end = busy["end"]
-            # To be safe, add our buffer minutes to busy_end so we don't schedule right back to back 
-            # if they have a non-MeetSync meeting. (Optional, but often preferred)
             busy_padded_start = busy_start - timedelta(minutes=buffer)
             busy_padded_end = busy_end + timedelta(minutes=buffer)
             if not (slot_end <= busy_padded_start or slot_start >= busy_padded_end):

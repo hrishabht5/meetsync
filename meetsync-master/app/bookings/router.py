@@ -89,39 +89,24 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
     if not host_user_id:
         raise HTTPException(status_code=400, detail="Missing host identity for booking")
 
-    # ── 2. Guard against double-booking ──────────────────
-    print(f"[BOOKING v2] create_booking called for host={host_user_id}")
-    host_settings = supabase.table("availability_settings") \
-        .select("allow_double_booking") \
+    # ── 2. Guard against double-booking (always — MeetSync DB is always managed) ──
+    # Normalize to UTC for robust timestamp comparison
+    sched_utc = payload.scheduled_at.astimezone(timezone.utc)
+    scheduled_iso = sched_utc.isoformat()
+    print(f"[BOOKING v3] Checking DB conflicts at scheduled_at={scheduled_iso} for host={host_user_id}")
+    conflict = supabase.table("bookings") \
+        .select("id") \
         .eq("user_id", host_user_id) \
+        .eq("scheduled_at", scheduled_iso) \
+        .neq("status", "cancelled") \
         .execute()
-    allow_double = (
-        host_settings.data[0].get("allow_double_booking", False)
-        if host_settings.data else False
-    )
-    print(f"[BOOKING v2] allow_double_booking={allow_double} (raw={host_settings.data})")
-
-    if not allow_double:
-        # Normalize to UTC for robust timestamp comparison
-        from datetime import timezone as tz_mod
-        sched_utc = payload.scheduled_at.astimezone(tz_mod.utc)
-        scheduled_iso = sched_utc.isoformat()
-        print(f"[BOOKING v2] Checking conflicts at scheduled_at={scheduled_iso}")
-        conflict = supabase.table("bookings") \
-            .select("id") \
-            .eq("user_id", host_user_id) \
-            .eq("scheduled_at", scheduled_iso) \
-            .neq("status", "cancelled") \
-            .execute()
-        print(f"[BOOKING v2] Conflict result: {len(conflict.data)} existing bookings found")
-        if conflict.data:
-            print(f"[BOOKING v2] BLOCKING double booking! Conflicting IDs: {[c['id'] for c in conflict.data]}")
-            raise HTTPException(
-                status_code=409,
-                detail="This time slot has just been taken. Please go back and choose another time."
-            )
-    else:
-        print(f"[BOOKING v2] Double booking allowed — skipping guard")
+    print(f"[BOOKING v3] Conflict result: {len(conflict.data)} existing bookings found")
+    if conflict.data:
+        print(f"[BOOKING v3] BLOCKING — slot already taken by: {[c['id'] for c in conflict.data]}")
+        raise HTTPException(
+            status_code=409,
+            detail="This time slot has just been taken. Please go back and choose another time."
+        )
 
     # ── 3. Create Google Meet event ───────────────────────
     duration_map = {

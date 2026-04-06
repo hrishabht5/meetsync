@@ -177,8 +177,8 @@ export default function SettingsPage() {
           <p className="text-sm font-semibold text-[var(--text-primary)] mb-2">Double Booking Prevention</p>
           <div className="flex items-center justify-between gap-6">
             <p className="text-xs text-[var(--text-secondary)] max-w-lg">
-              When <span className="text-[var(--text-primary)] font-medium">ON</span> (default), MeetSync blocks duplicate bookings at the same time using Google Calendar and database checks.
-              Turn <span className="text-[var(--text-primary)] font-medium">OFF</span> to allow multiple bookings at the exact same time slot.
+              When <span className="text-[var(--text-primary)] font-medium">ON</span> (default), MeetSync checks your Google Calendar for events from other apps and blocks conflicting time slots.
+              Turn <span className="text-[var(--text-primary)] font-medium">OFF</span> to ignore external calendar events and only prevent conflicts with MeetSync bookings.
             </p>
             <button
               type="button"
