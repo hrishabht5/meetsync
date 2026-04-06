@@ -90,6 +90,7 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
         raise HTTPException(status_code=400, detail="Missing host identity for booking")
 
     # ── 2. Guard against double-booking ──────────────────
+    print(f"[BOOKING v2] create_booking called for host={host_user_id}")
     host_settings = supabase.table("availability_settings") \
         .select("allow_double_booking") \
         .eq("user_id", host_user_id) \
@@ -98,22 +99,29 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
         host_settings.data[0].get("allow_double_booking", False)
         if host_settings.data else False
     )
-    logging.info(f"Double-booking check: allow_double={allow_double}, host={host_user_id}")
+    print(f"[BOOKING v2] allow_double_booking={allow_double} (raw={host_settings.data})")
 
     if not allow_double:
-        scheduled_iso = payload.scheduled_at.isoformat()
+        # Normalize to UTC for robust timestamp comparison
+        from datetime import timezone as tz_mod
+        sched_utc = payload.scheduled_at.astimezone(tz_mod.utc)
+        scheduled_iso = sched_utc.isoformat()
+        print(f"[BOOKING v2] Checking conflicts at scheduled_at={scheduled_iso}")
         conflict = supabase.table("bookings") \
             .select("id") \
             .eq("user_id", host_user_id) \
             .eq("scheduled_at", scheduled_iso) \
             .neq("status", "cancelled") \
             .execute()
-        logging.info(f"Conflict check: scheduled_at={scheduled_iso}, conflicts={len(conflict.data)}")
+        print(f"[BOOKING v2] Conflict result: {len(conflict.data)} existing bookings found")
         if conflict.data:
+            print(f"[BOOKING v2] BLOCKING double booking! Conflicting IDs: {[c['id'] for c in conflict.data]}")
             raise HTTPException(
                 status_code=409,
                 detail="This time slot has just been taken. Please go back and choose another time."
             )
+    else:
+        print(f"[BOOKING v2] Double booking allowed — skipping guard")
 
     # ── 3. Create Google Meet event ───────────────────────
     duration_map = {
@@ -154,11 +162,13 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
     # ── 4. Store booking ──────────────────────────────────
     booking_id = str(uuid.uuid4())
     # management_token was already generated above for the calendar description
+    # Normalize scheduled_at to UTC for consistent storage & conflict checks
+    stored_scheduled_at = payload.scheduled_at.astimezone(timezone.utc).isoformat()
     booking_row = {
         "id":                booking_id,
         "guest_name":        payload.guest_name,
         "guest_email":       payload.guest_email,
-        "scheduled_at":      payload.scheduled_at.isoformat(),
+        "scheduled_at":      stored_scheduled_at,
         "event_type":        payload.event_type,
         "custom_title":      link_custom_title or None,
         "notes":             payload.notes,
@@ -274,14 +284,17 @@ async def guest_cancel_booking(
         raise HTTPException(status_code=400, detail="Cannot cancel a booking that has already passed")
 
     # Delete Google Calendar event
+    print(f"[CANCEL] calendar_event_id={booking.get('calendar_event_id')}, host={host_user_id}")
     if booking.get("calendar_event_id"):
         try:
             cal_id = _preferred_calendar_id(host_user_id)
+            print(f"[CANCEL] Deleting GCal event {booking['calendar_event_id']} from calendar {cal_id}")
             await google_calendar.delete_calendar_event(
                 host_user_id, booking["calendar_event_id"], cal_id
             )
+            print(f"[CANCEL] GCal event deleted successfully")
         except Exception as e:
-            logging.error(f"Failed to delete GCal event {booking['calendar_event_id']} for booking {booking['id']}: {e}")
+            print(f"[CANCEL] ERROR deleting GCal event: {type(e).__name__}: {e}")
 
     # Update booking status
     supabase.table("bookings").update({
@@ -456,7 +469,7 @@ async def cancel_booking(request: Request, booking_id: str, payload: BookingCanc
                 user_id, booking["calendar_event_id"], cancel_calendar_id
             )
         except Exception as e:
-            logging.error(f"Failed to delete GCal event {booking['calendar_event_id']} for booking {booking_id}: {e}")
+            print(f"[HOST-CANCEL] ERROR deleting GCal event: {type(e).__name__}: {e}")
 
     supabase.table("bookings").update({
         "status":            BookingStatus.cancelled,
