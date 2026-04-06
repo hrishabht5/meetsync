@@ -5,9 +5,10 @@ from enum import Enum
 
 
 class BookingStatus(str, Enum):
-    pending   = "pending"
-    confirmed = "confirmed"
-    cancelled = "cancelled"
+    pending      = "pending"
+    confirmed    = "confirmed"
+    cancelled    = "cancelled"
+    rescheduled  = "rescheduled"
 
 
 class OTLStatus(str, Enum):
@@ -71,6 +72,26 @@ class BookingResponse(BaseModel):
 
 class BookingCancel(BaseModel):
     reason: Optional[str] = None
+
+
+class BookingReschedule(BaseModel):
+    new_scheduled_at: datetime   # ISO 8601 with timezone
+
+
+class GuestBookingResponse(BaseModel):
+    """Subset of booking fields safe for unauthenticated guest view."""
+    id:             str
+    guest_name:     str
+    guest_email:    str
+    scheduled_at:   datetime
+    event_type:     str
+    custom_title:   Optional[str] = None
+    status:         str
+    meet_link:      Optional[str] = None
+    notes:          Optional[str] = None
+    custom_answers: Optional[dict] = None
+    created_at:     Optional[datetime] = None
+    host_user_id:   Optional[str] = None    # needed for availability lookups
 
 
 # ── One-Time Links ────────────────────────────────────────

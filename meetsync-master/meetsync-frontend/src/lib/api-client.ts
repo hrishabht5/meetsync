@@ -136,6 +136,22 @@ export const api = {
       }),
   },
 
+  // ── Guest Self-Serve Management ────────────────────────
+  manage: {
+    getBooking: (token: string) =>
+      request<GuestBookingResponse>(`/bookings/manage/${token}/`),
+    cancel: (token: string, reason?: string) =>
+      request<{ status: string; booking_id: string }>(`/bookings/manage/${token}/cancel/`, {
+        method: "PATCH",
+        body: JSON.stringify({ reason }),
+      }),
+    reschedule: (token: string, newScheduledAt: string) =>
+      request<{ status: string; booking_id: string; scheduled_at: string; meet_link: string }>(
+        `/bookings/manage/${token}/reschedule/`,
+        { method: "PATCH", body: JSON.stringify({ new_scheduled_at: newScheduledAt }) }
+      ),
+  },
+
   // ── One-Time Links ────────────────────────────────────
   links: {
     validate: (token: string) => request<OTLRow>(`/links/${token}/`),
@@ -307,12 +323,29 @@ export interface BookingRow {
   scheduled_at: string;
   event_type: string;
   custom_title?: string | null;
-  status: "pending" | "confirmed" | "cancelled";
+  status: "pending" | "confirmed" | "cancelled" | "rescheduled";
   meet_link?: string;
   calendar_event_id?: string;
   one_time_link_id?: string;
   notes?: string;
   custom_answers?: Record<string, string>;
+  management_token?: string;
+}
+
+// Guest-safe booking view (no internal IDs)
+export interface GuestBookingResponse {
+  id: string;
+  guest_name: string;
+  guest_email: string;
+  scheduled_at: string;
+  event_type: string;
+  custom_title?: string | null;
+  status: string;
+  meet_link?: string;
+  notes?: string;
+  custom_answers?: Record<string, string>;
+  created_at?: string;
+  host_user_id?: string;
 }
 
 // One-Time Links

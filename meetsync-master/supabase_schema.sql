@@ -82,6 +82,7 @@ CREATE TABLE IF NOT EXISTS bookings (
     calendar_event_id   TEXT,
     one_time_link_id    TEXT REFERENCES one_time_links(id),
     cancellation_note   TEXT,
+    management_token    TEXT UNIQUE,          -- secure token for guest self-serve management
     created_at          TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -89,6 +90,7 @@ CREATE INDEX IF NOT EXISTS idx_bookings_user        ON bookings (user_id);
 CREATE INDEX IF NOT EXISTS idx_bookings_scheduled   ON bookings (scheduled_at);
 CREATE INDEX IF NOT EXISTS idx_bookings_status      ON bookings (status);
 CREATE INDEX IF NOT EXISTS idx_bookings_email       ON bookings (guest_email);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_bookings_management_token ON bookings (management_token) WHERE management_token IS NOT NULL;
 
 
 -- ── 5. Webhook Endpoints ──────────────────────────────────

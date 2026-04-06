@@ -26,6 +26,7 @@ export default function BookingPage() {
   const [meetLink, setMeetLink] = useState("");
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [consent, setConsent] = useState(false);
+  const [managementToken, setManagementToken] = useState("");
 
   // Step 1: validate OTL
   useEffect(() => {
@@ -100,6 +101,7 @@ export default function BookingPage() {
         custom_answers: Object.keys(customAnswers).length > 0 ? customAnswers : undefined,
       });
       setMeetLink(booking.meet_link ?? "");
+      setManagementToken(booking.management_token ?? "");
       setStep("success");
     } catch (e: unknown) {
       setErrorMsg(errMsg(e));
@@ -304,6 +306,17 @@ export default function BookingPage() {
                    className="w-full py-3 rounded-2xl bg-brand-gradient text-white font-semibold text-sm text-center transition-all shadow-lg shadow-[rgba(59,106,232,0.35)] hover:opacity-90 hover:-translate-y-0.5">
                   🎥 Join Google Meet
                 </a>
+              )}
+              {managementToken && (
+                <a href={`/manage/${managementToken}`}
+                   className="w-full py-3 rounded-2xl bg-[var(--bg-card-hover)] text-[var(--text-primary)] font-semibold text-sm text-center transition-all ring-1 ring-[var(--border)] hover:ring-[var(--border-accent)] hover:-translate-y-0.5">
+                  🔧 Manage Booking (Cancel / Reschedule)
+                </a>
+              )}
+              {managementToken && (
+                <p className="text-xs text-[var(--text-secondary)] text-center">
+                  Save this link to cancel or reschedule later
+                </p>
               )}
             </div>
           )}
