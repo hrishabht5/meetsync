@@ -8,19 +8,16 @@ State machine:  active → used  (on first booking)
 """
 
 import secrets
-import string
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from app.core.config import supabase, FRONTEND_URL
 from app.core.schemas import OTLStatus
 
 
-def _generate_token(prefix: str = "lnk", length: int = 8) -> str:
-    """Generate a URL-safe token like lnk_a3f8x9qr"""
-    alphabet = string.ascii_lowercase + string.digits
-    random_part = "".join(secrets.choice(alphabet) for _ in range(length))
-    return f"{prefix}_{random_part}"
+def _generate_token(prefix: str = "lnk") -> str:
+    """Generate a URL-safe token with 128-bit entropy."""
+    return f"{prefix}_{secrets.token_hex(16)}"
 
 
 def _parse_expiry(expires_in: Optional[str]) -> Optional[datetime]:
@@ -28,9 +25,9 @@ def _parse_expiry(expires_in: Optional[str]) -> Optional[datetime]:
     if not expires_in or expires_in == "never":
         return None
     if expires_in.endswith("h"):
-        return datetime.utcnow() + timedelta(hours=int(expires_in[:-1]))
+        return datetime.now(timezone.utc) + timedelta(hours=int(expires_in[:-1]))
     if expires_in.endswith("d"):
-        return datetime.utcnow() + timedelta(days=int(expires_in[:-1]))
+        return datetime.now(timezone.utc) + timedelta(days=int(expires_in[:-1]))
     return None
 
 
@@ -85,7 +82,7 @@ def validate_otl(token: str) -> dict:
     # Check expiry even if status hasn't been updated yet
     if otl["expires_at"]:
         exp = datetime.fromisoformat(otl["expires_at"].replace("Z", "+00:00"))
-        if datetime.utcnow() > exp.replace(tzinfo=None):
+        if datetime.now(timezone.utc) > exp:
             # Auto-update status
             supabase.table("one_time_links").update({"status": OTLStatus.expired}).eq("id", token).execute()
             raise ValueError("This booking link has expired.")
@@ -97,7 +94,7 @@ def mark_otl_used(token: str, booking_id: str):
     """Atomically mark a link as used and record which booking consumed it."""
     supabase.table("one_time_links").update({
         "status":     OTLStatus.used,
-        "used_at":    datetime.utcnow().isoformat(),
+        "used_at":    datetime.now(timezone.utc).isoformat(),
         "booking_id": booking_id,
     }).eq("id", token).execute()
 

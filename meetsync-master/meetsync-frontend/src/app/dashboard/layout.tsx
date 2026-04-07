@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, Suspense } from "react";
+import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 import { api } from "@/lib/api-client";
 import { ThemeToggle } from "@/components/themeToggle";
 
@@ -14,20 +14,6 @@ const nav = [
   { href: "/dashboard/webhooks", label: "API & Webhooks", icon: "🔔" },
   { href: "/dashboard/settings", label: "Settings", icon: "⚙️" },
 ];
-
-function SearchParamHandler() {
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const token = searchParams.get("token");
-    if (token) {
-      localStorage.setItem("meetsync_token", token);
-      window.history.replaceState({}, "", window.location.pathname);
-    }
-  }, [searchParams]);
-
-  return null;
-}
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const path = usePathname();
@@ -46,10 +32,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen flex bg-page-gradient">
-      <Suspense fallback={null}>
-        <SearchParamHandler />
-      </Suspense>
-
       {/* Sidebar */}
       <aside className="w-60 flex-shrink-0 border-r border-[var(--border)] flex flex-col bg-[var(--bg-card)]/60 backdrop-blur-sm">
         {/* Logo */}

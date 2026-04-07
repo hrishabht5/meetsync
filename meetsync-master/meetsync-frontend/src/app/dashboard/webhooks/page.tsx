@@ -86,7 +86,7 @@ function ApiDocsTab() {
           <p className="text-sm font-semibold text-[var(--text-primary)] mb-1">MeetSync Public API</p>
           <p className="text-xs text-[var(--text-secondary)]">Base URL: <code className="font-mono text-[var(--accent-cyan)]">{BASE_URL}</code></p>
           <p className="text-xs text-[var(--text-secondary)] mt-1">
-            Authenticate with <code className="font-mono text-[var(--accent-cyan)]">Authorization: Bearer &lt;api-key&gt;</code> or the <code className="font-mono text-[var(--accent-cyan)]">X-MeetSync-User</code> session header.
+            Authenticate with <code className="font-mono text-[var(--accent-cyan)]">Authorization: Bearer &lt;api-key&gt;</code>.
           </p>
         </div>
         <a

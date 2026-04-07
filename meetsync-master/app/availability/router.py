@@ -81,7 +81,10 @@ async def get_available_slots(
         from app.auth.middleware import get_current_user_id
         user_id = get_current_user_id(request)
 
-    settings = _get_settings(user_id)
+    try:
+        settings = _get_settings(user_id)
+    except Exception:
+        return {"date": date, "slots": [], "timezone": "UTC"}
     allow_double = settings.get("allow_double_booking", False)
 
     # Check for date override first

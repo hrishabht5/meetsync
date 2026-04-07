@@ -21,20 +21,11 @@ export default function HomePage() {
   const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Capture token from Google OAuth redirect
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const token = params.get("token");
-      if (token) {
-        localStorage.setItem("meetsync_token", token);
-        // Clean URL then redirect to dashboard
-        window.history.replaceState({}, "", "/");
-        router.push("/dashboard");
-        return;
-      }
-    }
     api.auth.status()
-      .then((res) => setIsLoggedIn(res.connected))
+      .then((res) => {
+        setIsLoggedIn(res.connected);
+        if (res.connected) router.push("/dashboard");
+      })
       .catch(() => setIsLoggedIn(false));
   }, [router]);
 
@@ -55,12 +46,9 @@ export default function HomePage() {
     setFormError(null);
     setSubmitting(true);
     try {
-      const res = tab === "signup"
-        ? await api.auth.signup(email, password)
-        : await api.auth.login(email, password);
-      if (res.token) {
-        localStorage.setItem("meetsync_token", res.token);
-      }
+      await (tab === "signup"
+        ? api.auth.signup(email, password)
+        : api.auth.login(email, password));
       router.push("/dashboard");
     } catch (err: unknown) {
       setFormError(err instanceof Error ? err.message : "Authentication failed");

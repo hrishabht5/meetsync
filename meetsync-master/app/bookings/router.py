@@ -105,16 +105,13 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
     # Normalize to UTC for robust timestamp comparison
     sched_utc = payload.scheduled_at.astimezone(timezone.utc)
     scheduled_iso = sched_utc.isoformat()
-    print(f"[BOOKING v3] Checking DB conflicts at scheduled_at={scheduled_iso} for host={host_user_id}")
     conflict = supabase.table("bookings") \
         .select("id") \
         .eq("user_id", host_user_id) \
         .eq("scheduled_at", scheduled_iso) \
         .neq("status", "cancelled") \
         .execute()
-    print(f"[BOOKING v3] Conflict result: {len(conflict.data)} existing bookings found")
     if conflict.data:
-        print(f"[BOOKING v3] BLOCKING — slot already taken by: {[c['id'] for c in conflict.data]}")
         raise HTTPException(
             status_code=409,
             detail="This time slot has just been taken. Please go back and choose another time."
@@ -154,7 +151,7 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
     except ValueError as e:
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Could not create Google Calendar event: {e}")
+        raise HTTPException(status_code=502, detail="Could not create Google Calendar event. Please try again.")
 
     # ── 4. Store booking ──────────────────────────────────
     booking_id = str(uuid.uuid4())
@@ -185,10 +182,12 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
         otl_service.mark_otl_used(payload.one_time_link_id, booking_id)
 
     # ── 6. Fire webhooks (background) ─────────────────────
+    # Exclude management_token from external webhook payloads
+    webhook_payload = {k: v for k, v in booking_row.items() if k != "management_token"}
     background_tasks.add_task(
         webhook_service.fire_event,
         "booking.created",
-        {**booking_row, "meet_link": meet_data["meet_link"]},
+        webhook_payload,
         host_user_id,
     )
     if meet_data["meet_link"]:
@@ -281,17 +280,14 @@ async def guest_cancel_booking(
         raise HTTPException(status_code=400, detail="Cannot cancel a booking that has already passed")
 
     # Delete Google Calendar event
-    print(f"[CANCEL] calendar_event_id={booking.get('calendar_event_id')}, host={host_user_id}")
     if booking.get("calendar_event_id"):
         try:
             cal_id = _preferred_calendar_id(host_user_id)
-            print(f"[CANCEL] Deleting GCal event {booking['calendar_event_id']} from calendar {cal_id}")
             await google_calendar.delete_calendar_event(
                 host_user_id, booking["calendar_event_id"], cal_id
             )
-            print(f"[CANCEL] GCal event deleted successfully")
         except Exception as e:
-            print(f"[CANCEL] ERROR deleting GCal event: {type(e).__name__}: {e}")
+            logging.warning("Failed to delete GCal event %s: %s", booking["calendar_event_id"], e)
 
     # Update booking status
     supabase.table("bookings").update({
@@ -396,7 +392,7 @@ async def guest_reschedule_booking(
     except Exception as e:
         raise HTTPException(
             status_code=502,
-            detail=f"Could not create the new calendar event. Please try again. ({e})"
+            detail="Could not create the new calendar event. Please try again."
         )
 
     # ── Update booking row in-place ───────────────────────
@@ -502,7 +498,7 @@ async def cancel_booking(request: Request, booking_id: str, payload: BookingCanc
                 user_id, booking["calendar_event_id"], cancel_calendar_id
             )
         except Exception as e:
-            print(f"[HOST-CANCEL] ERROR deleting GCal event: {type(e).__name__}: {e}")
+            logging.warning("Failed to delete GCal event %s: %s", booking["calendar_event_id"], e)
 
     supabase.table("bookings").update({
         "status":            BookingStatus.cancelled,

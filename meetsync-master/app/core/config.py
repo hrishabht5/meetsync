@@ -29,4 +29,6 @@ GOOGLE_REDIRECT_URI  = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/a
 # ── App ───────────────────────────────────────────────────
 APP_BASE_URL  = os.getenv("APP_BASE_URL", "http://localhost:8000")
 FRONTEND_URL  = os.getenv("FRONTEND_URL", "http://localhost:3000")
-SECRET_KEY    = os.getenv("SECRET_KEY", "change-me-in-production-use-a-long-random-string")
+SECRET_KEY    = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise ValueError("Missing required environment variable: SECRET_KEY")

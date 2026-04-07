@@ -17,17 +17,19 @@ app = FastAPI(
 # Clean FRONTEND_URL to avoid CORS issues with trailing slashes
 CLEAN_FRONTEND_URL = FRONTEND_URL.rstrip("/")
 
+import os as _os
+_dev_origins = ["http://localhost:3000", "http://127.0.0.1:3000"] if _os.getenv("ALLOW_DEV_ORIGINS") == "true" else []
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         CLEAN_FRONTEND_URL,
         f"{CLEAN_FRONTEND_URL}/",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
+        *_dev_origins,
     ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["Content-Type", "Authorization", "X-MeetSync-User"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -54,16 +56,23 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         client_ip = request.client.host if request.client else "127.0.0.1"
         now = time.time()
-        
+        cutoff = now - 60
+
+        # Evict stale IPs periodically to prevent unbounded memory growth
+        if len(self.ip_requests) > 500:
+            stale = [ip for ip, times in self.ip_requests.items() if not times or max(times) < cutoff]
+            for ip in stale:
+                del self.ip_requests[ip]
+
         # Slide window (60 seconds)
-        self.ip_requests[client_ip] = [t for t in self.ip_requests[client_ip] if now - t < 60]
-        
+        self.ip_requests[client_ip] = [t for t in self.ip_requests[client_ip] if t > cutoff]
+
         if len(self.ip_requests[client_ip]) >= self.requests_per_minute:
             return JSONResponse(
                 status_code=429,
                 content={"error": True, "message": "Too many requests. Please try again later."}
             )
-            
+
         self.ip_requests[client_ip].append(now)
         return await call_next(request)
 

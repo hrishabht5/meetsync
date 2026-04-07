@@ -25,19 +25,6 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     }
   }
 
-  // Cross-domain token fallback (if cookies are blocked)
-  if (typeof window !== "undefined") {
-    let token = localStorage.getItem("meetsync_token");
-    // Backup: If not in storage yet, check URL directly
-    if (!token) {
-      const search = new URLSearchParams(window.location.search);
-      token = search.get("token");
-    }
-    if (token) {
-      headers["X-MeetSync-User"] = token;
-    }
-  }
-
   // Ensure trailing slash for all paths to avoid 307 redirects on Render
   const normalizedPath = path.endsWith("/") || path.includes("?") 
     ? path 
@@ -69,18 +56,19 @@ export const api = {
     status: () =>
       request<AuthStatus>("/auth/status/"),
     signup: (email: string, password: string) =>
-      request<{ status: string; user_id: string; token: string }>("/auth/signup/", {
+      request<{ status: string; user_id: string }>("/auth/signup/", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       }),
     login: (email: string, password: string) =>
-      request<{ status: string; user_id: string; token: string }>("/auth/login/", {
+      request<{ status: string; user_id: string }>("/auth/login/", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       }),
     disconnect: () => request<{ status: string }>("/auth/disconnect/", { method: "DELETE" }),
     logout: async () => {
       await request<{ status: string }>("/auth/logout/", { method: "POST" });
+      // Clear any legacy token that may have been stored before this fix
       if (typeof window !== "undefined") {
         localStorage.removeItem("meetsync_token");
       }

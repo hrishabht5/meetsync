@@ -8,9 +8,14 @@ from fastapi.testclient import TestClient
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-FAKE_USER   = "test_profile_user_001"
-FAKE_EMAIL  = "testprofile@example.com"
-AUTH_HEADER = {"X-MeetSync-User": f"{FAKE_USER}|fake_sig_for_test"}
+FAKE_USER  = "test_profile_user_001"
+FAKE_EMAIL = "testprofile@example.com"
+
+
+def _auth_cookies(user_id: str) -> dict:
+    """Return a properly signed session cookie for test requests."""
+    from app.auth.middleware import make_user_session_cookie_value
+    return {"meetsync_user": make_user_session_cookie_value(user_id)}
 
 
 def _seed_profile(client: TestClient) -> dict:
@@ -44,9 +49,7 @@ class TestPublicProfile:
 class TestMyProfile:
     def test_get_me(self, client: TestClient):
         _seed_profile(client)
-        r = client.get("/profiles/me/", headers=AUTH_HEADER)
-        # Will be 401/403 if auth middleware rejects the fake header,
-        # or 200 if the test environment bypasses HMAC verification.
+        r = client.get("/profiles/me/", cookies=_auth_cookies(FAKE_USER))
         assert r.status_code in (200, 401, 403)
 
     def test_update_me_username_taken(self, client: TestClient):

@@ -103,9 +103,10 @@ function PermanentLinkBookingPageInner() {
       setMeetLink(booking.meet_link ?? "");
       setStep("success");
       if (isEmbed) {
+        const parentOrigin = document.referrer ? new URL(document.referrer).origin : window.location.origin;
         window.parent.postMessage(
           { type: "meetsync:booking_confirmed", bookingId: booking.id, meetLink: booking.meet_link ?? "" },
-          "*"
+          parentOrigin
         );
       }
     } catch (e: unknown) {

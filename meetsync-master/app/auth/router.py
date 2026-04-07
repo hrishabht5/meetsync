@@ -15,8 +15,9 @@ DELETE /auth/account            → GDPR account deletion
 """
 
 import uuid
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse
+from app.core.rate_limit import strict_rate_limit
 import bcrypt
 import httpx
 
@@ -65,12 +66,14 @@ def _upsert_user(user_id: str, email: str, password_hash: str = None):
     supabase.table("users").upsert(row, on_conflict="id").execute()
 
 
+import logging as _logging
+
 def _ensure_profile(user_id: str, email: str):
     try:
         from app.profiles.service import ensure_profile_exists
         ensure_profile_exists(user_id, email)
     except Exception as e:
-        print(f"DEBUG: Could not create profile for {user_id}: {e}")
+        _logging.warning("Could not create profile for %s: %s", user_id, e)
 
 
 # ── Google OAuth ──────────────────────────────────────────
@@ -151,21 +154,19 @@ async def google_callback(request: Request, code: str = None, error: str = None,
 
             _ensure_profile(actual_user_id, email)
 
-            token = make_user_session_cookie_value(actual_user_id)
-            redirect = RedirectResponse(url=f"{FRONTEND_URL}/dashboard?auth=success&token={token}")
+            redirect = RedirectResponse(url=f"{FRONTEND_URL}/dashboard?auth=success")
             _set_session_cookie(redirect, actual_user_id, secure)
-            print(f"DEBUG: Google sign-in for {actual_user_id}. Secure={secure}")
             return redirect
 
     except Exception as e:
-        print(f"DEBUG: Auth callback error: {e}")
+        _logging.warning("Auth callback error: %s", e)
         return RedirectResponse(url=f"{FRONTEND_URL}?auth_error=token_exchange_failed")
 
 
 # ── Email / Password ──────────────────────────────────────
 
 @router.post("/signup")
-async def signup(request: Request, payload: SignupRequest):
+async def signup(request: Request, payload: SignupRequest, _=Depends(strict_rate_limit)):
     """Create a new account with email + password. Session is set immediately."""
     # Check if email already exists
     existing = supabase.table("users").select("id").eq("email", payload.email).execute()
@@ -178,14 +179,13 @@ async def signup(request: Request, payload: SignupRequest):
     _ensure_profile(user_id, payload.email)
 
     secure = _is_secure(request)
-    token = make_user_session_cookie_value(user_id)
-    response = JSONResponse(content={"status": "created", "user_id": user_id, "token": token})
+    response = JSONResponse(content={"status": "created", "user_id": user_id})
     _set_session_cookie(response, user_id, secure)
     return response
 
 
 @router.post("/login")
-async def login(request: Request, payload: LoginRequest):
+async def login(request: Request, payload: LoginRequest, _=Depends(strict_rate_limit)):
     """Log in with email + password."""
     result = supabase.table("users").select("id,password_hash").eq("email", payload.email).execute()
     if not result.data:
@@ -193,14 +193,13 @@ async def login(request: Request, payload: LoginRequest):
 
     user = result.data[0]
     if not user.get("password_hash"):
-        raise HTTPException(status_code=401, detail="This account uses Google Sign-In. Please log in with Google.")
+        raise HTTPException(status_code=401, detail="Invalid email or password.")
 
     if not bcrypt.checkpw(payload.password.encode(), user["password_hash"].encode()):
         raise HTTPException(status_code=401, detail="Invalid email or password.")
 
     secure = _is_secure(request)
-    token = make_user_session_cookie_value(user["id"])
-    response = JSONResponse(content={"status": "ok", "user_id": user["id"], "token": token})
+    response = JSONResponse(content={"status": "ok", "user_id": user["id"]})
     _set_session_cookie(response, user["id"], secure)
     return response
 
@@ -281,6 +280,7 @@ async def delete_account(request: Request):
     # Order matters: bookings → links → everything else → identity tables
     supabase.table("bookings").delete().eq("user_id", user_id).execute()
     supabase.table("one_time_links").delete().eq("user_id", user_id).execute()
+    supabase.table("permanent_links").delete().eq("user_id", user_id).execute()
     supabase.table("availability_overrides").delete().eq("user_id", user_id).execute()
     supabase.table("availability_settings").delete().eq("user_id", user_id).execute()
     supabase.table("api_keys").delete().eq("user_id", user_id).execute()

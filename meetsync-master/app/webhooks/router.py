@@ -44,7 +44,10 @@ def register_webhook(request: Request, payload: WebhookCreate):
         "user_id":   user_id,
     }
     result = supabase.table("webhooks").insert(row).execute()
-    return result.data[0]
+    # Never return the secret after registration
+    data = result.data[0]
+    data.pop("secret", None)
+    return data
 
 
 @router.get("/")
@@ -60,10 +63,10 @@ def list_webhooks(request: Request):
 def delete_webhook(request: Request, webhook_id: str):
     from app.auth.middleware import get_current_user_id
     user_id = get_current_user_id(request)
-    result = supabase.table("webhooks").select("id").eq("id", webhook_id).execute()
+    result = supabase.table("webhooks").select("id").eq("id", webhook_id).eq("user_id", user_id).execute()
     if not result.data:
         raise HTTPException(status_code=404, detail="Webhook not found")
-    supabase.table("webhooks").delete().eq("id", webhook_id).eq("user_id", user_id).execute()
+    supabase.table("webhooks").delete().eq("id", webhook_id).execute()
     return {"status": "deleted", "id": webhook_id}
 
 
@@ -71,20 +74,25 @@ def delete_webhook(request: Request, webhook_id: str):
 def toggle_webhook(request: Request, webhook_id: str):
     from app.auth.middleware import get_current_user_id
     user_id = get_current_user_id(request)
-    result = supabase.table("webhooks").select("is_active").eq("id", webhook_id).execute()
+    result = supabase.table("webhooks").select("is_active").eq("id", webhook_id).eq("user_id", user_id).execute()
     if not result.data:
         raise HTTPException(status_code=404, detail="Webhook not found")
     new_state = not result.data[0]["is_active"]
-    supabase.table("webhooks").update({"is_active": new_state}).eq("id", webhook_id).eq("user_id", user_id).execute()
+    supabase.table("webhooks").update({"is_active": new_state}).eq("id", webhook_id).execute()
     return {"is_active": new_state}
 
 
 @router.get("/logs")
 def get_webhook_logs(request: Request, limit: int = 50):
-    """Recent webhook delivery logs for the admin dashboard."""
-    # Logs table isn't scoped to user_id directly. We keep this MVP simple by
-    # returning last N logs; production should enforce scoping by webhook ids.
+    """Recent webhook delivery logs scoped to the authenticated user's webhooks."""
+    from app.auth.middleware import get_current_user_id
+    user_id = get_current_user_id(request)
+    user_webhooks = supabase.table("webhooks").select("id").eq("user_id", user_id).execute()
+    webhook_ids = [w["id"] for w in user_webhooks.data]
+    if not webhook_ids:
+        return []
     result = supabase.table("webhook_logs").select("*") \
+        .in_("webhook_id", webhook_ids) \
         .order("created_at", desc=True).limit(limit).execute()
     return result.data
 

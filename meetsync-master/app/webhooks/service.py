@@ -17,7 +17,7 @@ import hmac
 import json
 import uuid
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 import httpx
@@ -129,7 +129,7 @@ async def fire_event(event_name: str, data: Any, user_id: str = None):
     payload = {
         "event":      event_name,
         "id":         f"evt_{uuid.uuid4().hex[:12]}",
-        "created_at": datetime.utcnow().isoformat() + "Z",
+        "created_at": datetime.now(timezone.utc).isoformat(),
         "data":       data,
     }
 
