@@ -122,6 +122,7 @@ function OneTimeLinksTab() {
   const [meetingTitle, setMeetingTitle] = useState("");
   const [error, setError] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
+  const [embedId, setEmbedId] = useState<string | null>(null);
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [showFieldBuilder, setShowFieldBuilder] = useState(false);
 
@@ -394,6 +395,9 @@ function OneTimeLinksTab() {
                       {copied === lk.id ? "✓ Copied!" : "Copy"}
                     </Button>
                   )}
+                  <Button variant="secondary" size="sm" onClick={() => setEmbedId(embedId === lk.id ? null : lk.id)}>
+                    {embedId === lk.id ? "Hide" : "📎 Embed"}
+                  </Button>
                   {lk.status === "active" && (
                     <Button variant="danger" size="sm" onClick={() => handleRevoke(lk.id)}>Revoke</Button>
                   )}
@@ -402,6 +406,18 @@ function OneTimeLinksTab() {
                   )}
                 </div>
               </div>
+              {embedId === lk.id && (
+                <div className="mt-3 bg-[var(--bg-deep)] rounded-xl border border-[var(--border)] p-4">
+                  <p className="text-xs text-[var(--text-secondary)] mb-2 font-semibold">Paste this into any webpage:</p>
+                  <pre className="text-xs text-[var(--accent-cyan)] whitespace-pre-wrap break-all leading-relaxed">{`<script src="https://meetsync-seven.vercel.app/embed.js"\n        data-token="${lk.id}"></script>`}</pre>
+                  <button
+                    className="mt-3 text-xs text-[var(--accent)] hover:text-[var(--accent-cyan)] transition-colors"
+                    onClick={() => navigator.clipboard.writeText(`<script src="https://meetsync-seven.vercel.app/embed.js"\n        data-token="${lk.id}"></script>`)}
+                  >
+                    Copy snippet
+                  </button>
+                </div>
+              )}
             </Card>
           ))}
 
@@ -450,6 +466,7 @@ function PermanentLinksTab() {
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [showFields, setShowFields] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  const [embedId, setEmbedId] = useState<string | null>(null);
 
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -692,12 +709,27 @@ function PermanentLinksTab() {
                       {copied === lk.id ? "✓ Copied!" : "Copy Link"}
                     </Button>
                   )}
+                  <Button variant="secondary" size="sm" onClick={() => setEmbedId(embedId === lk.id ? null : lk.id)}>
+                    {embedId === lk.id ? "Hide" : "📎 Embed"}
+                  </Button>
                   <Button variant="secondary" size="sm" onClick={() => handleToggle(lk.id)}>
                     {lk.is_active ? "Pause" : "Resume"}
                   </Button>
                   <Button variant="danger" size="sm" onClick={() => handleDelete(lk.id)}>Delete</Button>
                 </div>
               </div>
+              {embedId === lk.id && profile && (
+                <div className="mt-3 bg-[var(--bg-deep)] rounded-xl border border-[var(--border)] p-4">
+                  <p className="text-xs text-[var(--text-secondary)] mb-2 font-semibold">Paste this into any webpage:</p>
+                  <pre className="text-xs text-[var(--accent-cyan)] whitespace-pre-wrap break-all leading-relaxed">{`<script src="https://meetsync-seven.vercel.app/embed.js"\n        data-username="${profile.username}"\n        data-slug="${lk.slug}"></script>`}</pre>
+                  <button
+                    className="mt-3 text-xs text-[var(--accent)] hover:text-[var(--accent-cyan)] transition-colors"
+                    onClick={() => navigator.clipboard.writeText(`<script src="https://meetsync-seven.vercel.app/embed.js"\n        data-username="${profile.username}"\n        data-slug="${lk.slug}"></script>`)}
+                  >
+                    Copy snippet
+                  </button>
+                </div>
+              )}
             </Card>
           ))}
 

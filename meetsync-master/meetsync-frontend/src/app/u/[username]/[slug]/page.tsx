@@ -1,6 +1,7 @@
 "use client";
+import { Suspense } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { api, CustomField } from "@/lib/api-client";
 import { errMsg } from "@/lib/errors";
 import { Button, Input, Spinner } from "@/components/ui"; // Input used in booking form
@@ -8,10 +9,12 @@ import { BookingCalendar } from "@/components/BookingCalendar";
 
 type Step = "loading" | "error" | "pick-date" | "pick-slot" | "form" | "success";
 
-export default function PermanentLinkBookingPage() {
+function PermanentLinkBookingPageInner() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const username = params?.username as string;
   const slug = params?.slug as string;
+  const isEmbed = searchParams.get("embed") === "1";
 
   const [step, setStep] = useState<Step>("loading");
   const [eventType, setEventType] = useState("");
@@ -99,6 +102,12 @@ export default function PermanentLinkBookingPage() {
       });
       setMeetLink(booking.meet_link ?? "");
       setStep("success");
+      if (isEmbed) {
+        window.parent.postMessage(
+          { type: "meetsync:booking_confirmed", bookingId: booking.id, meetLink: booking.meet_link ?? "" },
+          "*"
+        );
+      }
     } catch (e: unknown) {
       setErrorMsg(errMsg(e));
     } finally {
@@ -107,17 +116,21 @@ export default function PermanentLinkBookingPage() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-4 py-12 bg-page-gradient">
-      <div
-        className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[400px] rounded-full blur-[120px] opacity-20 pointer-events-none"
-        style={{ background: "radial-gradient(circle, rgba(59,106,232,0.6) 0%, rgba(56,191,255,0.2) 60%, transparent 100%)" }}
-      />
+    <main className={isEmbed ? "w-full p-3" : "min-h-screen flex items-center justify-center px-4 py-12 bg-page-gradient"}>
+      {!isEmbed && (
+        <div
+          className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[400px] rounded-full blur-[120px] opacity-20 pointer-events-none"
+          style={{ background: "radial-gradient(circle, rgba(59,106,232,0.6) 0%, rgba(56,191,255,0.2) 60%, transparent 100%)" }}
+        />
+      )}
 
-      <div className="relative z-10 w-full max-w-md">
-        <div className="flex items-center gap-2 mb-8 justify-center">
-          <img src="/logo.png" alt="MeetSync" className="w-8 h-8 rounded-lg glow-brand-sm" />
-          <span className="text-lg font-bold text-[var(--text-primary)]">MeetSync</span>
-        </div>
+      <div className={isEmbed ? "w-full" : "relative z-10 w-full max-w-md"}>
+        {!isEmbed && (
+          <div className="flex items-center gap-2 mb-8 justify-center">
+            <img src="/logo.png" alt="MeetSync" className="w-8 h-8 rounded-lg glow-brand-sm" />
+            <span className="text-lg font-bold text-[var(--text-primary)]">MeetSync</span>
+          </div>
+        )}
 
         <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden glow-brand">
           {/* Loading */}
@@ -340,5 +353,13 @@ export default function PermanentLinkBookingPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function PermanentLinkBookingPage() {
+  return (
+    <Suspense fallback={null}>
+      <PermanentLinkBookingPageInner />
+    </Suspense>
   );
 }
