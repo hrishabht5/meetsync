@@ -98,11 +98,11 @@ export const api = {
 
   // ── Availability ───────────────────────────────────────
   availability: {
-    getSlots: (date: string, event_type: string, host_user_id?: string) =>
-      request<{ date: string; slots: string[]; timezone: string; reason?: string }>(
+    getSlots: (date: string, event_type: string, host_user_id?: string, timezone?: string) =>
+      request<{ date: string; slots: string[]; timezone: string; guest_timezone?: string; reason?: string }>(
         `/availability/slots/?date=${date}&event_type=${encodeURIComponent(event_type)}${
           host_user_id ? `&user_id=${encodeURIComponent(host_user_id)}` : ""
-        }`
+        }${timezone ? `&guest_timezone=${encodeURIComponent(timezone)}` : ""}`
       ),
     getSettings: () =>
       request<AvailabilitySettingsResponse>("/availability/settings/"),

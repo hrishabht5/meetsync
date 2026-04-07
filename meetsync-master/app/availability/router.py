@@ -64,6 +64,7 @@ async def get_available_slots(
     date: str,
     event_type: str = "30-min intro call",
     user_id: str | None = None,
+    guest_timezone: str | None = None,
 ):
     """
     Returns a list of available ISO-8601 time slots for a given date.
@@ -109,6 +110,23 @@ async def get_available_slots(
         tz = ZoneInfo(settings.get("timezone", "UTC"))
     except:
         tz = timezone.utc
+
+    # ── Guest timezone: adjust target_date + build day boundaries ──────────
+    # When a guest in UTC-8 picks "April 7", they mean April 7 in their clock,
+    # not the host's clock. Use noon as anchor to find the correct host-tz date,
+    # then filter to only return slots that fall within the guest's April 7.
+    guest_day_start = guest_day_end = None
+    original_target_date = target_date
+    if guest_timezone:
+        try:
+            guest_tz_info = ZoneInfo(guest_timezone)
+            guest_noon = datetime.combine(original_target_date, time(12, 0), tzinfo=guest_tz_info)
+            host_noon = guest_noon.astimezone(tz)
+            target_date = host_noon.date()
+            guest_day_start = datetime.combine(original_target_date, time(0, 0), tzinfo=guest_tz_info)
+            guest_day_end   = datetime.combine(original_target_date, time(23, 59, 59), tzinfo=guest_tz_info)
+        except Exception:
+            pass  # Invalid tz string — fall back silently
 
     slots: List[str] = []
     for shift_time_str in shifts:
@@ -168,12 +186,23 @@ async def get_available_slots(
 
         return False
 
+    def in_guest_day(slot_dt: datetime) -> bool:
+        if guest_day_start is None:
+            return True
+        slot_in_guest_tz = slot_dt.astimezone(guest_day_start.tzinfo)
+        return guest_day_start <= slot_in_guest_tz <= guest_day_end
+
     available = [
         s for s in slots
-        if (dt := datetime.fromisoformat(s)) > now and not conflicts(dt)
+        if (dt := datetime.fromisoformat(s)) > now and not conflicts(dt) and in_guest_day(dt)
     ]
 
-    return {"date": date, "slots": available, "timezone": settings["timezone"]}
+    return {
+        "date": date,
+        "slots": available,
+        "timezone": settings["timezone"],
+        **({"guest_timezone": guest_timezone} if guest_timezone else {}),
+    }
 
 
 # ── Settings CRUD ─────────────────────────────────────────

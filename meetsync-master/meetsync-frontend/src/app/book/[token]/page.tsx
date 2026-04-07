@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { api, OTLRow, EVENT_TYPES, CustomField } from "@/lib/api-client";
 import { errMsg } from "@/lib/errors";
@@ -27,6 +27,8 @@ export default function BookingPage() {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [consent, setConsent] = useState(false);
   const [managementToken, setManagementToken] = useState("");
+  const [hostTz, setHostTz] = useState("");
+  const guestTz = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone, []);
 
   // Step 1: validate OTL
   useEffect(() => {
@@ -55,9 +57,11 @@ export default function BookingPage() {
       const res = await api.availability.getSlots(
         date,
         otl?.event_type ?? EVENT_TYPES[1],
-        otl?.user_id
+        otl?.user_id,
+        guestTz
       );
       setSlots(res.slots);
+      setHostTz(res.timezone);
       setStep("pick-slot");
     } catch (e: unknown) {
       setErrorMsg(errMsg(e));
@@ -166,10 +170,18 @@ export default function BookingPage() {
                     </div>
                   ) : (
                     <div>
-                      <p className="text-sm font-medium text-[var(--text-primary)] mb-3">Available Times</p>
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-sm font-medium text-[var(--text-primary)]">Available Times</p>
+                        {hostTz && (
+                          <p className="text-xs text-[var(--text-secondary)] flex items-center gap-1">
+                            🌍 <span className="font-medium text-[var(--text-primary)]">{guestTz.replace(/_/g, " ")}</span>
+                            {hostTz !== guestTz && <span className="opacity-50">· host: {hostTz.replace(/_/g, " ")}</span>}
+                          </p>
+                        )}
+                      </div>
                       <div className="grid grid-cols-3 gap-2">
                         {slots.map((s) => {
-                          const time = new Date(s).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+                          const time = new Date(s).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", timeZone: guestTz });
                           const chosen = selectedSlot === s;
                           return (
                             <button key={s} onClick={() => { setSelectedSlot(s); setStep("form"); }}
@@ -199,7 +211,7 @@ export default function BookingPage() {
                 </button>
                 <h2 className="text-xl font-bold text-[var(--text-primary)]">{otl?.custom_title || otl?.event_type}</h2>
                 <p className="text-sm text-[var(--accent-cyan)] mt-1">
-                  📅 {new Date(selectedSlot).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
+                  📅 {new Date(selectedSlot).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short", timeZone: guestTz })}
                 </p>
               </div>
 
