@@ -7,6 +7,7 @@ import { ThemeToggle } from "@/components/themeToggle";
 
 const nav = [
   { href: "/dashboard", label: "Bookings", icon: "📅" },
+  { href: "/dashboard/analytics", label: "Analytics", icon: "📊" },
   { href: "/dashboard/links", label: "Links", icon: "🔗" },
   { href: "/dashboard/profile", label: "Profile", icon: "👤" },
   { href: "/dashboard/availability", label: "Availability", icon: "⏰" },

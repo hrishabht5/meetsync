@@ -235,6 +235,13 @@ export const api = {
         body: JSON.stringify({ ids }),
       }),
   },
+
+  // ── Analytics ─────────────────────────────────────────
+  analytics: {
+    summary: () => request<AnalyticsSummary>("/analytics/summary/"),
+    trend: (days = 30) => request<TrendPoint[]>(`/analytics/trend/?days=${days}`),
+    breakdown: () => request<AnalyticsBreakdown>("/analytics/breakdown/"),
+  },
 };
 
 // ── Types ─────────────────────────────────────────────
@@ -438,4 +445,30 @@ export interface APIKeyRow {
   created_at: string;
   last_used_at?: string | null;
   is_active: boolean;
+}
+
+// Analytics
+export interface AnalyticsSummary {
+  total: number;
+  confirmed: number;
+  cancelled: number;
+  upcoming: number;
+  cancellation_rate: number;
+  top_event_type: string;
+}
+
+export interface TrendPoint {
+  date: string;
+  count: number;
+}
+
+export interface BreakdownItem {
+  label: string;
+  count: number;
+  pct: number;
+}
+
+export interface AnalyticsBreakdown {
+  by_event_type: BreakdownItem[];
+  by_status: BreakdownItem[];
 }
