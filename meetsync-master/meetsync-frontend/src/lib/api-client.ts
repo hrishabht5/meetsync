@@ -134,6 +134,15 @@ export const api = {
         method: "PATCH",
         body: JSON.stringify({ reason }),
       }),
+    setOutcome: (
+      id: string,
+      outcome: "completed" | "no_show" | "cancelled_by_guest",
+      outcome_notes?: string
+    ) =>
+      request<{ status: string; booking_id: string; outcome: string; outcome_recorded_at: string }>(
+        `/bookings/${id}/outcome/`,
+        { method: "PATCH", body: JSON.stringify({ outcome, outcome_notes: outcome_notes ?? null }) }
+      ),
   },
 
   // ── Guest Self-Serve Management ────────────────────────
@@ -241,6 +250,7 @@ export const api = {
     summary: () => request<AnalyticsSummary>("/analytics/summary/"),
     trend: (days = 30) => request<TrendPoint[]>(`/analytics/trend/?days=${days}`),
     breakdown: () => request<AnalyticsBreakdown>("/analytics/breakdown/"),
+    outcomeSummary: () => request<OutcomeSummary>("/bookings/outcomes/summary/"),
   },
 };
 
@@ -337,6 +347,19 @@ export interface BookingRow {
   notes?: string;
   custom_answers?: Record<string, string>;
   management_token?: string;
+  outcome?: "completed" | "no_show" | "cancelled_by_guest" | null;
+  outcome_notes?: string | null;
+  outcome_recorded_at?: string | null;
+}
+
+export interface OutcomeSummary {
+  total_past_meetings: number;
+  completed: number;
+  no_show: number;
+  cancelled_by_guest: number;
+  unrecorded: number;
+  completion_rate: number;
+  no_show_rate: number;
 }
 
 // Guest-safe booking view (no internal IDs)

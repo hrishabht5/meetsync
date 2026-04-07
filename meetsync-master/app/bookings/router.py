@@ -23,6 +23,7 @@ from app.core.schemas import (
     BookingCreate,
     BookingCancel,
     BookingReschedule,
+    BookingSetOutcome,
     BookingStatus,
     GuestBookingResponse,
 )
@@ -33,6 +34,17 @@ from app.webhooks import service as webhook_service
 from app.auth.middleware import get_current_user_id
 
 router = APIRouter()
+
+
+# ═══════════════════════════════════════════════════════════
+#  Helper — parse a Supabase TIMESTAMPTZ string safely
+# ═══════════════════════════════════════════════════════════
+def _parse_scheduled_dt(value: str) -> datetime:
+    try:
+        dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+    except (ValueError, TypeError):
+        return datetime.min.replace(tzinfo=timezone.utc)
 
 
 # ═══════════════════════════════════════════════════════════
@@ -423,7 +435,43 @@ async def guest_reschedule_booking(
 # ═══════════════════════════════════════════════════════════
 #  HOST-AUTHENTICATED DETAIL ENDPOINTS
 #  (Must come AFTER /manage/ routes to avoid path conflicts)
+#
+#  ⚠️  GET /outcomes/summary MUST be before GET /{booking_id}
+#     to prevent FastAPI matching "outcomes" as a booking UUID.
 # ═══════════════════════════════════════════════════════════
+
+@router.get("/outcomes/summary")
+def get_outcomes_summary(request: Request):
+    """
+    Returns aggregate outcome stats for the authenticated host.
+    Denominator: past, non-cancelled bookings.
+    """
+    user_id = get_current_user_id(request)
+    result = supabase.table("bookings") \
+        .select("id, status, scheduled_at, outcome") \
+        .eq("user_id", user_id) \
+        .execute()
+    now = datetime.now(timezone.utc)
+    past = [
+        b for b in (result.data or [])
+        if b["status"] != "cancelled"
+        and _parse_scheduled_dt(b["scheduled_at"]) < now
+    ]
+    total      = len(past)
+    completed  = sum(1 for b in past if b.get("outcome") == "completed")
+    no_show    = sum(1 for b in past if b.get("outcome") == "no_show")
+    cbg        = sum(1 for b in past if b.get("outcome") == "cancelled_by_guest")
+    unrecorded = total - completed - no_show - cbg
+    return {
+        "total_past_meetings": total,
+        "completed":           completed,
+        "no_show":             no_show,
+        "cancelled_by_guest":  cbg,
+        "unrecorded":          unrecorded,
+        "completion_rate":     round(completed / total * 100, 1) if total else 0.0,
+        "no_show_rate":        round(no_show   / total * 100, 1) if total else 0.0,
+    }
+
 
 @router.get("/{booking_id}")
 def get_booking(request: Request, booking_id: str):
@@ -468,3 +516,59 @@ async def cancel_booking(request: Request, booking_id: str, payload: BookingCanc
         user_id,
     )
     return {"status": "cancelled", "booking_id": booking_id}
+
+
+@router.patch("/{booking_id}/outcome")
+async def set_booking_outcome(
+    request: Request,
+    booking_id: str,
+    payload: BookingSetOutcome,
+    background_tasks: BackgroundTasks,
+):
+    """
+    Record the host's outcome for a past meeting.
+    - Booking must be owned by the authenticated host.
+    - scheduled_at must be in the past.
+    - Cancelled bookings cannot have an outcome.
+    - Fires booking.outcome.recorded webhook.
+    """
+    user_id = get_current_user_id(request)
+    result = supabase.table("bookings").select("*") \
+        .eq("id", booking_id).eq("user_id", user_id).execute()
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    booking = result.data[0]
+
+    if booking["status"] == "cancelled":
+        raise HTTPException(status_code=400, detail="Cannot record outcome for a cancelled booking")
+
+    if _parse_scheduled_dt(booking["scheduled_at"]) >= datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="Outcome can only be recorded for past meetings")
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+    supabase.table("bookings").update({
+        "outcome":             payload.outcome,
+        "outcome_notes":       payload.outcome_notes,
+        "outcome_recorded_at": now_iso,
+    }).eq("id", booking_id).execute()
+
+    background_tasks.add_task(
+        webhook_service.fire_event,
+        "booking.outcome.recorded",
+        {
+            "booking_id":          booking_id,
+            "guest_name":          booking["guest_name"],
+            "guest_email":         booking["guest_email"],
+            "scheduled_at":        booking["scheduled_at"],
+            "outcome":             payload.outcome,
+            "outcome_notes":       payload.outcome_notes,
+            "outcome_recorded_at": now_iso,
+        },
+        user_id,
+    )
+    return {
+        "status":              "outcome_recorded",
+        "booking_id":          booking_id,
+        "outcome":             payload.outcome,
+        "outcome_recorded_at": now_iso,
+    }

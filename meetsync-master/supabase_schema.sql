@@ -83,6 +83,9 @@ CREATE TABLE IF NOT EXISTS bookings (
     one_time_link_id    TEXT REFERENCES one_time_links(id),
     cancellation_note   TEXT,
     management_token    TEXT UNIQUE,          -- secure token for guest self-serve management
+    outcome             TEXT CHECK (outcome IN ('completed','no_show','cancelled_by_guest')),
+    outcome_notes       TEXT,
+    outcome_recorded_at TIMESTAMPTZ,
     created_at          TIMESTAMPTZ DEFAULT NOW()
 );
 

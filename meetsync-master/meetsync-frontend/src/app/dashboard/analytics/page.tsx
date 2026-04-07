@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState, useCallback } from "react";
-import { api, AnalyticsSummary, TrendPoint, AnalyticsBreakdown } from "@/lib/api-client";
+import { api, AnalyticsSummary, TrendPoint, AnalyticsBreakdown, OutcomeSummary } from "@/lib/api-client";
 import { Card, SectionHeader, Spinner } from "@/components/ui";
 import { errMsg } from "@/lib/errors";
 
@@ -153,6 +153,7 @@ export default function AnalyticsPage() {
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [trend, setTrend] = useState<TrendPoint[]>([]);
   const [breakdown, setBreakdown] = useState<AnalyticsBreakdown | null>(null);
+  const [outcomeSummary, setOutcomeSummary] = useState<OutcomeSummary | null>(null);
   const [trendDays, setTrendDays] = useState(30);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -161,14 +162,16 @@ export default function AnalyticsPage() {
     setLoading(true);
     setError("");
     try {
-      const [s, t, b] = await Promise.all([
+      const [s, t, b, o] = await Promise.all([
         api.analytics.summary(),
         api.analytics.trend(trendDays),
         api.analytics.breakdown(),
+        api.analytics.outcomeSummary(),
       ]);
       setSummary(s);
       setTrend(t);
       setBreakdown(b);
+      setOutcomeSummary(o);
     } catch (e: unknown) {
       setError(errMsg(e));
     } finally {
@@ -224,6 +227,16 @@ export default function AnalyticsPage() {
           sub="not yet occurred"
         />
       </div>
+
+      {/* ── Outcome Stats ── */}
+      {outcomeSummary && outcomeSummary.total_past_meetings > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <StatCard label="Past Meetings" value={outcomeSummary.total_past_meetings} sub="with outcome data" />
+          <StatCard label="Completion Rate" value={`${outcomeSummary.completion_rate}%`} accent="text-emerald-400" sub={`${outcomeSummary.completed} completed`} />
+          <StatCard label="No-Show Rate" value={`${outcomeSummary.no_show_rate}%`} accent="text-amber-400" sub={`${outcomeSummary.no_show} no-shows`} />
+          <StatCard label="Unrecorded" value={outcomeSummary.unrecorded} accent="text-[var(--text-secondary)]" sub="awaiting outcome" />
+        </div>
+      )}
 
       {/* ── Top Event Type ── */}
       {summary?.top_event_type && (

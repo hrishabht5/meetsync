@@ -78,6 +78,17 @@ class BookingReschedule(BaseModel):
     new_scheduled_at: datetime   # ISO 8601 with timezone
 
 
+class BookingOutcome(str, Enum):
+    completed          = "completed"
+    no_show            = "no_show"
+    cancelled_by_guest = "cancelled_by_guest"
+
+
+class BookingSetOutcome(BaseModel):
+    outcome:       BookingOutcome
+    outcome_notes: Optional[str] = None
+
+
 class GuestBookingResponse(BaseModel):
     """Subset of booking fields safe for unauthenticated guest view."""
     id:             str
