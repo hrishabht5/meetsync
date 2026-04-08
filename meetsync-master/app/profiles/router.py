@@ -92,6 +92,10 @@ def create_link(request: Request, payload: PermanentLinkCreate):
             event_type=payload.event_type,
             custom_fields=[f.model_dump() for f in payload.custom_fields],
             custom_title=payload.custom_title or None,
+            description=payload.description or None,
+            cover_image_url=payload.cover_image_url or None,
+            bg_image_url=payload.bg_image_url or None,
+            accent_color=payload.accent_color or None,
         )
     except ValueError as e:
         status = 409 if "already have" in str(e) else 400

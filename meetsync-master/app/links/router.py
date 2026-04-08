@@ -44,6 +44,10 @@ def create_link(request: Request, payload: OTLCreate):
         user_id=user_id,
         custom_fields=custom_fields,
         custom_title=payload.custom_title or None,
+        description=payload.description or None,
+        cover_image_url=payload.cover_image_url or None,
+        bg_image_url=payload.bg_image_url or None,
+        accent_color=payload.accent_color or None,
     )
     return otl
 

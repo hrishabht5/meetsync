@@ -415,6 +415,10 @@ export interface OTLCreatePayload {
   expires_in?: string;
   custom_fields?: CustomField[];
   custom_title?: string;
+  description?: string | null;
+  cover_image_url?: string | null;
+  bg_image_url?: string | null;
+  accent_color?: string | null;
 }
 
 export interface LinkCustomizationPayload {
@@ -486,6 +490,10 @@ export interface PermanentLinkCreate {
   event_type?: string;
   custom_fields?: CustomField[];
   custom_title?: string;
+  description?: string | null;
+  cover_image_url?: string | null;
+  bg_image_url?: string | null;
+  accent_color?: string | null;
 }
 
 // API Keys

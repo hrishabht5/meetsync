@@ -121,7 +121,17 @@ def list_permanent_links(
     return {"items": result.data or [], "total": total, "page": page, "has_more": offset + limit < total}
 
 
-def create_permanent_link(user_id: str, slug: str, event_type: str, custom_fields: list, custom_title: str = None) -> dict:
+def create_permanent_link(
+    user_id: str,
+    slug: str,
+    event_type: str,
+    custom_fields: list,
+    custom_title: str = None,
+    description: str = None,
+    cover_image_url: str = None,
+    bg_image_url: str = None,
+    accent_color: str = None,
+) -> dict:
     """
     Raises ValueError on duplicate (user_id, slug).
     slug is validated to contain only safe characters.
@@ -141,12 +151,16 @@ def create_permanent_link(user_id: str, slug: str, event_type: str, custom_field
         raise ValueError(f"You already have a link with slug '{clean_slug}'")
 
     row = {
-        "user_id":       user_id,
-        "slug":          clean_slug,
-        "event_type":    event_type,
-        "is_active":     True,
-        "custom_fields": custom_fields,
-        "custom_title":  custom_title or None,
+        "user_id":         user_id,
+        "slug":            clean_slug,
+        "event_type":      event_type,
+        "is_active":       True,
+        "custom_fields":   custom_fields,
+        "custom_title":    custom_title or None,
+        "description":     description or None,
+        "cover_image_url": cover_image_url or None,
+        "bg_image_url":    bg_image_url or None,
+        "accent_color":    accent_color or None,
     }
     result = supabase.table("permanent_links").insert(row).execute()
     return result.data[0]

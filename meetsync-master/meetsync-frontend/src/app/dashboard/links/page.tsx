@@ -129,6 +129,8 @@ function OneTimeLinksTab() {
   const [customizeSaving, setCustomizeSaving] = useState(false);
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [showFieldBuilder, setShowFieldBuilder] = useState(false);
+  const [showCreateCustomize, setShowCreateCustomize] = useState(false);
+  const [createCustomize, setCreateCustomize] = useState<LinkCustomizationPayload>({});
 
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -150,10 +152,17 @@ function OneTimeLinksTab() {
       const saved = localStorage.getItem("meetsync_saved_questions");
       if (saved) {
         const parsed: CustomField[] = JSON.parse(saved);
-        if (parsed.length > 0) {
-          setCustomFields(parsed);
-          setShowFieldBuilder(true);
-        }
+        if (parsed.length > 0) { setCustomFields(parsed); setShowFieldBuilder(true); }
+      }
+    } catch { /* ignore */ }
+    // Load saved customization from localStorage
+    try {
+      const savedC = localStorage.getItem("meetsync_saved_customization");
+      if (savedC) {
+        const parsed: LinkCustomizationPayload = JSON.parse(savedC);
+        setCreateCustomize(parsed);
+        const hasAny = parsed.description || parsed.cover_image_url || parsed.bg_image_url || parsed.accent_color;
+        if (hasAny) setShowCreateCustomize(true);
       }
     } catch { /* ignore */ }
     fetchPage(1, "", "", false).catch((e: unknown) => setError(errMsg(e)));
@@ -161,10 +170,15 @@ function OneTimeLinksTab() {
 
   // Auto-save questions to localStorage whenever they change
   useEffect(() => {
-    try {
-      localStorage.setItem("meetsync_saved_questions", JSON.stringify(customFields));
-    } catch { /* ignore */ }
+    try { localStorage.setItem("meetsync_saved_questions", JSON.stringify(customFields)); }
+    catch { /* ignore */ }
   }, [customFields]);
+
+  // Auto-save customization to localStorage whenever it changes
+  useEffect(() => {
+    try { localStorage.setItem("meetsync_saved_customization", JSON.stringify(createCustomize)); }
+    catch { /* ignore */ }
+  }, [createCustomize]);
 
   const handleSearchChange = (val: string) => {
     setSearch(val);
@@ -195,9 +209,13 @@ function OneTimeLinksTab() {
         expires_in: expires,
         custom_fields: customFields.length > 0 ? customFields : undefined,
         custom_title: meetingTitle.trim() || undefined,
+        description: createCustomize.description || undefined,
+        cover_image_url: createCustomize.cover_image_url || undefined,
+        bg_image_url: createCustomize.bg_image_url || undefined,
+        accent_color: createCustomize.accent_color || undefined,
       });
       setMeetingTitle("");
-      // Keep customFields — user can reuse same questions for next link
+      // Keep customFields + customization — pre-filled for next link
       fetchPage(1, search, statusFilter, false);
     } catch (e: unknown) { alert(errMsg(e)); }
     finally { setCreating(false); }
@@ -336,6 +354,77 @@ function OneTimeLinksTab() {
           )}
         </div>
 
+        {/* Customize Page section */}
+        <div className="border-t border-[var(--border)] pt-4">
+          <div className="flex items-center justify-between mb-3">
+            <button
+              onClick={() => setShowCreateCustomize(!showCreateCustomize)}
+              className="text-sm text-[var(--accent)] hover:text-[var(--accent-cyan)] font-semibold flex items-center gap-1 transition-colors"
+            >
+              {showCreateCustomize ? "▾ Hide" : "▸ Set"} Page Customization
+              {(createCustomize.description || createCustomize.cover_image_url || createCustomize.bg_image_url || createCustomize.accent_color) && (
+                <span className="ml-1 text-xs bg-blue-500/15 text-blue-400 ring-1 ring-blue-500/30 px-2 py-0.5 rounded-full">saved</span>
+              )}
+            </button>
+            {(createCustomize.description || createCustomize.cover_image_url || createCustomize.bg_image_url || createCustomize.accent_color) && (
+              <button
+                onClick={() => { setCreateCustomize({}); setShowCreateCustomize(false); }}
+                className="text-xs text-[var(--text-secondary)] hover:text-red-400 transition-colors"
+              >Clear</button>
+            )}
+          </div>
+          {showCreateCustomize && (
+            <div className="flex flex-col gap-3 mb-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium text-[var(--text-secondary)]">Description <span className="opacity-60">(shown on booking page)</span></label>
+                <textarea rows={2} maxLength={1000} placeholder="e.g. Book a 30-minute intro call…"
+                  value={createCustomize.description ?? ""}
+                  onChange={(e) => setCreateCustomize((f) => ({ ...f, description: e.target.value || null }))}
+                  className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 resize-none"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium text-[var(--text-secondary)]">Cover Image URL <span className="opacity-60">(HTTPS)</span></label>
+                <input type="url" placeholder="https://example.com/cover.jpg"
+                  value={createCustomize.cover_image_url ?? ""}
+                  onChange={(e) => setCreateCustomize((f) => ({ ...f, cover_image_url: e.target.value || null }))}
+                  className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
+                />
+                {createCustomize.cover_image_url && (
+                  <img src={createCustomize.cover_image_url} alt="Cover preview"
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                    className="mt-1 rounded-lg h-24 object-cover w-full" />
+                )}
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium text-[var(--text-secondary)]">Background Image URL <span className="opacity-60">(HTTPS, fills page behind card)</span></label>
+                <input type="url" placeholder="https://example.com/bg.jpg"
+                  value={createCustomize.bg_image_url ?? ""}
+                  onChange={(e) => setCreateCustomize((f) => ({ ...f, bg_image_url: e.target.value || null }))}
+                  className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
+                />
+                {createCustomize.bg_image_url && (
+                  <img src={createCustomize.bg_image_url} alt="Background preview"
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                    className="mt-1 rounded-lg h-20 object-cover w-full" />
+                )}
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium text-[var(--text-secondary)]">Accent Color <span className="opacity-60">(button color)</span></label>
+                <div className="flex items-center gap-3">
+                  <input type="color" value={createCustomize.accent_color ?? "#3B6AE8"}
+                    onChange={(e) => setCreateCustomize((f) => ({ ...f, accent_color: e.target.value }))}
+                    className="w-10 h-10 rounded-lg cursor-pointer border border-[var(--border)] bg-transparent" />
+                  <input type="text" placeholder="#3B6AE8" maxLength={7}
+                    value={createCustomize.accent_color ?? ""}
+                    onChange={(e) => setCreateCustomize((f) => ({ ...f, accent_color: e.target.value || null }))}
+                    className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 w-32 font-mono" />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="flex justify-end">
           <Button onClick={handleCreate} loading={creating}>Generate Link</Button>
         </div>
@@ -418,6 +507,7 @@ function OneTimeLinksTab() {
                     setCustomizeForm({
                       description:     lk.description     ?? "",
                       cover_image_url: lk.cover_image_url ?? "",
+                      bg_image_url:    lk.bg_image_url    ?? "",
                       accent_color:    lk.accent_color    ?? "",
                     });
                   }}>
@@ -573,6 +663,8 @@ function PermanentLinksTab() {
   const [meetingTitle, setMeetingTitle] = useState("");
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [showFields, setShowFields] = useState(false);
+  const [showCreateCustomize, setShowCreateCustomize] = useState(false);
+  const [createCustomize, setCreateCustomize] = useState<LinkCustomizationPayload>({});
   const [copied, setCopied] = useState<string | null>(null);
   const [embedId, setEmbedId] = useState<string | null>(null);
   const [customizeId, setCustomizeId] = useState<string | null>(null);
@@ -599,10 +691,17 @@ function PermanentLinksTab() {
       const saved = localStorage.getItem("meetsync_saved_questions");
       if (saved) {
         const parsed: CustomField[] = JSON.parse(saved);
-        if (parsed.length > 0) {
-          setCustomFields(parsed);
-          setShowFields(true);
-        }
+        if (parsed.length > 0) { setCustomFields(parsed); setShowFields(true); }
+      }
+    } catch { /* ignore */ }
+    // Load saved customization from localStorage (shared with OTL tab)
+    try {
+      const savedC = localStorage.getItem("meetsync_saved_customization");
+      if (savedC) {
+        const parsed: LinkCustomizationPayload = JSON.parse(savedC);
+        setCreateCustomize(parsed);
+        const hasAny = parsed.description || parsed.cover_image_url || parsed.bg_image_url || parsed.accent_color;
+        if (hasAny) setShowCreateCustomize(true);
       }
     } catch { /* ignore */ }
     Promise.all([api.profiles.getMe(), fetchPage(1, "", false)])
@@ -612,10 +711,15 @@ function PermanentLinksTab() {
 
   // Auto-save questions to localStorage whenever they change
   useEffect(() => {
-    try {
-      localStorage.setItem("meetsync_saved_questions", JSON.stringify(customFields));
-    } catch { /* ignore */ }
+    try { localStorage.setItem("meetsync_saved_questions", JSON.stringify(customFields)); }
+    catch { /* ignore */ }
   }, [customFields]);
+
+  // Auto-save customization to localStorage whenever it changes
+  useEffect(() => {
+    try { localStorage.setItem("meetsync_saved_customization", JSON.stringify(createCustomize)); }
+    catch { /* ignore */ }
+  }, [createCustomize]);
 
   const handleSearchChange = (val: string) => {
     setSearch(val);
@@ -641,11 +745,15 @@ function PermanentLinksTab() {
         event_type: eventType,
         custom_fields: customFields.length > 0 ? customFields : undefined,
         custom_title: meetingTitle.trim() || undefined,
+        description: createCustomize.description || undefined,
+        cover_image_url: createCustomize.cover_image_url || undefined,
+        bg_image_url: createCustomize.bg_image_url || undefined,
+        accent_color: createCustomize.accent_color || undefined,
       };
       await api.profiles.createLink(payload);
       setSlug("");
       setMeetingTitle("");
-      // Keep customFields — user can reuse same questions for next link
+      // Keep customFields + customization — pre-filled for next link
       fetchPage(1, search, false);
     } catch (e: unknown) { alert(errMsg(e)); }
     finally { setCreating(false); }
@@ -767,6 +875,77 @@ function PermanentLinksTab() {
           )}
         </div>
 
+        {/* Customize Page section */}
+        <div className="border-t border-[var(--border)] pt-4">
+          <div className="flex items-center justify-between mb-3">
+            <button
+              onClick={() => setShowCreateCustomize(!showCreateCustomize)}
+              className="text-sm text-[var(--accent)] hover:text-[var(--accent-cyan)] font-semibold flex items-center gap-1 transition-colors"
+            >
+              {showCreateCustomize ? "▾ Hide" : "▸ Set"} Page Customization
+              {(createCustomize.description || createCustomize.cover_image_url || createCustomize.bg_image_url || createCustomize.accent_color) && (
+                <span className="ml-1 text-xs bg-blue-500/15 text-blue-400 ring-1 ring-blue-500/30 px-2 py-0.5 rounded-full">saved</span>
+              )}
+            </button>
+            {(createCustomize.description || createCustomize.cover_image_url || createCustomize.bg_image_url || createCustomize.accent_color) && (
+              <button
+                onClick={() => { setCreateCustomize({}); setShowCreateCustomize(false); }}
+                className="text-xs text-[var(--text-secondary)] hover:text-red-400 transition-colors"
+              >Clear</button>
+            )}
+          </div>
+          {showCreateCustomize && (
+            <div className="flex flex-col gap-3 mb-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium text-[var(--text-secondary)]">Description <span className="opacity-60">(shown on booking page)</span></label>
+                <textarea rows={2} maxLength={1000} placeholder="e.g. Book a 30-minute intro call…"
+                  value={createCustomize.description ?? ""}
+                  onChange={(e) => setCreateCustomize((f) => ({ ...f, description: e.target.value || null }))}
+                  className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 resize-none"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium text-[var(--text-secondary)]">Cover Image URL <span className="opacity-60">(HTTPS)</span></label>
+                <input type="url" placeholder="https://example.com/cover.jpg"
+                  value={createCustomize.cover_image_url ?? ""}
+                  onChange={(e) => setCreateCustomize((f) => ({ ...f, cover_image_url: e.target.value || null }))}
+                  className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
+                />
+                {createCustomize.cover_image_url && (
+                  <img src={createCustomize.cover_image_url} alt="Cover preview"
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                    className="mt-1 rounded-lg h-24 object-cover w-full" />
+                )}
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium text-[var(--text-secondary)]">Background Image URL <span className="opacity-60">(HTTPS, fills page behind card)</span></label>
+                <input type="url" placeholder="https://example.com/bg.jpg"
+                  value={createCustomize.bg_image_url ?? ""}
+                  onChange={(e) => setCreateCustomize((f) => ({ ...f, bg_image_url: e.target.value || null }))}
+                  className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
+                />
+                {createCustomize.bg_image_url && (
+                  <img src={createCustomize.bg_image_url} alt="Background preview"
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                    className="mt-1 rounded-lg h-20 object-cover w-full" />
+                )}
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium text-[var(--text-secondary)]">Accent Color <span className="opacity-60">(button color)</span></label>
+                <div className="flex items-center gap-3">
+                  <input type="color" value={createCustomize.accent_color ?? "#3B6AE8"}
+                    onChange={(e) => setCreateCustomize((f) => ({ ...f, accent_color: e.target.value }))}
+                    className="w-10 h-10 rounded-lg cursor-pointer border border-[var(--border)] bg-transparent" />
+                  <input type="text" placeholder="#3B6AE8" maxLength={7}
+                    value={createCustomize.accent_color ?? ""}
+                    onChange={(e) => setCreateCustomize((f) => ({ ...f, accent_color: e.target.value || null }))}
+                    className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 w-32 font-mono" />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="flex justify-end">
           <Button onClick={handleCreate} loading={creating} disabled={!slug}>Create Link</Button>
         </div>
@@ -839,6 +1018,7 @@ function PermanentLinksTab() {
                     setCustomizeForm({
                       description:     lk.description     ?? "",
                       cover_image_url: lk.cover_image_url ?? "",
+                      bg_image_url:    lk.bg_image_url    ?? "",
                       accent_color:    lk.accent_color    ?? "",
                     });
                   }}>
