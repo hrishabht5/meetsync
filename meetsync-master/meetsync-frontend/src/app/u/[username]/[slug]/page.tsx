@@ -21,6 +21,7 @@ function PermanentLinkBookingPageInner() {
   const [customTitle, setCustomTitle] = useState<string | null>(null);
   const [description, setDescription] = useState<string | null>(null);
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
+  const [bgImageUrl, setBgImageUrl] = useState<string | null>(null);
   const [accentColor, setAccentColor] = useState<string | null>(null);
   const [hostUserId, setHostUserId] = useState("");
   const [permanentLinkId, setPermanentLinkId] = useState("");
@@ -47,6 +48,7 @@ function PermanentLinkBookingPageInner() {
         setCustomTitle(data.custom_title ?? null);
         setDescription(data.description ?? null);
         setCoverImageUrl(data.cover_image_url ?? null);
+        setBgImageUrl(data.bg_image_url ?? null);
         setAccentColor(data.accent_color ?? null);
         setHostUserId(data.host_user_id);
         setPermanentLinkId(data.id);
@@ -122,14 +124,15 @@ function PermanentLinkBookingPageInner() {
     }
   };
 
-  const accentStyle = accentColor
-    ? ({ "--accent": accentColor } as React.CSSProperties)
-    : {};
+  const mainStyle: React.CSSProperties = {
+    ...(accentColor ? ({ "--accent": accentColor } as React.CSSProperties) : {}),
+    ...(bgImageUrl ? { backgroundImage: `url(${bgImageUrl})`, backgroundSize: "cover", backgroundPosition: "center" } : {}),
+  };
 
   return (
     <main
-      style={accentStyle}
-      className={isEmbed ? "w-full p-3" : "min-h-screen flex items-center justify-center px-4 py-12 bg-page-gradient"}
+      style={mainStyle}
+      className={isEmbed ? "w-full p-3" : `min-h-screen flex items-center justify-center px-4 py-12${bgImageUrl ? "" : " bg-page-gradient"}`}
     >
       {!isEmbed && (
         <div
@@ -224,9 +227,10 @@ function PermanentLinkBookingPageInner() {
                             <button
                               key={s}
                               onClick={() => { setSelectedSlot(s); setStep("form"); }}
+                              style={chosen && accentColor ? { background: accentColor } : undefined}
                               className={`py-2.5 rounded-xl text-sm font-semibold transition-all
                                 ${chosen
-                                  ? "bg-brand-gradient text-white shadow-lg glow-brand-sm"
+                                  ? `${accentColor ? "" : "bg-brand-gradient"} text-white shadow-lg glow-brand-sm`
                                   : "bg-[var(--bg-card-hover)] text-[var(--text-secondary)] hover:bg-[var(--accent)]/15 hover:text-[var(--text-primary)] border border-[var(--border)] hover:border-[var(--border-accent)]"
                                 }`}
                             >
@@ -354,6 +358,7 @@ function PermanentLinkBookingPageInner() {
                 onClick={handleBook}
                 loading={submitting}
                 disabled={!form.name || !form.email || !consent}
+                style={accentColor ? { background: accentColor } : undefined}
               >
                 Confirm Booking
               </Button>

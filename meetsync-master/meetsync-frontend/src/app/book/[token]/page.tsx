@@ -124,14 +124,15 @@ function BookingPageInner() {
     }
   };
 
-  const accentStyle = otl?.accent_color
-    ? ({ "--accent": otl.accent_color } as React.CSSProperties)
-    : {};
+  const mainStyle: React.CSSProperties = {
+    ...(otl?.accent_color ? ({ "--accent": otl.accent_color } as React.CSSProperties) : {}),
+    ...(otl?.bg_image_url ? { backgroundImage: `url(${otl.bg_image_url})`, backgroundSize: "cover", backgroundPosition: "center" } : {}),
+  };
 
   return (
     <main
-      style={accentStyle}
-      className={isEmbed ? "w-full p-3" : "min-h-screen flex items-center justify-center px-4 py-12 bg-page-gradient"}
+      style={mainStyle}
+      className={isEmbed ? "w-full p-3" : `min-h-screen flex items-center justify-center px-4 py-12${otl?.bg_image_url ? "" : " bg-page-gradient"}`}
     >
       {!isEmbed && (
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[400px] rounded-full blur-[120px] opacity-20 pointer-events-none"
@@ -220,9 +221,10 @@ function BookingPageInner() {
                           const chosen = selectedSlot === s;
                           return (
                             <button key={s} onClick={() => { setSelectedSlot(s); setStep("form"); }}
+                              style={chosen && otl?.accent_color ? { background: otl.accent_color } : undefined}
                               className={`py-2.5 rounded-xl text-sm font-semibold transition-all
                                 ${chosen
-                                  ? "bg-brand-gradient text-white shadow-lg glow-brand-sm"
+                                  ? `${otl?.accent_color ? "" : "bg-brand-gradient"} text-white shadow-lg glow-brand-sm`
                                   : "bg-[var(--bg-card-hover)] text-[var(--text-secondary)] hover:bg-[var(--accent)]/15 hover:text-[var(--text-primary)] border border-[var(--border)] hover:border-[var(--border-accent)]"
                                 }`}>
                               {time}
@@ -337,7 +339,8 @@ function BookingPageInner() {
               )}
 
               <Button onClick={handleBook} loading={submitting}
-                disabled={!form.name || !form.email || !consent}>
+                disabled={!form.name || !form.email || !consent}
+                style={otl?.accent_color ? { background: otl.accent_color } : undefined}>
                 Confirm Booking
               </Button>
             </div>

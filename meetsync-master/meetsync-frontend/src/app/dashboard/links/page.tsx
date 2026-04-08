@@ -481,6 +481,26 @@ function OneTimeLinksTab() {
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-medium text-[var(--text-secondary)]">
+                      Background Image URL <span className="opacity-60">(HTTPS only, fills page behind card)</span>
+                    </label>
+                    <input
+                      type="url"
+                      placeholder="https://example.com/bg.jpg"
+                      value={customizeForm.bg_image_url ?? ""}
+                      onChange={(e) => setCustomizeForm((f) => ({ ...f, bg_image_url: e.target.value || null }))}
+                      className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
+                    />
+                    {customizeForm.bg_image_url && (
+                      <img
+                        src={customizeForm.bg_image_url}
+                        alt="Background preview"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                        className="mt-1 rounded-lg h-20 object-cover w-full"
+                      />
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-medium text-[var(--text-secondary)]">
                       Accent Color <span className="opacity-60">(tints the CTA button)</span>
                     </label>
                     <div className="flex items-center gap-3">
@@ -875,6 +895,26 @@ function PermanentLinksTab() {
                         alt="Cover preview"
                         onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
                         className="mt-1 rounded-lg h-24 object-cover w-full"
+                      />
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-medium text-[var(--text-secondary)]">
+                      Background Image URL <span className="opacity-60">(HTTPS only, fills page behind card)</span>
+                    </label>
+                    <input
+                      type="url"
+                      placeholder="https://example.com/bg.jpg"
+                      value={customizeForm.bg_image_url ?? ""}
+                      onChange={(e) => setCustomizeForm((f) => ({ ...f, bg_image_url: e.target.value || null }))}
+                      className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
+                    />
+                    {customizeForm.bg_image_url && (
+                      <img
+                        src={customizeForm.bg_image_url}
+                        alt="Background preview"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                        className="mt-1 rounded-lg h-20 object-cover w-full"
                       />
                     )}
                   </div>

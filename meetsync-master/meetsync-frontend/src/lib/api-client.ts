@@ -406,6 +406,7 @@ export interface OTLRow {
   custom_fields?: CustomField[];
   description?: string | null;
   cover_image_url?: string | null;
+  bg_image_url?: string | null;
   accent_color?: string | null;
 }
 
@@ -419,6 +420,7 @@ export interface OTLCreatePayload {
 export interface LinkCustomizationPayload {
   description?: string | null;
   cover_image_url?: string | null;
+  bg_image_url?: string | null;
   accent_color?: string | null;
 }
 
@@ -475,6 +477,7 @@ export interface PermanentLinkRow {
   created_at: string;
   description?: string | null;
   cover_image_url?: string | null;
+  bg_image_url?: string | null;
   accent_color?: string | null;
 }
 

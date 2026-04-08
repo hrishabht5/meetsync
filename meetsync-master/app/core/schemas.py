@@ -112,9 +112,10 @@ class GuestBookingResponse(BaseModel):
 class LinkCustomization(BaseModel):
     description:     Optional[str] = Field(default=None, max_length=1000)
     cover_image_url: Optional[str] = Field(default=None, max_length=500)
+    bg_image_url:    Optional[str] = Field(default=None, max_length=500)
     accent_color:    Optional[str] = Field(default=None)
 
-    @field_validator("cover_image_url")
+    @field_validator("cover_image_url", "bg_image_url")
     @classmethod
     def cover_image_must_be_https(cls, v: Optional[str]) -> Optional[str]:
         if v is None or v == "":
@@ -124,7 +125,7 @@ class LinkCustomization(BaseModel):
         except Exception:
             raise ValueError("Invalid URL")
         if parsed.scheme != "https":
-            raise ValueError("cover_image_url must use HTTPS")
+            raise ValueError("Image URL must use HTTPS")
         return v
 
     @field_validator("accent_color")
@@ -160,6 +161,7 @@ class OTLResponse(BaseModel):
     custom_fields:   Optional[List[dict]] = None
     description:     Optional[str] = None
     cover_image_url: Optional[str] = None
+    bg_image_url:    Optional[str] = None
     accent_color:    Optional[str] = None
 
 
@@ -243,6 +245,7 @@ class PermanentLinkRow(BaseModel):
     custom_title:    Optional[str] = None
     description:     Optional[str] = None
     cover_image_url: Optional[str] = None
+    bg_image_url:    Optional[str] = None
     accent_color:    Optional[str] = None
 
 
