@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { api, GuestBookingResponse } from "@/lib/api-client";
+import { useTheme } from "@/components/themeProvider";
 import { errMsg } from "@/lib/errors";
 import { Button, Spinner } from "@/components/ui";
 import { CancelConfirmation, RescheduleFlow } from "@/components/GuestManageActions";
@@ -19,6 +20,7 @@ export default function ManageBookingPage() {
   const params = useParams();
   const token = params?.token as string;
 
+  const { theme } = useTheme();
   const [view, setView] = useState<View>("loading");
   const [booking, setBooking] = useState<GuestBookingResponse | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
@@ -64,12 +66,12 @@ export default function ManageBookingPage() {
         {/* Logo */}
         <div className="flex items-center gap-2 mb-8 justify-center">
           <img
-            src="/logo.png"
-            alt="MeetSync"
+            src={theme === "dark" ? "/logo-dark.png" : "/logo-light.png"}
+            alt="DraftMeet"
             className="w-8 h-8 rounded-lg glow-brand-sm"
           />
           <span className="text-lg font-bold text-[var(--text-primary)]">
-            MeetSync
+            DraftMeet
           </span>
         </div>
 
@@ -285,7 +287,7 @@ export default function ManageBookingPage() {
 
         {/* Footer */}
         <p className="text-center text-xs text-[var(--text-secondary)] mt-6 opacity-60">
-          Powered by MeetSync
+          Powered by DraftMeet
         </p>
       </div>
     </main>

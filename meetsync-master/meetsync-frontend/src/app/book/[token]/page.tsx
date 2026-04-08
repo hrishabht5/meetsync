@@ -3,6 +3,7 @@ import React, { Suspense } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { api, OTLRow, EVENT_TYPES, CustomField } from "@/lib/api-client";
+import { useTheme } from "@/components/themeProvider";
 import { errMsg } from "@/lib/errors";
 import { Button, Input, Spinner } from "@/components/ui"; // Input used in booking form
 import { BookingCalendar } from "@/components/BookingCalendar";
@@ -32,6 +33,7 @@ function BookingPageInner() {
   const [managementToken, setManagementToken] = useState("");
   const [hostTz, setHostTz] = useState("");
   const guestTz = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone, []);
+  const { theme } = useTheme();
 
   // Step 1: validate OTL
   useEffect(() => {
@@ -113,7 +115,7 @@ function BookingPageInner() {
       if (isEmbed) {
         const parentOrigin = document.referrer ? new URL(document.referrer).origin : window.location.origin;
         window.parent.postMessage(
-          { type: "meetsync:booking_confirmed", bookingId: booking.id, meetLink: booking.meet_link ?? "" },
+          { type: "draftmeet:booking_confirmed", bookingId: booking.id, meetLink: booking.meet_link ?? "" },
           parentOrigin
         );
       }
@@ -142,8 +144,8 @@ function BookingPageInner() {
       <div className={isEmbed ? "w-full" : "relative z-10 w-full max-w-md"}>
         {!isEmbed && (
           <div className="flex items-center gap-2 mb-8 justify-center">
-            <img src="/logo.png" alt="MeetSync" className="w-8 h-8 rounded-lg glow-brand-sm" />
-            <span className="text-lg font-bold text-[var(--text-primary)]">MeetSync</span>
+            <img src={theme === "dark" ? "/logo-dark.png" : "/logo-light.png"} alt="DraftMeet" className="w-8 h-8 rounded-lg glow-brand-sm" />
+            <span className="text-lg font-bold text-[var(--text-primary)]">DraftMeet</span>
           </div>
         )}
 

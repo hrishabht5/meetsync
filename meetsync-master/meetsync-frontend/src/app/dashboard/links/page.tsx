@@ -149,7 +149,7 @@ function OneTimeLinksTab() {
   useEffect(() => {
     // Load saved questions from localStorage
     try {
-      const saved = localStorage.getItem("meetsync_saved_questions");
+      const saved = localStorage.getItem("draftmeet_saved_questions");
       if (saved) {
         const parsed: CustomField[] = JSON.parse(saved);
         if (parsed.length > 0) { setCustomFields(parsed); setShowFieldBuilder(true); }
@@ -157,7 +157,7 @@ function OneTimeLinksTab() {
     } catch { /* ignore */ }
     // Load saved customization from localStorage
     try {
-      const savedC = localStorage.getItem("meetsync_saved_customization");
+      const savedC = localStorage.getItem("draftmeet_saved_customization");
       if (savedC) {
         const parsed: LinkCustomizationPayload = JSON.parse(savedC);
         setCreateCustomize(parsed);
@@ -170,13 +170,13 @@ function OneTimeLinksTab() {
 
   // Auto-save questions to localStorage whenever they change
   useEffect(() => {
-    try { localStorage.setItem("meetsync_saved_questions", JSON.stringify(customFields)); }
+    try { localStorage.setItem("draftmeet_saved_questions", JSON.stringify(customFields)); }
     catch { /* ignore */ }
   }, [customFields]);
 
   // Auto-save customization to localStorage whenever it changes
   useEffect(() => {
-    try { localStorage.setItem("meetsync_saved_customization", JSON.stringify(createCustomize)); }
+    try { localStorage.setItem("draftmeet_saved_customization", JSON.stringify(createCustomize)); }
     catch { /* ignore */ }
   }, [createCustomize]);
 
@@ -524,10 +524,10 @@ function OneTimeLinksTab() {
               {embedId === lk.id && (
                 <div className="mt-3 bg-[var(--bg-deep)] rounded-xl border border-[var(--border)] p-4">
                   <p className="text-xs text-[var(--text-secondary)] mb-2 font-semibold">Paste this into any webpage:</p>
-                  <pre className="text-xs text-[var(--accent-cyan)] whitespace-pre-wrap break-all leading-relaxed">{`<script src="https://meetsync-seven.vercel.app/embed.js"\n        data-token="${lk.id}"></script>`}</pre>
+                  <pre className="text-xs text-[var(--accent-cyan)] whitespace-pre-wrap break-all leading-relaxed">{`<script src="https://draftmeet.vercel.app/embed.js"\n        data-token="${lk.id}"></script>`}</pre>
                   <button
                     className="mt-3 text-xs text-[var(--accent)] hover:text-[var(--accent-cyan)] transition-colors"
-                    onClick={() => navigator.clipboard.writeText(`<script src="https://meetsync-seven.vercel.app/embed.js"\n        data-token="${lk.id}"></script>`)}
+                    onClick={() => navigator.clipboard.writeText(`<script src="https://draftmeet.vercel.app/embed.js"\n        data-token="${lk.id}"></script>`)}
                   >
                     Copy snippet
                   </button>
@@ -688,7 +688,7 @@ function PermanentLinksTab() {
   useEffect(() => {
     // Load saved questions from localStorage (shared with OTL tab)
     try {
-      const saved = localStorage.getItem("meetsync_saved_questions");
+      const saved = localStorage.getItem("draftmeet_saved_questions");
       if (saved) {
         const parsed: CustomField[] = JSON.parse(saved);
         if (parsed.length > 0) { setCustomFields(parsed); setShowFields(true); }
@@ -696,7 +696,7 @@ function PermanentLinksTab() {
     } catch { /* ignore */ }
     // Load saved customization from localStorage (shared with OTL tab)
     try {
-      const savedC = localStorage.getItem("meetsync_saved_customization");
+      const savedC = localStorage.getItem("draftmeet_saved_customization");
       if (savedC) {
         const parsed: LinkCustomizationPayload = JSON.parse(savedC);
         setCreateCustomize(parsed);
@@ -711,13 +711,13 @@ function PermanentLinksTab() {
 
   // Auto-save questions to localStorage whenever they change
   useEffect(() => {
-    try { localStorage.setItem("meetsync_saved_questions", JSON.stringify(customFields)); }
+    try { localStorage.setItem("draftmeet_saved_questions", JSON.stringify(customFields)); }
     catch { /* ignore */ }
   }, [customFields]);
 
   // Auto-save customization to localStorage whenever it changes
   useEffect(() => {
-    try { localStorage.setItem("meetsync_saved_customization", JSON.stringify(createCustomize)); }
+    try { localStorage.setItem("draftmeet_saved_customization", JSON.stringify(createCustomize)); }
     catch { /* ignore */ }
   }, [createCustomize]);
 
@@ -1033,10 +1033,10 @@ function PermanentLinksTab() {
               {embedId === lk.id && profile && (
                 <div className="mt-3 bg-[var(--bg-deep)] rounded-xl border border-[var(--border)] p-4">
                   <p className="text-xs text-[var(--text-secondary)] mb-2 font-semibold">Paste this into any webpage:</p>
-                  <pre className="text-xs text-[var(--accent-cyan)] whitespace-pre-wrap break-all leading-relaxed">{`<script src="https://meetsync-seven.vercel.app/embed.js"\n        data-username="${profile.username}"\n        data-slug="${lk.slug}"></script>`}</pre>
+                  <pre className="text-xs text-[var(--accent-cyan)] whitespace-pre-wrap break-all leading-relaxed">{`<script src="https://draftmeet.vercel.app/embed.js"\n        data-username="${profile.username}"\n        data-slug="${lk.slug}"></script>`}</pre>
                   <button
                     className="mt-3 text-xs text-[var(--accent)] hover:text-[var(--accent-cyan)] transition-colors"
-                    onClick={() => navigator.clipboard.writeText(`<script src="https://meetsync-seven.vercel.app/embed.js"\n        data-username="${profile.username}"\n        data-slug="${lk.slug}"></script>`)}
+                    onClick={() => navigator.clipboard.writeText(`<script src="https://draftmeet.vercel.app/embed.js"\n        data-username="${profile.username}"\n        data-slug="${lk.slug}"></script>`)}
                   >
                     Copy snippet
                   </button>

@@ -20,8 +20,9 @@ export default function HomePage() {
 
       <div className="relative z-10 flex flex-col items-center text-center max-w-2xl gap-8">
         <div className="flex items-center gap-3">
-          <img src="/logo.png" alt="MeetSync" className="w-10 h-10 rounded-xl glow-brand-sm" />
-          <span className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">MeetSync</span>
+          <img src="/logo-light.png" alt="DraftMeet" className="logo-light w-10 h-10 rounded-xl glow-brand-sm" />
+          <img src="/logo-dark.png" alt="DraftMeet" className="logo-dark w-10 h-10 rounded-xl glow-brand-sm" />
+          <span className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">DraftMeet</span>
         </div>
 
         {/* Headline — fully server-rendered and crawlable */}
@@ -57,7 +58,7 @@ export default function HomePage() {
 
         {/* Footer */}
         <footer className="w-full mt-16 pt-8 border-t border-[var(--border)] flex flex-col sm:flex-row items-center justify-between gap-4 text-[var(--text-secondary)] text-xs">
-          <p>© {new Date().getFullYear()} MeetSync. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} DraftMeet. All rights reserved.</p>
           <div className="flex gap-6">
             <Link href="/privacy" className="hover:text-[var(--text-primary)] transition-colors">Privacy Policy</Link>
             <Link href="/terms" className="hover:text-[var(--text-primary)] transition-colors">Terms of Service</Link>

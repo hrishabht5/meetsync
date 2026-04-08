@@ -9,7 +9,7 @@ import uvicorn
 from app.core.config import FRONTEND_URL
 
 app = FastAPI(
-    title="MeetSync API",
+    title="DraftMeet API",
     description="Scheduling platform with Google Meet, one-time links, and webhooks",
     version="1.0.0"
 )

@@ -15,7 +15,7 @@ class JSONFormatter(logging.Formatter):
             log_data["exception"] = "".join(traceback.format_exception(*record.exc_info))
         return json.dumps(log_data)
 
-def setup_logger(name="meetsync"):
+def setup_logger(name="draftmeet"):
     logger = logging.getLogger(name)
     if not logger.handlers:
         handler = logging.StreamHandler()

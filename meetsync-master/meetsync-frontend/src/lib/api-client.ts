@@ -1,4 +1,4 @@
-// API Client — single module for all calls to the MeetSync FastAPI backend
+// API Client — single module for all calls to the DraftMeet FastAPI backend
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
@@ -70,7 +70,7 @@ export const api = {
       await request<{ status: string }>("/auth/logout/", { method: "POST" });
       // Clear any legacy token that may have been stored before this fix
       if (typeof window !== "undefined") {
-        localStorage.removeItem("meetsync_token");
+        localStorage.removeItem("draftmeet_token");
       }
     },
     googleLoginUrl: (mode: "signin" | "connect" = "signin") =>

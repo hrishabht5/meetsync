@@ -10,7 +10,7 @@ export default function PrivacyPolicy() {
         <section className="space-y-4">
           <h2 className="text-2xl font-semibold text-[var(--text-primary)]">1. Introduction</h2>
           <p>
-            Welcome to MeetSync. We are committed to protecting your personal data and ensuring transparency about how we collect, use, and share information. This policy complies with global privacy standards, including the GDPR and CCPA.
+            Welcome to DraftMeet. We are committed to protecting your personal data and ensuring transparency about how we collect, use, and share information. This policy complies with global privacy standards, including the GDPR and CCPA.
           </p>
         </section>
 
@@ -47,7 +47,7 @@ export default function PrivacyPolicy() {
             <li><strong>Right to Erasure (Right to be Forgotten):</strong> Hosts can permanently delete their accounts and revoke all Google OAuth access directly from their Dashboard.</li>
             <li><strong>Right to Access &amp; Rectification:</strong> You may request a copy of your stored data or update inaccurate details.</li>
           </ul>
-          <p>To exercise these rights securely, please contact the host of the meeting or reach out to MeetSync Support.</p>
+          <p>To exercise these rights securely, please contact the host of the meeting or reach out to DraftMeet Support.</p>
         </section>
 
         <section className="space-y-4">
@@ -58,7 +58,7 @@ export default function PrivacyPolicy() {
         <section className="space-y-4 border-t border-[var(--border)] pt-8">
           <h2 className="text-2xl font-semibold text-[var(--text-primary)]">6. Google API Disclosure</h2>
           <p>
-            MeetSync&apos;s use and transfer to any other app of information received from Google APIs will adhere to{" "}
+            DraftMeet&apos;s use and transfer to any other app of information received from Google APIs will adhere to{" "}
             <a
               href="https://developers.google.com/terms/api-services-user-data-policy"
               target="_blank"

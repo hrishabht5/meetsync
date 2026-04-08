@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { api } from "@/lib/api-client";
 import { ThemeToggle } from "@/components/themeToggle";
+import { useTheme } from "@/components/themeProvider";
 
 const nav = [
   { href: "/dashboard", label: "Bookings", icon: "📅" },
@@ -17,6 +18,7 @@ const nav = [
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const path = usePathname();
+  const { theme } = useTheme();
 
   useEffect(() => {
     api.auth.status()
@@ -36,8 +38,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <aside className="w-60 flex-shrink-0 border-r border-[var(--border)] flex flex-col bg-[var(--bg-card)]/60 backdrop-blur-sm">
         {/* Logo */}
         <div className="px-5 py-5 border-b border-[var(--border)] flex items-center gap-2.5">
-          <img src="/logo.png" alt="MeetSync" className="w-8 h-8 rounded-lg glow-brand-sm" />
-          <span className="font-bold text-[var(--text-primary)] text-sm">MeetSync</span>
+          <img src={theme === "dark" ? "/logo-dark.png" : "/logo-light.png"} alt="DraftMeet" className="w-8 h-8 rounded-lg glow-brand-sm" />
+          <span className="font-bold text-[var(--text-primary)] text-sm">DraftMeet</span>
         </div>
 
         {/* Nav */}

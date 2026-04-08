@@ -13,7 +13,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   // On mount: read saved preference or system preference
   useEffect(() => {
-    const saved = localStorage.getItem("meetsync_theme") as Theme | null;
+    const saved = localStorage.getItem("draftmeet_theme") as Theme | null;
     if (saved === "dark" || saved === "light") {
       apply(saved);
     } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
@@ -30,7 +30,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     } else {
       document.documentElement.removeAttribute("data-theme");
     }
-    localStorage.setItem("meetsync_theme", t);
+    localStorage.setItem("draftmeet_theme", t);
   }
 
   const toggle = () => apply(theme === "light" ? "dark" : "light");

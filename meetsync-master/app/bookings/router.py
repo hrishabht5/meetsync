@@ -104,7 +104,7 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
     if not host_user_id:
         raise HTTPException(status_code=400, detail="Missing host identity for booking")
 
-    # ── 2. Guard against double-booking (always — MeetSync DB is always managed) ──
+    # ── 2. Guard against double-booking (always — DraftMeet DB is always managed) ──
     # Normalize to UTC for robust timestamp comparison
     sched_utc = payload.scheduled_at.astimezone(timezone.utc)
     scheduled_iso = sched_utc.isoformat()
@@ -132,7 +132,7 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
 
     # Build calendar description with management link (will be filled after token is generated)
     management_token = secrets.token_hex(16)  # 32-char hex, 128-bit entropy
-    manage_url = f"{request.headers.get('origin', 'https://meetsync.vercel.app')}/manage/{management_token}"
+    manage_url = f"{request.headers.get('origin', 'https://draftmeet.vercel.app')}/manage/{management_token}"
     cal_description = (
         f"{payload.notes or ''}\n\n"
         f"──────────────────\n"

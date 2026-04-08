@@ -1,13 +1,13 @@
 """
-Email service — MeetSync
+Email service — DraftMeet
 ------------------------
 Uses Resend (https://resend.com) via its REST API.
 No extra package required; httpx is already in requirements.txt.
 
 Required env vars:
   RESEND_API_KEY   — from resend.com dashboard
-  FROM_EMAIL       — e.g. "MeetSync <noreply@yourdomain.com>"
-                     During testing: "MeetSync <onboarding@resend.dev>"
+  FROM_EMAIL       — e.g. "DraftMeet <noreply@yourdomain.com>"
+                     During testing: "DraftMeet <onboarding@resend.dev>"
 """
 
 import logging
@@ -64,7 +64,7 @@ def _base(title: str, body: str) -> str:
         <tr>
           <td style="background:#6366f1;padding:24px 32px;">
             <span style="color:#ffffff;font-size:22px;font-weight:700;
-                         letter-spacing:-0.5px;">MeetSync</span>
+                         letter-spacing:-0.5px;">DraftMeet</span>
           </td>
         </tr>
         <!-- Body -->
@@ -78,7 +78,7 @@ def _base(title: str, body: str) -> str:
           <td style="padding:16px 32px;background:#f9fafb;
                      border-top:1px solid #e5e7eb;">
             <p style="margin:0;font-size:12px;color:#9ca3af;">
-              MeetSync — Smart scheduling, simplified.<br/>
+              DraftMeet — Smart scheduling, simplified.<br/>
               This is an automated message. Please do not reply to this email.
             </p>
           </td>
@@ -227,7 +227,7 @@ async def send_cancellation_email_to_guest(
 {details}
 <p style="margin:20px 0 0;color:#6b7280;font-size:14px;">
   Want to book a new time?
-  <a href="{FRONTEND_URL}" style="color:#6366f1;">Visit MeetSync</a>
+  <a href="{FRONTEND_URL}" style="color:#6366f1;">Visit DraftMeet</a>
 </p>
 """
     await _send(

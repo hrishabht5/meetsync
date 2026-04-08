@@ -46,7 +46,7 @@ export default function ProfilePage() {
   const handleDeleteAccount = async () => {
     const c1 = window.confirm("Are you absolutely sure you want to delete your account? This cannot be undone.");
     if (!c1) return;
-    const c2 = window.confirm("This will revoke MeetSync's access to your Google Calendar and wipe all your data. Proceed?");
+    const c2 = window.confirm("This will revoke DraftMeet's access to your Google Calendar and wipe all your data. Proceed?");
     if (!c2) return;
     try {
       setDeleting(true);
@@ -62,7 +62,7 @@ export default function ProfilePage() {
 
   return (
     <>
-      <SectionHeader title="Profile" subtitle="Your public identity on MeetSync" />
+      <SectionHeader title="Profile" subtitle="Your public identity on DraftMeet" />
 
       <div className="flex flex-col gap-6">
         <Card className="p-6">

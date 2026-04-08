@@ -2,7 +2,7 @@
   var s = document.currentScript;
   if (!s) return;
 
-  var BASE = "https://meetsync-seven.vercel.app";
+  var BASE = "https://draftmeet.vercel.app";
   var token = s.getAttribute("data-token");
   var username = s.getAttribute("data-username");
   var slug = s.getAttribute("data-slug");
@@ -25,14 +25,14 @@
   iframe.style.cssText = "border:none;border-radius:16px;display:block;max-width:100%;";
   iframe.setAttribute("frameborder", "0");
   iframe.setAttribute("allowtransparency", "true");
-  iframe.setAttribute("title", "MeetSync Booking");
+  iframe.setAttribute("title", "DraftMeet Booking");
 
   s.parentNode.insertBefore(iframe, s.nextSibling);
 
   // Forward booking_confirmed messages to host page
   window.addEventListener("message", function (e) {
-    if (e.source === iframe.contentWindow && e.data && e.data.type === "meetsync:booking_confirmed") {
-      window.dispatchEvent(new CustomEvent("meetsync:booking_confirmed", { detail: e.data }));
+    if (e.source === iframe.contentWindow && e.data && e.data.type === "draftmeet:booking_confirmed") {
+      window.dispatchEvent(new CustomEvent("draftmeet:booking_confirmed", { detail: e.data }));
     }
   });
 })();

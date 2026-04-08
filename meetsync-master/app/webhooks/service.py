@@ -8,7 +8,7 @@ After each booking event, this service:
   4. Logs delivery status to Supabase for the admin dashboard
 
 Signature:
-  Each request includes  X-MeetSync-Signature: sha256=<hmac>
+  Each request includes  X-DraftMeet-Signature: sha256=<hmac>
   Customers verify this using their stored secret key.
 """
 
@@ -43,12 +43,12 @@ async def _deliver(endpoint: dict, event_name: str, payload: dict):
     payload_bytes = json.dumps(payload, default=str).encode()
     headers = {
         "Content-Type":          "application/json",
-        "X-MeetSync-Event":      event_name,
-        "X-MeetSync-Delivery":   str(uuid.uuid4()),
-        "User-Agent":            "MeetSync-Webhooks/1.0",
+        "X-DraftMeet-Event":      event_name,
+        "X-DraftMeet-Delivery":   str(uuid.uuid4()),
+        "User-Agent":            "DraftMeet-Webhooks/1.0",
     }
     if endpoint.get("secret"):
-        headers["X-MeetSync-Signature"] = _sign_payload(endpoint["secret"], payload_bytes)
+        headers["X-DraftMeet-Signature"] = _sign_payload(endpoint["secret"], payload_bytes)
 
     status_code = None
     error_msg   = None

@@ -118,4 +118,9 @@
     border-color: var(--border-accent);
     box-shadow: var(--shadow-card-hover);
   }
+  /* Theme-aware logo switching (used in server components that can't use useTheme) */
+  .logo-light { display: block; }
+  .logo-dark  { display: none;  }
+  [data-theme="dark"] .logo-light { display: none;  }
+  [data-theme="dark"] .logo-dark  { display: block; }
 }

@@ -105,7 +105,7 @@ export default function SettingsPage() {
         <Card className="p-6">
           <p className="text-sm font-semibold text-[var(--text-primary)] mb-1">Google Calendar</p>
           <p className="text-xs text-[var(--text-secondary)] mb-4">
-            Connect your Google Calendar so MeetSync can create Google Meet links when guests book a slot.
+            Connect your Google Calendar so DraftMeet can create Google Meet links when guests book a slot.
           </p>
 
           <div className="flex items-center justify-between gap-4 mb-4">
@@ -177,8 +177,8 @@ export default function SettingsPage() {
           <p className="text-sm font-semibold text-[var(--text-primary)] mb-2">Double Booking Prevention</p>
           <div className="flex items-center justify-between gap-6">
             <p className="text-xs text-[var(--text-secondary)] max-w-lg">
-              When <span className="text-[var(--text-primary)] font-medium">ON</span> (default), MeetSync checks your Google Calendar for events from other apps and blocks conflicting time slots.
-              Turn <span className="text-[var(--text-primary)] font-medium">OFF</span> to ignore external calendar events and only prevent conflicts with MeetSync bookings.
+              When <span className="text-[var(--text-primary)] font-medium">ON</span> (default), DraftMeet checks your Google Calendar for events from other apps and blocks conflicting time slots.
+              Turn <span className="text-[var(--text-primary)] font-medium">OFF</span> to ignore external calendar events and only prevent conflicts with DraftMeet bookings.
             </p>
             <button
               type="button"

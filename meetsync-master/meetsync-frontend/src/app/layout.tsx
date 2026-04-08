@@ -3,24 +3,24 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/themeProvider";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://meetsync.app"),
+  metadataBase: new URL("https://draftmeet.app"),
   title: {
-    default: "MeetSync — Smart Scheduling",
-    template: "%s | MeetSync",
+    default: "DraftMeet — Smart Scheduling",
+    template: "%s | DraftMeet",
   },
   description: "Share a one-time booking link. Guests pick a slot, Google Meet is created instantly. No accounts. No friction.",
   keywords: ["meeting scheduler", "booking link", "Google Meet", "calendar scheduling", "Calendly alternative"],
   openGraph: {
     type: "website",
-    url: "https://meetsync.app",
-    title: "MeetSync — Smart Scheduling",
+    url: "https://draftmeet.app",
+    title: "DraftMeet — Smart Scheduling",
     description: "Share a one-time booking link. Guests pick a slot, Google Meet is created instantly.",
-    siteName: "MeetSync",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "MeetSync" }],
+    siteName: "DraftMeet",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "DraftMeet" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "MeetSync — Smart Scheduling",
+    title: "DraftMeet — Smart Scheduling",
     description: "One-time booking links. Instant Google Meet. No friction.",
     images: ["/og-image.png"],
   },
@@ -33,10 +33,10 @@ export const metadata: Metadata = {
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  name: "MeetSync",
+  name: "DraftMeet",
   applicationCategory: "BusinessApplication",
   description: "Smart scheduling with one-time booking links and Google Meet integration.",
-  url: "https://meetsync.app",
+  url: "https://draftmeet.app",
   offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
 };
 

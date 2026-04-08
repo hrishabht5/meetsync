@@ -5,7 +5,7 @@ from fastapi import HTTPException, Request
 from app.core.config import SECRET_KEY
 
 
-COOKIE_NAME = "meetsync_user"
+COOKIE_NAME = "draftmeet_user"
 
 
 def _sign_user_id(user_id: str) -> str:

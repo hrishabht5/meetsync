@@ -38,7 +38,7 @@ router = APIRouter()
 def _set_session_cookie(response, user_id: str, secure: bool):
     samesite = "none" if secure else "lax"
     response.set_cookie(
-        key="meetsync_user",
+        key="draftmeet_user",
         value=make_user_session_cookie_value(user_id),
         httponly=True,
         secure=secure,
@@ -50,7 +50,7 @@ def _set_session_cookie(response, user_id: str, secure: bool):
 
 def _clear_session_cookie(response, secure: bool):
     samesite = "none" if secure else "lax"
-    response.delete_cookie(key="meetsync_user", path="/", secure=secure, samesite=samesite)
+    response.delete_cookie(key="draftmeet_user", path="/", secure=secure, samesite=samesite)
 
 
 def _is_secure(request: Request) -> bool:

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { api, ProfileResponse, PermanentLinkRow } from "@/lib/api-client";
+import { useTheme } from "@/components/themeProvider";
 import { errMsg } from "@/lib/errors";
 import { Card, Spinner } from "@/components/ui";
 
@@ -12,6 +13,7 @@ export default function PublicProfilePage() {
   const params = useParams();
   const username = params?.username as string;
 
+  const { theme } = useTheme();
   const [data, setData] = useState<PageData | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(true);
@@ -35,8 +37,8 @@ export default function PublicProfilePage() {
       <div className="relative z-10 w-full max-w-lg">
         {/* Logo */}
         <div className="flex items-center gap-2 mb-8 justify-center">
-          <img src="/logo.png" alt="MeetSync" className="w-8 h-8 rounded-lg glow-brand-sm" />
-          <span className="text-lg font-bold text-[var(--text-primary)]">MeetSync</span>
+          <img src={theme === "dark" ? "/logo-dark.png" : "/logo-light.png"} alt="DraftMeet" className="w-8 h-8 rounded-lg glow-brand-sm" />
+          <span className="text-lg font-bold text-[var(--text-primary)]">DraftMeet</span>
         </div>
 
         {loading && (

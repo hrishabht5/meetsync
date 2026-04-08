@@ -139,7 +139,7 @@ async def get_available_slots(
 
     now = datetime.now(tz=tz)
 
-    # Always check MeetSync DB bookings (these are always managed)
+    # Always check DraftMeet DB bookings (these are always managed)
     day_start_local = datetime.combine(target_date, time(0, 0), tzinfo=tz)
     day_end_local = datetime.combine(target_date, time(23, 59, 59), tzinfo=tz)
     start_dt_utc = day_start_local.astimezone(timezone.utc)
@@ -166,7 +166,7 @@ async def get_available_slots(
     def conflicts(slot_start: datetime) -> bool:
         slot_end = slot_start + timedelta(minutes=event_duration)
         
-        # Check local MeetSync bookings (always)
+        # Check local DraftMeet bookings (always)
         for bk in booked:
             # Parse DB ISO string safely
             bk_iso = bk["scheduled_at"].replace("Z", "+00:00")

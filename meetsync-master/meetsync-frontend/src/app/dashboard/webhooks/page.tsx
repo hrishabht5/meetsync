@@ -83,7 +83,7 @@ function ApiDocsTab() {
       {/* Header banner */}
       <Card className="p-5 flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <p className="text-sm font-semibold text-[var(--text-primary)] mb-1">MeetSync Public API</p>
+          <p className="text-sm font-semibold text-[var(--text-primary)] mb-1">DraftMeet Public API</p>
           <p className="text-xs text-[var(--text-secondary)]">Base URL: <code className="font-mono text-[var(--accent-cyan)]">{BASE_URL}</code></p>
           <p className="text-xs text-[var(--text-secondary)] mt-1">
             Authenticate with <code className="font-mono text-[var(--accent-cyan)]">Authorization: Bearer &lt;api-key&gt;</code>.
