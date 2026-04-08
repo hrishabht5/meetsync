@@ -14,6 +14,7 @@ export default function BookingsPage() {
   const [error, setError] = useState("");
   const [savingOutcome, setSavingOutcome] = useState<string | null>(null);
   const [outcomeSelections, setOutcomeSelections] = useState<Record<string, { outcome: string; notes: string }>>({});
+  const [exporting, setExporting] = useState(false);
 
   const load = React.useCallback(async () => {
     setLoading(true);
@@ -49,6 +50,14 @@ export default function BookingsPage() {
     finally { setSavingOutcome(null); }
   };
 
+  const handleExportCsv = async () => {
+    setExporting(true);
+    try {
+      await api.bookings.exportCsv(filter || undefined);
+    } catch (e: unknown) { alert(errMsg(e)); }
+    finally { setExporting(false); }
+  };
+
   const handleCancel = async (id: string) => {
     if (!confirm("Cancel this booking?")) return;
     setCancelling(id);
@@ -68,7 +77,7 @@ export default function BookingsPage() {
         title="Bookings"
         subtitle="All scheduled meetings with guests"
         action={
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
             {["", "confirmed", "cancelled"].map((s) => (
               <button
                 key={s}
@@ -82,6 +91,9 @@ export default function BookingsPage() {
                 {s || "All"}
               </button>
             ))}
+            <Button variant="secondary" size="sm" loading={exporting} onClick={handleExportCsv}>
+              ↓ Export CSV
+            </Button>
           </div>
         }
       />

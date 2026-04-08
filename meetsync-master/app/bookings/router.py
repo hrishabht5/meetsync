@@ -12,11 +12,14 @@ PATCH /bookings/manage/{token}/cancel      → guest-initiated cancellation
 PATCH /bookings/manage/{token}/reschedule  → guest-initiated reschedule
 """
 
+import csv
+import io
 import logging
 import secrets
 import uuid
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Request
+from fastapi.responses import StreamingResponse
 
 from app.core.config import supabase
 from app.core.schemas import (
@@ -467,6 +470,35 @@ def get_outcomes_summary(request: Request):
         "completion_rate":     round(completed / total * 100, 1) if total else 0.0,
         "no_show_rate":        round(no_show   / total * 100, 1) if total else 0.0,
     }
+
+
+@router.get("/export")
+def export_bookings_csv(request: Request, status: str = None):
+    """Download all bookings for the authenticated host as a CSV file."""
+    user_id = get_current_user_id(request)
+    query = supabase.table("bookings").select("*").eq("user_id", user_id)
+    if status:
+        query = query.eq("status", status)
+    result = query.order("scheduled_at", desc=True).execute()
+    rows = result.data or []
+
+    COLUMNS = [
+        "id", "guest_name", "guest_email", "scheduled_at", "event_type",
+        "custom_title", "status", "meet_link", "notes",
+        "outcome", "outcome_notes", "outcome_recorded_at", "created_at",
+    ]
+
+    buf = io.StringIO()
+    writer = csv.DictWriter(buf, fieldnames=COLUMNS, extrasaction="ignore")
+    writer.writeheader()
+    writer.writerows(rows)
+
+    filename = f"bookings_{datetime.now(timezone.utc).strftime('%Y-%m-%d')}.csv"
+    return StreamingResponse(
+        iter([buf.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.get("/{booking_id}")
