@@ -11,6 +11,13 @@ meetsync-frontend/.next/
 meetsync-frontend/.env.local
 meetsync-frontend/tsconfig.tsbuildinfo
 
+# Build & lint artifacts
+meetsync-frontend/build.log
+meetsync-frontend/build_output*.txt
+meetsync-frontend/lint_output.txt
+meetsync-frontend/lint_full.txt
+meetsync-frontend/lint_results.json
+
 # OS files
 .DS_Store
 Thumbs.db
