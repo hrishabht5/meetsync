@@ -130,6 +130,19 @@ def list_otls(
     return {"items": result.data, "total": total, "page": page, "has_more": offset + limit < total}
 
 
+def customize_otl(token: str, user_id: str, updates: dict) -> dict:
+    """Update customization fields (description, cover_image_url, accent_color) on an OTL."""
+    row = supabase.table("one_time_links").select("user_id").eq("id", token).execute()
+    if not row.data:
+        raise ValueError("Link not found.")
+    if row.data[0].get("user_id") != user_id:
+        raise ValueError("Forbidden.")
+    updated = supabase.table("one_time_links").update(updates).eq("id", token).execute()
+    data = updated.data[0]
+    data["booking_url"] = f"{FRONTEND_URL}/book/{token}"
+    return data
+
+
 def delete_otl(token: str, user_id: str):
     """Hard-delete a non-active OTL. Raises ValueError if active or not found/owned."""
     result = supabase.table("one_time_links").select("status,user_id").eq("id", token).execute()

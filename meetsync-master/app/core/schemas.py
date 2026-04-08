@@ -108,23 +108,59 @@ class GuestBookingResponse(BaseModel):
     host_user_id:   Optional[str] = None    # needed for availability lookups
 
 
+# ── Booking Page Customization Mixin ─────────────────────
+class LinkCustomization(BaseModel):
+    description:     Optional[str] = Field(default=None, max_length=1000)
+    cover_image_url: Optional[str] = Field(default=None, max_length=500)
+    accent_color:    Optional[str] = Field(default=None)
+
+    @field_validator("cover_image_url")
+    @classmethod
+    def cover_image_must_be_https(cls, v: Optional[str]) -> Optional[str]:
+        if v is None or v == "":
+            return None
+        try:
+            parsed = urlparse(v)
+        except Exception:
+            raise ValueError("Invalid URL")
+        if parsed.scheme != "https":
+            raise ValueError("cover_image_url must use HTTPS")
+        return v
+
+    @field_validator("accent_color")
+    @classmethod
+    def accent_color_must_be_hex(cls, v: Optional[str]) -> Optional[str]:
+        if v is None or v == "":
+            return None
+        if not _re.fullmatch(r"#[0-9A-Fa-f]{6}", v):
+            raise ValueError("accent_color must be a 6-digit hex color, e.g. #3B6AE8")
+        return v
+
+
 # ── One-Time Links ────────────────────────────────────────
-class OTLCreate(BaseModel):
+class OTLCreate(LinkCustomization):
     event_type:    str
     expires_in:    Optional[str] = "7d"  # "24h", "7d", "never"
     custom_fields: Optional[List[CustomField]] = None
     custom_title:  Optional[str] = None
 
 
+class OTLUpdate(LinkCustomization):
+    pass
+
+
 class OTLResponse(BaseModel):
-    id:            str
-    booking_url:   str
-    event_type:    str
-    status:        OTLStatus
-    expires_at:    Optional[datetime]
-    created_at:    datetime
-    used_at:       Optional[datetime]
-    custom_fields: Optional[List[dict]] = None
+    id:              str
+    booking_url:     str
+    event_type:      str
+    status:          OTLStatus
+    expires_at:      Optional[datetime]
+    created_at:      datetime
+    used_at:         Optional[datetime]
+    custom_fields:   Optional[List[dict]] = None
+    description:     Optional[str] = None
+    cover_image_url: Optional[str] = None
+    accent_color:    Optional[str] = None
 
 
 # ── Webhooks ──────────────────────────────────────────────
@@ -185,21 +221,29 @@ class ProfileUpdate(BaseModel):
     bio:          Optional[str] = Field(default=None, max_length=500)
 
 
-class PermanentLinkCreate(BaseModel):
+class PermanentLinkCreate(LinkCustomization):
     slug:          str
     event_type:    str = "Google Meet"
     custom_fields: List[CustomField] = []
     custom_title:  Optional[str] = None
 
 
+class PermanentLinkUpdate(LinkCustomization):
+    pass
+
+
 class PermanentLinkRow(BaseModel):
-    id:            str
-    user_id:       str
-    slug:          str
-    event_type:    str
-    is_active:     bool
-    custom_fields: List[CustomField]
-    created_at:    str
+    id:              str
+    user_id:         str
+    slug:            str
+    event_type:      str
+    is_active:       bool
+    custom_fields:   List[CustomField]
+    created_at:      str
+    custom_title:    Optional[str] = None
+    description:     Optional[str] = None
+    cover_image_url: Optional[str] = None
+    accent_color:    Optional[str] = None
 
 
 # ── Auth ──────────────────────────────────────────────────

@@ -1,5 +1,5 @@
 "use client";
-import { Suspense } from "react";
+import React, { Suspense } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { api, CustomField } from "@/lib/api-client";
@@ -19,6 +19,9 @@ function PermanentLinkBookingPageInner() {
   const [step, setStep] = useState<Step>("loading");
   const [eventType, setEventType] = useState("");
   const [customTitle, setCustomTitle] = useState<string | null>(null);
+  const [description, setDescription] = useState<string | null>(null);
+  const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
+  const [accentColor, setAccentColor] = useState<string | null>(null);
   const [hostUserId, setHostUserId] = useState("");
   const [permanentLinkId, setPermanentLinkId] = useState("");
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
@@ -42,6 +45,9 @@ function PermanentLinkBookingPageInner() {
       .then((data) => {
         setEventType(data.event_type);
         setCustomTitle(data.custom_title ?? null);
+        setDescription(data.description ?? null);
+        setCoverImageUrl(data.cover_image_url ?? null);
+        setAccentColor(data.accent_color ?? null);
         setHostUserId(data.host_user_id);
         setPermanentLinkId(data.id);
         if (data.custom_fields && data.custom_fields.length > 0) {
@@ -116,8 +122,15 @@ function PermanentLinkBookingPageInner() {
     }
   };
 
+  const accentStyle = accentColor
+    ? ({ "--accent": accentColor } as React.CSSProperties)
+    : {};
+
   return (
-    <main className={isEmbed ? "w-full p-3" : "min-h-screen flex items-center justify-center px-4 py-12 bg-page-gradient"}>
+    <main
+      style={accentStyle}
+      className={isEmbed ? "w-full p-3" : "min-h-screen flex items-center justify-center px-4 py-12 bg-page-gradient"}
+    >
       {!isEmbed && (
         <div
           className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[400px] rounded-full blur-[120px] opacity-20 pointer-events-none"
@@ -134,6 +147,18 @@ function PermanentLinkBookingPageInner() {
         )}
 
         <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden glow-brand">
+          {/* Cover image */}
+          {coverImageUrl && (
+            <div className="w-full h-36 overflow-hidden">
+              <img
+                src={coverImageUrl}
+                alt="Booking cover"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+
           {/* Loading */}
           {step === "loading" && (
             <div className="flex flex-col items-center gap-4 py-16 px-8">
@@ -159,6 +184,9 @@ function PermanentLinkBookingPageInner() {
                   @{username}
                 </p>
                 <h2 className="text-xl font-bold text-[var(--text-primary)]">{customTitle || eventType}</h2>
+                {description && (
+                  <p className="text-sm text-[var(--text-secondary)] mt-1 leading-relaxed">{description}</p>
+                )}
                 <p className="text-sm text-[var(--text-secondary)] mt-1">Pick a date to see available slots</p>
               </div>
 
@@ -225,6 +253,9 @@ function PermanentLinkBookingPageInner() {
                   ← Change time
                 </button>
                 <h2 className="text-xl font-bold text-[var(--text-primary)]">{customTitle || eventType}</h2>
+                {description && (
+                  <p className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed">{description}</p>
+                )}
                 <p className="text-sm text-[var(--accent-cyan)] mt-1">
                   📅 {new Date(selectedSlot).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short", timeZone: guestTz })}
                 </p>

@@ -1,5 +1,5 @@
 "use client";
-import { Suspense } from "react";
+import React, { Suspense } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { api, OTLRow, EVENT_TYPES, CustomField } from "@/lib/api-client";
@@ -124,8 +124,15 @@ function BookingPageInner() {
     }
   };
 
+  const accentStyle = otl?.accent_color
+    ? ({ "--accent": otl.accent_color } as React.CSSProperties)
+    : {};
+
   return (
-    <main className={isEmbed ? "w-full p-3" : "min-h-screen flex items-center justify-center px-4 py-12 bg-page-gradient"}>
+    <main
+      style={accentStyle}
+      className={isEmbed ? "w-full p-3" : "min-h-screen flex items-center justify-center px-4 py-12 bg-page-gradient"}
+    >
       {!isEmbed && (
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[400px] rounded-full blur-[120px] opacity-20 pointer-events-none"
              style={{ background: "radial-gradient(circle, rgba(59,106,232,0.6) 0%, rgba(56,191,255,0.2) 60%, transparent 100%)" }} />
@@ -140,6 +147,18 @@ function BookingPageInner() {
         )}
 
         <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden glow-brand">
+          {/* Cover image */}
+          {otl?.cover_image_url && (
+            <div className="w-full h-36 overflow-hidden">
+              <img
+                src={otl.cover_image_url}
+                alt="Booking cover"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+
           {/* Loading */}
           {step === "loading" && (
             <div className="flex flex-col items-center gap-4 py-16 px-8">
@@ -163,6 +182,9 @@ function BookingPageInner() {
               <div>
                 <p className="text-xs text-[var(--accent-cyan)] font-semibold uppercase tracking-wider mb-1">Booking Link</p>
                 <h2 className="text-xl font-bold text-[var(--text-primary)]">{otl?.custom_title || otl?.event_type}</h2>
+                {otl?.description && (
+                  <p className="text-sm text-[var(--text-secondary)] mt-1 leading-relaxed">{otl.description}</p>
+                )}
                 <p className="text-sm text-[var(--text-secondary)] mt-1">Pick a date to see available slots</p>
               </div>
 
@@ -223,6 +245,9 @@ function BookingPageInner() {
                   ← Change time
                 </button>
                 <h2 className="text-xl font-bold text-[var(--text-primary)]">{otl?.custom_title || otl?.event_type}</h2>
+                {otl?.description && (
+                  <p className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed">{otl.description}</p>
+                )}
                 <p className="text-sm text-[var(--accent-cyan)] mt-1">
                   📅 {new Date(selectedSlot).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short", timeZone: guestTz })}
                 </p>

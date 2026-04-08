@@ -205,6 +205,22 @@ def get_permanent_link_by_username_slug(username: str, slug: str) -> tuple[dict,
     return result.data[0], profile["user_id"]
 
 
+def customize_permanent_link(user_id: str, link_id: str, updates: dict) -> dict:
+    """Update customization fields on a permanent link."""
+    row = (
+        supabase.table("permanent_links")
+        .select("user_id")
+        .eq("id", link_id)
+        .execute()
+    )
+    if not row.data:
+        raise ValueError("Link not found.")
+    if row.data[0].get("user_id") != user_id:
+        raise ValueError("Forbidden.")
+    updated = supabase.table("permanent_links").update(updates).eq("id", link_id).execute()
+    return updated.data[0]
+
+
 def get_permanent_link_by_id(link_id: str) -> dict | None:
     result = supabase.table("permanent_links").select("*").eq("id", link_id).execute()
     return result.data[0] if result.data else None

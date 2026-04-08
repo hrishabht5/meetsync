@@ -19,7 +19,7 @@ from pydantic import BaseModel
 from typing import List
 
 from app.auth.middleware import get_current_user_id
-from app.core.schemas import ProfileUpdate, PermanentLinkCreate
+from app.core.schemas import ProfileUpdate, PermanentLinkCreate, PermanentLinkUpdate
 from app.profiles import service
 
 
@@ -96,6 +96,17 @@ def create_link(request: Request, payload: PermanentLinkCreate):
     except ValueError as e:
         status = 409 if "already have" in str(e) else 400
         raise HTTPException(status_code=status, detail=str(e))
+
+
+@router.patch("/me/links/{link_id}/customize")
+def customize_permanent_link(request: Request, link_id: str, payload: PermanentLinkUpdate):
+    """Update description, cover_image_url, and accent_color on a permanent link."""
+    user_id = get_current_user_id(request)
+    try:
+        return service.customize_permanent_link(user_id, link_id, payload.dict(exclude_none=True))
+    except ValueError as e:
+        status_code = 403 if "Forbidden" in str(e) else 400
+        raise HTTPException(status_code=status_code, detail=str(e))
 
 
 @router.patch("/me/links/{link_id}/toggle")

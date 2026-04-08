@@ -12,7 +12,7 @@ POST /links/bulk             → bulk revoke or hard-delete
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from typing import List, Literal
-from app.core.schemas import OTLCreate
+from app.core.schemas import OTLCreate, OTLUpdate
 from app.links import service as otl_service
 
 router = APIRouter()
@@ -90,6 +90,18 @@ def bulk_action(request: Request, payload: BulkAction):
         except (ValueError, Exception):
             skipped += 1
     return {"succeeded": succeeded, "skipped": skipped}
+
+
+@router.patch("/{token}/customize")
+def customize_link(request: Request, token: str, payload: OTLUpdate):
+    """Update description, cover_image_url, and accent_color on an OTL."""
+    from app.auth.middleware import get_current_user_id
+    user_id = get_current_user_id(request)
+    try:
+        return otl_service.customize_otl(token, user_id, payload.dict(exclude_none=True))
+    except ValueError as e:
+        status_code = 403 if "Forbidden" in str(e) else 400
+        raise HTTPException(status_code=status_code, detail=str(e))
 
 
 @router.get("/{token}")

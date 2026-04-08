@@ -131,6 +131,22 @@ export const api = {
         `/bookings/${id}/outcome/`,
         { method: "PATCH", body: JSON.stringify({ outcome, outcome_notes: outcome_notes ?? null }) }
       ),
+    exportCsv: async (status?: string): Promise<void> => {
+      const qs = status ? `?status=${status}` : "";
+      const res = await fetch(`${BASE_URL}/bookings/export/${qs}`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Export failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `bookings_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    },
   },
 
   // ── Guest Self-Serve Management ────────────────────────
@@ -174,6 +190,11 @@ export const api = {
       request<{ succeeded: number; skipped: number }>("/links/bulk/", {
         method: "POST",
         body: JSON.stringify({ tokens, action }),
+      }),
+    customize: (token: string, data: LinkCustomizationPayload) =>
+      request<OTLRow>(`/links/${token}/customize/`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
       }),
   },
 
@@ -230,6 +251,11 @@ export const api = {
       request<{ succeeded: number; skipped: number }>("/profiles/me/links/bulk/", {
         method: "DELETE",
         body: JSON.stringify({ ids }),
+      }),
+    customizeLink: (id: string, data: LinkCustomizationPayload) =>
+      request<PermanentLinkRow>(`/profiles/me/links/${id}/customize/`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
       }),
   },
 
@@ -378,6 +404,9 @@ export interface OTLRow {
   created_at: string;
   used_at?: string;
   custom_fields?: CustomField[];
+  description?: string | null;
+  cover_image_url?: string | null;
+  accent_color?: string | null;
 }
 
 export interface OTLCreatePayload {
@@ -385,6 +414,12 @@ export interface OTLCreatePayload {
   expires_in?: string;
   custom_fields?: CustomField[];
   custom_title?: string;
+}
+
+export interface LinkCustomizationPayload {
+  description?: string | null;
+  cover_image_url?: string | null;
+  accent_color?: string | null;
 }
 
 // Webhooks
@@ -438,6 +473,9 @@ export interface PermanentLinkRow {
   is_active: boolean;
   custom_fields: CustomField[];
   created_at: string;
+  description?: string | null;
+  cover_image_url?: string | null;
+  accent_color?: string | null;
 }
 
 export interface PermanentLinkCreate {

@@ -8,6 +8,7 @@ import {
   EVENT_TYPES,
   CustomField,
   ProfileResponse,
+  LinkCustomizationPayload,
 } from "@/lib/api-client";
 import { errMsg } from "@/lib/errors";
 import { Badge, Button, Card, EmptyState, Input, SectionHeader, Spinner } from "@/components/ui";
@@ -123,6 +124,9 @@ function OneTimeLinksTab() {
   const [error, setError] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
   const [embedId, setEmbedId] = useState<string | null>(null);
+  const [customizeId, setCustomizeId] = useState<string | null>(null);
+  const [customizeForm, setCustomizeForm] = useState<LinkCustomizationPayload>({});
+  const [customizeSaving, setCustomizeSaving] = useState(false);
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [showFieldBuilder, setShowFieldBuilder] = useState(false);
 
@@ -216,6 +220,16 @@ function OneTimeLinksTab() {
       setTotal((t) => t - 1);
       setSelected((s) => { const n = new Set(s); n.delete(token); return n; });
     } catch (e: unknown) { alert(errMsg(e)); }
+  };
+
+  const handleCustomizeSave = async (token: string) => {
+    setCustomizeSaving(true);
+    try {
+      const updated = await api.links.customize(token, customizeForm);
+      setItems((l) => l.map((x) => x.id === token ? { ...x, ...updated } : x));
+      setCustomizeId(null);
+    } catch (e: unknown) { alert(errMsg(e)); }
+    finally { setCustomizeSaving(false); }
   };
 
   const handleBulkRevoke = async () => {
@@ -398,6 +412,17 @@ function OneTimeLinksTab() {
                   <Button variant="secondary" size="sm" onClick={() => setEmbedId(embedId === lk.id ? null : lk.id)}>
                     {embedId === lk.id ? "Hide" : "📎 Embed"}
                   </Button>
+                  <Button variant="secondary" size="sm" onClick={() => {
+                    if (customizeId === lk.id) { setCustomizeId(null); return; }
+                    setCustomizeId(lk.id);
+                    setCustomizeForm({
+                      description:     lk.description     ?? "",
+                      cover_image_url: lk.cover_image_url ?? "",
+                      accent_color:    lk.accent_color    ?? "",
+                    });
+                  }}>
+                    {customizeId === lk.id ? "Hide" : "✏️ Customize"}
+                  </Button>
                   {lk.status === "active" && (
                     <Button variant="danger" size="sm" onClick={() => handleRevoke(lk.id)}>Revoke</Button>
                   )}
@@ -416,6 +441,69 @@ function OneTimeLinksTab() {
                   >
                     Copy snippet
                   </button>
+                </div>
+              )}
+              {customizeId === lk.id && (
+                <div className="mt-3 bg-[var(--bg-deep)] rounded-xl border border-[var(--border)] p-4 flex flex-col gap-3">
+                  <p className="text-xs font-semibold text-[var(--text-secondary)]">Page Customization</p>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-medium text-[var(--text-secondary)]">
+                      Description <span className="opacity-60">(optional, shown on booking page)</span>
+                    </label>
+                    <textarea
+                      rows={2}
+                      maxLength={1000}
+                      placeholder="e.g. Book a 30-minute intro call to discuss your project…"
+                      value={customizeForm.description ?? ""}
+                      onChange={(e) => setCustomizeForm((f) => ({ ...f, description: e.target.value || null }))}
+                      className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 resize-none"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-medium text-[var(--text-secondary)]">
+                      Cover Image URL <span className="opacity-60">(HTTPS only)</span>
+                    </label>
+                    <input
+                      type="url"
+                      placeholder="https://example.com/cover.jpg"
+                      value={customizeForm.cover_image_url ?? ""}
+                      onChange={(e) => setCustomizeForm((f) => ({ ...f, cover_image_url: e.target.value || null }))}
+                      className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
+                    />
+                    {customizeForm.cover_image_url && (
+                      <img
+                        src={customizeForm.cover_image_url}
+                        alt="Cover preview"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                        className="mt-1 rounded-lg h-24 object-cover w-full"
+                      />
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-medium text-[var(--text-secondary)]">
+                      Accent Color <span className="opacity-60">(tints the CTA button)</span>
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="color"
+                        value={customizeForm.accent_color ?? "#3B6AE8"}
+                        onChange={(e) => setCustomizeForm((f) => ({ ...f, accent_color: e.target.value }))}
+                        className="w-10 h-10 rounded-lg cursor-pointer border border-[var(--border)] bg-transparent"
+                      />
+                      <input
+                        type="text"
+                        placeholder="#3B6AE8"
+                        maxLength={7}
+                        value={customizeForm.accent_color ?? ""}
+                        onChange={(e) => setCustomizeForm((f) => ({ ...f, accent_color: e.target.value || null }))}
+                        className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 w-32 font-mono"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-1">
+                    <Button variant="secondary" size="sm" onClick={() => setCustomizeId(null)}>Cancel</Button>
+                    <Button size="sm" loading={customizeSaving} onClick={() => handleCustomizeSave(lk.id)}>Save</Button>
+                  </div>
                 </div>
               )}
             </Card>
@@ -467,6 +555,9 @@ function PermanentLinksTab() {
   const [showFields, setShowFields] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [embedId, setEmbedId] = useState<string | null>(null);
+  const [customizeId, setCustomizeId] = useState<string | null>(null);
+  const [customizeForm, setCustomizeForm] = useState<LinkCustomizationPayload>({});
+  const [customizeSaving, setCustomizeSaving] = useState(false);
 
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -555,6 +646,16 @@ function PermanentLinksTab() {
       setTotal((t) => t - 1);
       setSelected((s) => { const n = new Set(s); n.delete(id); return n; });
     } catch (e: unknown) { alert(errMsg(e)); }
+  };
+
+  const handleCustomizeSave = async (id: string) => {
+    setCustomizeSaving(true);
+    try {
+      const updated = await api.profiles.customizeLink(id, customizeForm);
+      setItems((l) => l.map((x) => x.id === id ? { ...x, ...updated } : x));
+      setCustomizeId(null);
+    } catch (e: unknown) { alert(errMsg(e)); }
+    finally { setCustomizeSaving(false); }
   };
 
   const handleBulkDelete = async () => {
@@ -712,6 +813,17 @@ function PermanentLinksTab() {
                   <Button variant="secondary" size="sm" onClick={() => setEmbedId(embedId === lk.id ? null : lk.id)}>
                     {embedId === lk.id ? "Hide" : "📎 Embed"}
                   </Button>
+                  <Button variant="secondary" size="sm" onClick={() => {
+                    if (customizeId === lk.id) { setCustomizeId(null); return; }
+                    setCustomizeId(lk.id);
+                    setCustomizeForm({
+                      description:     lk.description     ?? "",
+                      cover_image_url: lk.cover_image_url ?? "",
+                      accent_color:    lk.accent_color    ?? "",
+                    });
+                  }}>
+                    {customizeId === lk.id ? "Hide" : "✏️ Customize"}
+                  </Button>
                   <Button variant="secondary" size="sm" onClick={() => handleToggle(lk.id)}>
                     {lk.is_active ? "Pause" : "Resume"}
                   </Button>
@@ -728,6 +840,69 @@ function PermanentLinksTab() {
                   >
                     Copy snippet
                   </button>
+                </div>
+              )}
+              {customizeId === lk.id && (
+                <div className="mt-3 bg-[var(--bg-deep)] rounded-xl border border-[var(--border)] p-4 flex flex-col gap-3">
+                  <p className="text-xs font-semibold text-[var(--text-secondary)]">Page Customization</p>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-medium text-[var(--text-secondary)]">
+                      Description <span className="opacity-60">(optional, shown on booking page)</span>
+                    </label>
+                    <textarea
+                      rows={2}
+                      maxLength={1000}
+                      placeholder="e.g. Book a 30-minute intro call to discuss your project…"
+                      value={customizeForm.description ?? ""}
+                      onChange={(e) => setCustomizeForm((f) => ({ ...f, description: e.target.value || null }))}
+                      className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 resize-none"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-medium text-[var(--text-secondary)]">
+                      Cover Image URL <span className="opacity-60">(HTTPS only)</span>
+                    </label>
+                    <input
+                      type="url"
+                      placeholder="https://example.com/cover.jpg"
+                      value={customizeForm.cover_image_url ?? ""}
+                      onChange={(e) => setCustomizeForm((f) => ({ ...f, cover_image_url: e.target.value || null }))}
+                      className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
+                    />
+                    {customizeForm.cover_image_url && (
+                      <img
+                        src={customizeForm.cover_image_url}
+                        alt="Cover preview"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                        className="mt-1 rounded-lg h-24 object-cover w-full"
+                      />
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-medium text-[var(--text-secondary)]">
+                      Accent Color <span className="opacity-60">(tints the CTA button)</span>
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="color"
+                        value={customizeForm.accent_color ?? "#3B6AE8"}
+                        onChange={(e) => setCustomizeForm((f) => ({ ...f, accent_color: e.target.value }))}
+                        className="w-10 h-10 rounded-lg cursor-pointer border border-[var(--border)] bg-transparent"
+                      />
+                      <input
+                        type="text"
+                        placeholder="#3B6AE8"
+                        maxLength={7}
+                        value={customizeForm.accent_color ?? ""}
+                        onChange={(e) => setCustomizeForm((f) => ({ ...f, accent_color: e.target.value || null }))}
+                        className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 w-32 font-mono"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-1">
+                    <Button variant="secondary" size="sm" onClick={() => setCustomizeId(null)}>Cancel</Button>
+                    <Button size="sm" loading={customizeSaving} onClick={() => handleCustomizeSave(lk.id)}>Save</Button>
+                  </div>
                 </div>
               )}
             </Card>
