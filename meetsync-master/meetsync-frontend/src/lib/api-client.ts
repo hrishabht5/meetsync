@@ -266,6 +266,15 @@ export const api = {
     breakdown: () => request<AnalyticsBreakdown>("/analytics/breakdown/"),
     outcomeSummary: () => request<OutcomeSummary>("/bookings/outcomes/summary/"),
   },
+
+  // ── Waitlist ──────────────────────────────────────────
+  waitlist: {
+    join: (email: string) =>
+      request<{ already_registered: boolean; message: string }>("/waitlist/", {
+        method: "POST",
+        body: JSON.stringify({ email }),
+      }),
+  },
 };
 
 // ── Types ─────────────────────────────────────────────
