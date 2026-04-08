@@ -524,10 +524,10 @@ function OneTimeLinksTab() {
               {embedId === lk.id && (
                 <div className="mt-3 bg-[var(--bg-deep)] rounded-xl border border-[var(--border)] p-4">
                   <p className="text-xs text-[var(--text-secondary)] mb-2 font-semibold">Paste this into any webpage:</p>
-                  <pre className="text-xs text-[var(--accent-cyan)] whitespace-pre-wrap break-all leading-relaxed">{`<script src="https://draftmeet.vercel.app/embed.js"\n        data-token="${lk.id}"></script>`}</pre>
+                  <pre className="text-xs text-[var(--accent-cyan)] whitespace-pre-wrap break-all leading-relaxed">{`<script src="https://draftmeet.com/embed.js"\n        data-token="${lk.id}"></script>`}</pre>
                   <button
                     className="mt-3 text-xs text-[var(--accent)] hover:text-[var(--accent-cyan)] transition-colors"
-                    onClick={() => navigator.clipboard.writeText(`<script src="https://draftmeet.vercel.app/embed.js"\n        data-token="${lk.id}"></script>`)}
+                    onClick={() => navigator.clipboard.writeText(`<script src="https://draftmeet.com/embed.js"\n        data-token="${lk.id}"></script>`)}
                   >
                     Copy snippet
                   </button>
@@ -1033,10 +1033,10 @@ function PermanentLinksTab() {
               {embedId === lk.id && profile && (
                 <div className="mt-3 bg-[var(--bg-deep)] rounded-xl border border-[var(--border)] p-4">
                   <p className="text-xs text-[var(--text-secondary)] mb-2 font-semibold">Paste this into any webpage:</p>
-                  <pre className="text-xs text-[var(--accent-cyan)] whitespace-pre-wrap break-all leading-relaxed">{`<script src="https://draftmeet.vercel.app/embed.js"\n        data-username="${profile.username}"\n        data-slug="${lk.slug}"></script>`}</pre>
+                  <pre className="text-xs text-[var(--accent-cyan)] whitespace-pre-wrap break-all leading-relaxed">{`<script src="https://draftmeet.com/embed.js"\n        data-username="${profile.username}"\n        data-slug="${lk.slug}"></script>`}</pre>
                   <button
                     className="mt-3 text-xs text-[var(--accent)] hover:text-[var(--accent-cyan)] transition-colors"
-                    onClick={() => navigator.clipboard.writeText(`<script src="https://draftmeet.vercel.app/embed.js"\n        data-username="${profile.username}"\n        data-slug="${lk.slug}"></script>`)}
+                    onClick={() => navigator.clipboard.writeText(`<script src="https://draftmeet.com/embed.js"\n        data-username="${profile.username}"\n        data-slug="${lk.slug}"></script>`)}
                   >
                     Copy snippet
                   </button>

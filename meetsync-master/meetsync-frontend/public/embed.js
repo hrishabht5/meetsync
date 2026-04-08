@@ -2,7 +2,7 @@
   var s = document.currentScript;
   if (!s) return;
 
-  var BASE = "https://draftmeet.vercel.app";
+  var BASE = "https://draftmeet.com";
   var token = s.getAttribute("data-token");
   var username = s.getAttribute("data-username");
   var slug = s.getAttribute("data-slug");

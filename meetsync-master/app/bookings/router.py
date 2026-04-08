@@ -132,7 +132,7 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
 
     # Build calendar description with management link (will be filled after token is generated)
     management_token = secrets.token_hex(16)  # 32-char hex, 128-bit entropy
-    manage_url = f"{request.headers.get('origin', 'https://draftmeet.vercel.app')}/manage/{management_token}"
+    manage_url = f"{request.headers.get('origin', 'https://draftmeet.com')}/manage/{management_token}"
     cal_description = (
         f"{payload.notes or ''}\n\n"
         f"──────────────────\n"

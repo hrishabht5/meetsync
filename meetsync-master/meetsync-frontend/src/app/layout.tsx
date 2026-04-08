@@ -3,7 +3,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/themeProvider";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://draftmeet.app"),
+  metadataBase: new URL("https://draftmeet.com"),
   title: {
     default: "DraftMeet — Smart Scheduling",
     template: "%s | DraftMeet",
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   keywords: ["meeting scheduler", "booking link", "Google Meet", "calendar scheduling", "Calendly alternative"],
   openGraph: {
     type: "website",
-    url: "https://draftmeet.app",
+    url: "https://draftmeet.com",
     title: "DraftMeet — Smart Scheduling",
     description: "Share a one-time booking link. Guests pick a slot, Google Meet is created instantly.",
     siteName: "DraftMeet",
@@ -36,7 +36,7 @@ const jsonLd = {
   name: "DraftMeet",
   applicationCategory: "BusinessApplication",
   description: "Smart scheduling with one-time booking links and Google Meet integration.",
-  url: "https://draftmeet.app",
+  url: "https://draftmeet.com",
   offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
 };
 

@@ -3,6 +3,6 @@ import { MetadataRoute } from "next";
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: { userAgent: "*", allow: "/", disallow: ["/dashboard/", "/api/"] },
-    sitemap: "https://draftmeet.app/sitemap.xml",
+    sitemap: "https://draftmeet.com/sitemap.xml",
   };
 }
