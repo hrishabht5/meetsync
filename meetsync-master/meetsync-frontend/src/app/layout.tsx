@@ -50,6 +50,11 @@ export const metadata: Metadata = {
       "One-time booking links. Permanent booking pages. Automatic Google Meet. The free Calendly alternative built for freelancers and founders.",
     images: ["/og-image.png"],
   },
+  icons: {
+    icon: "/logo-light.png",
+    shortcut: "/logo-light.png",
+    apple: "/logo-light.png",
+  },
   robots: { index: true, follow: true },
   verification: {
     google: "2CACV__s0LZoR8P2xyPxHh0Es8GBtRtxfKI3zEJDzDo",
