@@ -62,9 +62,11 @@ def _base(title: str, body: str) -> str:
                     box-shadow:0 2px 8px rgba(0,0,0,0.08);">
         <!-- Header -->
         <tr>
-          <td style="background:#6366f1;padding:24px 32px;">
-            <span style="color:#ffffff;font-size:22px;font-weight:700;
-                         letter-spacing:-0.5px;">DraftMeet</span>
+          <td style="background:#ffffff;padding:24px 32px;text-align:center;
+                     border-bottom:1px solid #e5e7eb;">
+            <img src="https://draftmeet.com/logo-light.png"
+                 alt="DraftMeet" height="56"
+                 style="display:inline-block;" />
           </td>
         </tr>
         <!-- Body -->
@@ -131,20 +133,41 @@ def _detail_table(*rows: str) -> str:
 
 async def send_waitlist_welcome(email: str) -> None:
     body = f"""
-<h2 style="margin:0 0 8px;color:#111827;font-size:20px;">You're on the waitlist!</h2>
-<p style="margin:0 0 20px;color:#6b7280;font-size:14px;">
-  Thanks for joining the DraftMeet waitlist. We'll notify you the moment early access opens up.
+<h2 style="margin:0 0 12px;color:#111827;font-size:22px;font-weight:700;
+           letter-spacing:-0.3px;">You're in. We'll save your spot.</h2>
+
+<p style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.6;">
+  Thanks for joining the DraftMeet waitlist — you're among the first people
+  who believe scheduling shouldn't be painful. We agree.
 </p>
-<p style="margin:0 0 20px;color:#6b7280;font-size:14px;">
-  DraftMeet is a smart scheduling tool that lets you share a booking link, let guests pick a time,
-  and have meetings land on your calendar automatically — no back-and-forth needed.
+
+<div style="background:#f5f3ff;border-left:4px solid #6366f1;border-radius:4px;
+            padding:16px 20px;margin:0 0 24px;">
+  <p style="margin:0;color:#4b5563;font-size:14px;line-height:1.6;">
+    <strong style="color:#111827;">What is DraftMeet?</strong><br/>
+    Share a single booking link. Your guest picks a time that works for them.
+    The meeting lands on your Google Calendar — automatically, with a Meet link ready.
+    No back-and-forth. No "does Tuesday work for you?" threads.
+  </p>
+</div>
+
+<p style="margin:0 0 8px;color:#111827;font-size:14px;font-weight:600;">
+  Here's what happens next:
 </p>
-{_btn("Learn more", FRONTEND_URL, "#6366f1")}
-<p style="margin:24px 0 0;color:#6b7280;font-size:13px;">
-  We'll be in touch soon. Stay tuned!
+<ul style="margin:0 0 24px;padding-left:20px;color:#4b5563;font-size:14px;line-height:1.8;">
+  <li>We're putting the finishing touches on early access.</li>
+  <li>You'll be the first to know when the doors open.</li>
+  <li>Early users get priority features and direct input into the roadmap.</li>
+</ul>
+
+{_btn("See how DraftMeet works", FRONTEND_URL, "#6366f1")}
+
+<p style="margin:28px 0 0;color:#9ca3af;font-size:13px;line-height:1.6;">
+  Can't wait? Reply to this email — we'd love to hear what scheduling
+  problem brought you here.
 </p>
 """
-    await _send(email, "You're on the DraftMeet waitlist!", _base("Waitlist confirmed", body))
+    await _send(email, "You're on the DraftMeet waitlist — we saved your spot", _base("Waitlist confirmed", body))
 
 
 async def send_booking_confirmation_to_guest(
