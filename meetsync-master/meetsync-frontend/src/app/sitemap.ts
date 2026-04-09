@@ -1,9 +1,12 @@
 import { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
+  const base = "https://www.draftmeet.com";
+  const now = new Date();
+
   return [
-    { url: "https://draftmeet.com", lastModified: new Date(), changeFrequency: "monthly", priority: 1 },
-    { url: "https://draftmeet.com/privacy", lastModified: new Date(), changeFrequency: "yearly", priority: 0.3 },
-    { url: "https://draftmeet.com/terms", lastModified: new Date(), changeFrequency: "yearly", priority: 0.3 },
+    { url: base,               lastModified: now, changeFrequency: "weekly",  priority: 1.0 },
+    { url: `${base}/privacy`,  lastModified: now, changeFrequency: "monthly", priority: 0.3 },
+    { url: `${base}/terms`,    lastModified: now, changeFrequency: "monthly", priority: 0.3 },
   ];
 }

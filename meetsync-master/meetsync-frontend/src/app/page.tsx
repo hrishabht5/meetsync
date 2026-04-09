@@ -335,16 +335,17 @@ export default function LandingPage() {
               Frequently asked questions
             </h2>
           </div>
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3" role="list">
             {FAQS.map(({ q, a }, i) => (
               <details
                 key={q}
+                role="listitem"
                 className="animate-fade-up bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl group overflow-hidden"
                 style={{ animationDelay: `${0.08 * i}s` }}
               >
-                <summary className="flex items-center justify-between gap-4 px-6 py-4 cursor-pointer list-none font-semibold text-sm text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors select-none">
-                  {q}
-                  <ChevronDown size={16} className="shrink-0 text-[var(--text-secondary)] transition-transform duration-200 group-open:rotate-180" />
+                <summary className="flex items-center justify-between gap-4 px-6 py-4 cursor-pointer list-none font-semibold text-sm text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]">
+                  <span>{q}</span>
+                  <ChevronDown size={16} aria-hidden="true" className="shrink-0 text-[var(--text-secondary)] transition-transform duration-200 group-open:rotate-180" />
                 </summary>
                 <p className="px-6 pb-5 text-sm text-[var(--text-secondary)] leading-relaxed border-t border-[var(--border)] pt-4">
                   {a}

@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Block product routes on production (landing page only)
+Disallow: /dashboard
+Disallow: /login
+
+Sitemap: https://www.draftmeet.com/sitemap.xml
