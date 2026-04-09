@@ -1,17 +1,43 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Hostnames that show ONLY the public landing page (no product access)
+// ─────────────────────────────────────────────────────────────────────────────
+// LAUNCH MODE — controls whether draftmeet.com shows waitlist-only or full app
+//
+// To go live:
+//   1. Set  LAUNCH_MODE=live  in Vercel environment variables
+//   2. Redeploy — no code changes required
+//
+// Current default: "waitlist" (only the landing page + waitlist are accessible)
+// ─────────────────────────────────────────────────────────────────────────────
+const LAUNCH_MODE = process.env.LAUNCH_MODE ?? "waitlist";
+
+// Hostnames that enforce waitlist-only access when LAUNCH_MODE=waitlist
 const PUBLIC_ONLY_HOSTS = ["www.draftmeet.com", "draftmeet.com"];
 
-// Routes that are allowed on public-only hosts
+// Routes allowed in waitlist mode
 const PUBLIC_ALLOWED = ["/", "/privacy", "/terms"];
-const PUBLIC_ALLOWED_PREFIXES = ["/_next/", "/favicon", "/logo", "/og-image", "/api/waitlist", "/robots", "/sitemap", "/_vercel"];
+const PUBLIC_ALLOWED_PREFIXES = [
+  "/_next/",
+  "/favicon",
+  "/logo",
+  "/og-image",
+  "/api/waitlist",
+  "/robots",
+  "/sitemap",
+  "/_vercel",
+];
 
 export function middleware(request: NextRequest) {
   const host = request.headers.get("host") ?? "";
   const { pathname } = request.nextUrl;
 
-  const isPublicOnlyHost = PUBLIC_ONLY_HOSTS.some((h) => host === h || host.startsWith(h));
+  // In live mode, allow everything through
+  if (LAUNCH_MODE === "live") return NextResponse.next();
+
+  // In waitlist mode, block product routes on the public domain
+  const isPublicOnlyHost = PUBLIC_ONLY_HOSTS.some(
+    (h) => host === h || host.startsWith(h)
+  );
 
   if (isPublicOnlyHost) {
     const isAllowed =
