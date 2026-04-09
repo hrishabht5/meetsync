@@ -224,7 +224,7 @@ export default function LandingPage() {
             </span>
 
             {/* H1 — primary keyword in first 6 words */}
-            <h1 className="animate-fade-up delay-100 text-5xl sm:text-6xl lg:text-7xl font-extrabold text-[var(--text-primary)] leading-[1.08] tracking-tight">
+            <h1 className="animate-fade-up text-5xl sm:text-6xl lg:text-7xl font-extrabold text-[var(--text-primary)] leading-[1.08] tracking-tight">
               Smart scheduling links<br />
               <span className="text-gradient-brand">without the chaos</span>
             </h1>

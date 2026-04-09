@@ -5,7 +5,7 @@ const PUBLIC_ONLY_HOSTS = ["www.draftmeet.com", "draftmeet.com"];
 
 // Routes that are allowed on public-only hosts
 const PUBLIC_ALLOWED = ["/", "/privacy", "/terms"];
-const PUBLIC_ALLOWED_PREFIXES = ["/_next/", "/favicon", "/logo", "/og-image", "/api/waitlist"];
+const PUBLIC_ALLOWED_PREFIXES = ["/_next/", "/favicon", "/logo", "/og-image", "/api/waitlist", "/robots", "/sitemap", "/_vercel"];
 
 export function middleware(request: NextRequest) {
   const host = request.headers.get("host") ?? "";

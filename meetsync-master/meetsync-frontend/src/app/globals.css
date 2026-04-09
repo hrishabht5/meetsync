@@ -109,13 +109,12 @@
   [data-theme="dark"] .glow-brand-sm {
     box-shadow: 0 4px 24px 0 rgba(59, 106, 232, 0.28);
   }
+  /* Card hover — only transform/opacity are GPU-composited (no box-shadow/border-color jank) */
   .card-glow-hover {
-    box-shadow: var(--shadow-card);
-    transition: box-shadow 0.25s, border-color 0.25s, transform 0.25s;
+    transition: transform 0.25s ease;
+    will-change: transform;
   }
   .card-glow-hover:hover {
-    border-color: var(--border-accent);
-    box-shadow: var(--shadow-card-hover);
     transform: translateY(-3px);
   }
 
