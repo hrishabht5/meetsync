@@ -259,6 +259,15 @@ export const api = {
       }),
   },
 
+  // ── Waitlist ──────────────────────────────────────────
+  waitlist: {
+    join: (email: string) =>
+      request<{ status: string; message: string }>("/waitlist/", {
+        method: "POST",
+        body: JSON.stringify({ email }),
+      }),
+  },
+
   // ── Analytics ─────────────────────────────────────────
   analytics: {
     summary: () => request<AnalyticsSummary>("/analytics/summary/"),

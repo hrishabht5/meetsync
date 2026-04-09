@@ -96,6 +96,7 @@ async def global_exception_handler(request, exc):
         content={"error": True, "message": "Internal server error"},
     )
 
+from app.waitlist.router import router as waitlist_router
 from app.auth.api_keys_router import router as api_keys_router
 from app.api.v1.router import api_v1_router
 from app.profiles.router import router as profiles_router
@@ -110,6 +111,7 @@ app.include_router(webhooks_router,     prefix="/webhooks",     tags=["Webhooks"
 app.include_router(profiles_router,     prefix="/profiles",     tags=["Profiles"])
 
 # Public API Endpoints
+app.include_router(waitlist_router,     prefix="/waitlist",     tags=["Waitlist"])
 app.include_router(api_keys_router,     prefix="/api_keys",     tags=["API Keys Management"])
 app.include_router(api_v1_router,       prefix="/api/v1")
 
