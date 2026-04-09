@@ -1,42 +1,38 @@
-from fastapi import FastAPI
+import logging
+import os as _os
+import time
+from collections import defaultdict
+
+import uvicorn
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.middleware.base import BaseHTTPMiddleware
+
 from app.auth.router import router as auth_router
 from app.availability.router import router as availability_router
 from app.bookings.router import router as bookings_router
 from app.links.router import router as links_router
 from app.webhooks.router import router as webhooks_router
-import uvicorn
 from app.core.config import FRONTEND_URL
+
+_log = logging.getLogger("draftmeet")
 
 app = FastAPI(
     title="DraftMeet API",
     description="Scheduling platform with Google Meet, one-time links, and webhooks",
-    version="1.0.0"
+    version="1.0.0",
 )
 
-# Clean FRONTEND_URL to avoid CORS issues with trailing slashes
 CLEAN_FRONTEND_URL = FRONTEND_URL.rstrip("/")
-
-import os as _os
-_dev_origins = ["http://localhost:3000", "http://127.0.0.1:3000"] if _os.getenv("ALLOW_DEV_ORIGINS") == "true" else []
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        CLEAN_FRONTEND_URL,
-        f"{CLEAN_FRONTEND_URL}/",
-        *_dev_origins,
-    ],
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization"],
+_dev_origins = (
+    ["http://localhost:3000", "http://127.0.0.1:3000"]
+    if _os.getenv("ALLOW_DEV_ORIGINS") == "true"
+    else []
 )
 
-from starlette.middleware.base import BaseHTTPMiddleware
-from fastapi import Request
-from fastapi.responses import JSONResponse
-import time
-from collections import defaultdict
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
@@ -47,40 +43,58 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-XSS-Protection"] = "1; mode=block"
         return response
 
+
 class RateLimitMiddleware(BaseHTTPMiddleware):
     def __init__(self, app, requests_per_minute: int = 200):
         super().__init__(app)
         self.requests_per_minute = requests_per_minute
-        self.ip_requests = defaultdict(list)
+        self.ip_requests: defaultdict = defaultdict(list)
 
     async def dispatch(self, request: Request, call_next):
-        client_ip = request.client.host if request.client else "127.0.0.1"
+        # Read real client IP — trust X-Forwarded-For set by Vercel/reverse proxy
+        forwarded_for = request.headers.get("x-forwarded-for")
+        client_ip = (
+            forwarded_for.split(",")[0].strip()
+            if forwarded_for
+            else (request.client.host if request.client else "127.0.0.1")
+        )
+
         now = time.time()
         cutoff = now - 60
 
-        # Evict stale IPs periodically to prevent unbounded memory growth
+        # Evict stale IPs to prevent unbounded memory growth
         if len(self.ip_requests) > 500:
-            stale = [ip for ip, times in self.ip_requests.items() if not times or max(times) < cutoff]
+            stale = [
+                ip for ip, times in self.ip_requests.items()
+                if not times or max(times) < cutoff
+            ]
             for ip in stale:
                 del self.ip_requests[ip]
 
-        # Slide window (60 seconds)
         self.ip_requests[client_ip] = [t for t in self.ip_requests[client_ip] if t > cutoff]
 
         if len(self.ip_requests[client_ip]) >= self.requests_per_minute:
             return JSONResponse(
                 status_code=429,
-                content={"error": True, "message": "Too many requests. Please try again later."}
+                content={"error": True, "message": "Too many requests. Please try again later."},
             )
 
         self.ip_requests[client_ip].append(now)
         return await call_next(request)
 
-app.add_middleware(RateLimitMiddleware)
-app.add_middleware(SecurityHeadersMiddleware)
 
-from fastapi.exceptions import RequestValidationError
-from starlette.exceptions import HTTPException as StarletteHTTPException
+# Middleware registration — Starlette runs in LIFO order (last registered = outermost).
+# CORS must be outermost so it adds headers to ALL responses including 429s.
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RateLimitMiddleware)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[CLEAN_FRONTEND_URL, f"{CLEAN_FRONTEND_URL}/", *_dev_origins],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
+)
+
 
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request, exc):
@@ -89,8 +103,10 @@ async def http_exception_handler(request, exc):
         content={"error": True, "message": str(exc.detail)},
     )
 
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
+    _log.error("Unhandled exception on %s %s", request.method, request.url.path, exc_info=exc)
     return JSONResponse(
         status_code=500,
         content={"error": True, "message": "Internal server error"},
@@ -117,7 +133,7 @@ app.include_router(api_v1_router,       prefix="/api/v1")
 
 @app.get("/")
 def root():
-    return {"status": "MeetSync API running", "docs": "/docs"}
+    return {"status": "DraftMeet API running", "docs": "/docs"}
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

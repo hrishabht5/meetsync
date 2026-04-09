@@ -111,17 +111,15 @@ async def fire_event(event_name: str, data: Any, user_id: str = None):
         booking.created     booking.confirmed    booking.cancelled
         link.used           link.expired         meet.link.created
     """
-    # Fetch active endpoints subscribed to this event
-    result = supabase.table("webhooks") \
-        .select("*") \
-        .eq("is_active", True) \
-        .execute()
+    # Fetch only this user's active endpoints — avoids full-table scan
+    query = supabase.table("webhooks") \
+        .select("id,url,secret,events") \
+        .eq("is_active", True)
+    if user_id:
+        query = query.eq("user_id", user_id)
+    result = query.execute()
 
-    endpoints = [
-        ep for ep in result.data
-        if event_name in ep.get("events", [])
-        and (user_id is None or ep.get("user_id") == user_id)
-    ]
+    endpoints = [ep for ep in result.data if event_name in ep.get("events", [])]
 
     if not endpoints:
         return

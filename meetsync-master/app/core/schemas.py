@@ -1,5 +1,6 @@
 import ipaddress
 import re as _re
+import socket
 from urllib.parse import urlparse
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional, List
@@ -105,7 +106,6 @@ class GuestBookingResponse(BaseModel):
     notes:          Optional[str] = None
     custom_answers: Optional[dict] = None
     created_at:     Optional[datetime] = None
-    host_user_id:   Optional[str] = None    # needed for availability lookups
 
 
 # ── Booking Page Customization Mixin ─────────────────────
@@ -181,16 +181,27 @@ class WebhookCreate(BaseModel):
         if parsed.scheme != "https":
             raise ValueError("Webhook URL must use HTTPS")
         hostname = (parsed.hostname or "").lower()
-        blocked = {"localhost", "127.0.0.1", "0.0.0.0", "metadata.google.internal"}
-        if hostname in blocked:
+        if not hostname:
+            raise ValueError("Invalid webhook URL: missing hostname")
+
+        # Static blocklist for known metadata endpoints
+        _blocked_hosts = {
+            "localhost", "metadata.google.internal",
+            "instance-data",   # AWS legacy
+        }
+        if hostname in _blocked_hosts:
             raise ValueError("Webhook URL must point to a public host")
+
+        # Resolve hostname → IP at validation time to block DNS rebinding
+        # and private/link-local ranges (IPv4 + IPv6).
         try:
-            addr = ipaddress.ip_address(hostname)
-            if addr.is_private or addr.is_loopback or addr.is_link_local:
-                raise ValueError("Webhook URL must point to a public host")
-        except ValueError as exc:
-            if "Webhook" in str(exc):
-                raise
+            resolved_ip = ipaddress.ip_address(socket.gethostbyname(hostname))
+        except socket.gaierror:
+            raise ValueError("Webhook URL hostname could not be resolved")
+
+        if not resolved_ip.is_global:
+            raise ValueError("Webhook URL must point to a publicly routable host")
+
         return v
 
 

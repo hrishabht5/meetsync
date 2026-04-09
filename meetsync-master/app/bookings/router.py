@@ -267,7 +267,6 @@ def guest_get_booking(management_token: str):
         notes=booking.get("notes"),
         custom_answers=booking.get("custom_answers"),
         created_at=booking.get("created_at"),
-        host_user_id=booking.get("user_id"),
     )
 
 

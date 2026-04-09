@@ -66,7 +66,7 @@ def get_auth_url(state: str = "signin") -> str:
 
 async def exchange_code(code: str) -> dict:
     """Exchange authorization code for access + refresh tokens."""
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=15.0) as client:
         resp = await client.post(GOOGLE_TOKEN_URL, data={
             "code":          code,
             "client_id":     GOOGLE_CLIENT_ID,
@@ -80,7 +80,7 @@ async def exchange_code(code: str) -> dict:
 
 async def refresh_access_token(refresh_token: str) -> str:
     """Use stored refresh_token to get a new short-lived access_token."""
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=15.0) as client:
         resp = await client.post(GOOGLE_TOKEN_URL, data={
             "client_id":     GOOGLE_CLIENT_ID,
             "client_secret": GOOGLE_CLIENT_SECRET,
@@ -142,7 +142,7 @@ async def list_calendars(user_id: str) -> list[dict]:
     Used to populate the calendar picker in Settings.
     """
     access_token = await get_valid_access_token(user_id)
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=15.0) as client:
         resp = await client.get(
             f"{CALENDAR_API}/users/me/calendarList",
             headers={"Authorization": f"Bearer {access_token}"},
@@ -184,7 +184,7 @@ async def get_google_busy_times(user_id: str, start_dt: datetime, end_dt: dateti
         "items": [{"id": calendar_id}]
     }
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=15.0) as client:
         resp = await client.post(
             f"{CALENDAR_API}/freeBusy",
             headers={"Authorization": f"Bearer {access_token}"},
@@ -262,7 +262,7 @@ async def create_meet_event(
         "sendUpdates": "all",  # Google sends invite email to attendees
     }
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=15.0) as client:
         resp = await client.post(
             f"{CALENDAR_API}/calendars/{calendar_id}/events",
             headers={"Authorization": f"Bearer {access_token}"},
@@ -289,7 +289,7 @@ async def create_meet_event(
 async def delete_calendar_event(user_id: str, event_id: str, calendar_id: str = "primary"):
     """Cancel/delete a Google Calendar event."""
     access_token = await get_valid_access_token(user_id)
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=15.0) as client:
         resp = await client.delete(
             f"{CALENDAR_API}/calendars/{calendar_id}/events/{event_id}",
             headers={"Authorization": f"Bearer {access_token}"},
