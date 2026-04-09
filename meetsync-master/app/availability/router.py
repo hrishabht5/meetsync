@@ -160,8 +160,8 @@ async def get_available_slots(
         google_busy = await get_google_busy_times(user_id, start_dt_utc, end_dt_utc)
 
     # Remove conflicting slots
-    duration_map = {"15-min quick chat": 15, "30-min intro call": 30, "60-min deep dive": 60}
-    event_duration = duration_map.get(event_type, slot_duration)
+    from app.core.schemas import DURATION_MAP
+    event_duration = DURATION_MAP.get(event_type, slot_duration)
 
     def conflicts(slot_start: datetime) -> bool:
         slot_end = slot_start + timedelta(minutes=event_duration)
@@ -221,7 +221,7 @@ def get_settings(request: Request):
 def update_settings(request: Request, payload: AvailabilitySettings):
     from app.auth.middleware import get_current_user_id
     user_id = get_current_user_id(request)
-    settings_dict = payload.dict()
+    settings_dict = payload.model_dump()
     settings_dict["user_id"] = user_id
     supabase.table("availability_settings").upsert(settings_dict).execute()
     return {"status": "updated", **settings_dict}
@@ -245,7 +245,7 @@ def list_overrides(request: Request):
 def create_override(request: Request, payload: AvailabilityOverrideCreate):
     from app.auth.middleware import get_current_user_id
     user_id = get_current_user_id(request)
-    row = payload.dict()
+    row = payload.model_dump()
     row["user_id"] = user_id
     result = supabase.table("availability_overrides").upsert(row, on_conflict="user_id,override_date").execute()
     return result.data[0] if result.data else row

@@ -310,17 +310,23 @@ async def delete_account(request: Request):
     if not user_id:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
-    # Order matters: bookings → links → everything else → identity tables
-    supabase.table("bookings").delete().eq("user_id", user_id).execute()
-    supabase.table("one_time_links").delete().eq("user_id", user_id).execute()
-    supabase.table("permanent_links").delete().eq("user_id", user_id).execute()
-    supabase.table("availability_overrides").delete().eq("user_id", user_id).execute()
-    supabase.table("availability_settings").delete().eq("user_id", user_id).execute()
-    supabase.table("api_keys").delete().eq("user_id", user_id).execute()
-    supabase.table("webhooks").delete().eq("user_id", user_id).execute()
-    supabase.table("google_tokens").delete().eq("user_id", user_id).execute()
-    supabase.table("user_profiles").delete().eq("user_id", user_id).execute()
-    supabase.table("users").delete().eq("id", user_id).execute()
+    # Execute deletion via a Postgres function so all tables are wiped in a
+    # single transaction — a crash mid-way won't leave orphaned rows.
+    # The function is defined in migration_v12.sql.
+    try:
+        supabase.rpc("delete_user_account", {"target_user_id": user_id}).execute()
+    except Exception:
+        # Fallback: sequential deletes (pre-migration_v12 deployments)
+        supabase.table("bookings").delete().eq("user_id", user_id).execute()
+        supabase.table("one_time_links").delete().eq("user_id", user_id).execute()
+        supabase.table("permanent_links").delete().eq("user_id", user_id).execute()
+        supabase.table("availability_overrides").delete().eq("user_id", user_id).execute()
+        supabase.table("availability_settings").delete().eq("user_id", user_id).execute()
+        supabase.table("api_keys").delete().eq("user_id", user_id).execute()
+        supabase.table("webhooks").delete().eq("user_id", user_id).execute()
+        supabase.table("google_tokens").delete().eq("user_id", user_id).execute()
+        supabase.table("user_profiles").delete().eq("user_id", user_id).execute()
+        supabase.table("users").delete().eq("id", user_id).execute()
 
     secure = _is_secure(request)
     response = JSONResponse(content={"status": "account_deleted"})

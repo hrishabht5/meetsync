@@ -15,6 +15,15 @@ class BookingStatus(str, Enum):
     rescheduled  = "rescheduled"
 
 
+# Central duration map — single source of truth for all event-type durations.
+# Import this wherever duration_map was previously copy-pasted.
+DURATION_MAP: dict[str, int] = {
+    "15-min quick chat": 15,
+    "30-min intro call": 30,
+    "60-min deep dive":  60,
+}
+
+
 class OTLStatus(str, Enum):
     active  = "active"
     used    = "used"

@@ -36,7 +36,7 @@ def create_link(request: Request, payload: OTLCreate):
                     status_code=400,
                     detail=f"Dropdown question '{field.label}' must have at least one option."
                 )
-        custom_fields = [f.dict() for f in payload.custom_fields]
+        custom_fields = [f.model_dump() for f in payload.custom_fields]
 
     otl = otl_service.create_otl(
         event_type=payload.event_type,

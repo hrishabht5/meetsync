@@ -135,5 +135,17 @@ app.include_router(api_v1_router,       prefix="/api/v1")
 def root():
     return {"status": "DraftMeet API running", "docs": "/docs"}
 
+
+@app.get("/health")
+def health():
+    """Readiness probe — verifies Supabase connectivity before accepting traffic."""
+    from app.core.config import supabase
+    try:
+        supabase.table("users").select("id").limit(1).execute()
+    except Exception as exc:
+        _log.error("Health check failed: %s", exc)
+        return JSONResponse(status_code=503, content={"status": "unhealthy", "detail": "db_unreachable"})
+    return {"status": "healthy"}
+
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

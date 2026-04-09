@@ -29,6 +29,7 @@ from app.core.schemas import (
     BookingSetOutcome,
     BookingStatus,
     GuestBookingResponse,
+    DURATION_MAP,
 )
 from app.integrations import google_calendar
 from app.links import service as otl_service
@@ -121,12 +122,7 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
         )
 
     # ── 3. Create Google Meet event ───────────────────────
-    duration_map = {
-        "15-min quick chat": 15,
-        "30-min intro call": 30,
-        "60-min deep dive":  60,
-    }
-    duration = duration_map.get(payload.event_type, 30)
+    duration = DURATION_MAP.get(payload.event_type, 30)
     preferred_cal = _preferred_calendar_id(host_user_id)
     display_title = link_custom_title or payload.event_type
 
@@ -219,8 +215,12 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
 
 
 @router.get("/")
-def list_bookings(request: Request, status: str = None, limit: int = 50):
-    """List all bookings. Optional ?status=confirmed|pending|cancelled"""
+def list_bookings(request: Request, status: BookingStatus = None, limit: int = 50):
+    """List all bookings. Optional ?status=confirmed|pending|cancelled|rescheduled"""
+    if limit < 1:
+        limit = 1
+    if limit > 200:
+        limit = 200
     user_id = get_current_user_id(request)
     query = supabase.table("bookings").select("*").eq("user_id", user_id)
     if status:
@@ -388,12 +388,7 @@ async def guest_reschedule_booking(
             pass  # Best-effort deletion
 
     # ── Create new Google Calendar event ──────────────────
-    duration_map = {
-        "15-min quick chat": 15,
-        "30-min intro call": 30,
-        "60-min deep dive":  60,
-    }
-    duration = duration_map.get(booking["event_type"], 30)
+    duration = DURATION_MAP.get(booking["event_type"], 30)
     display_title = booking.get("custom_title") or booking["event_type"]
 
     try:
