@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   Link2, RefreshCw, CalendarCheck, Clock4,
   BarChart3, Webhook, KeyRound, MessageSquare,
@@ -199,8 +200,8 @@ export default function LandingPage() {
         {/* ── Nav ── */}
         <nav className="sticky top-0 z-30 flex items-center justify-between px-6 py-4 border-b border-[var(--border)] bg-[var(--bg-page)]/80 backdrop-blur-md animate-fade-in">
           <div className="flex items-center gap-2.5">
-            <img src="/logo-light.png" alt="DraftMeet logo" className="logo-light w-8 h-8 rounded-lg" />
-            <img src="/logo-dark.png"  alt="DraftMeet logo" className="logo-dark  w-8 h-8 rounded-lg" />
+            <Image src="/logo-light.png" alt="DraftMeet logo" width={32} height={32} className="logo-light rounded-lg" priority />
+            <Image src="/logo-dark.png"  alt="DraftMeet logo" width={32} height={32} className="logo-dark  rounded-lg" />
             <span className="text-lg font-bold text-[var(--text-primary)] tracking-tight">DraftMeet</span>
           </div>
           <ThemeToggle compact />
@@ -335,11 +336,10 @@ export default function LandingPage() {
               Frequently asked questions
             </h2>
           </div>
-          <div className="flex flex-col gap-3" role="list">
+          <div className="flex flex-col gap-3">
             {FAQS.map(({ q, a }, i) => (
               <details
                 key={q}
-                role="listitem"
                 className="animate-fade-up bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl group overflow-hidden"
                 style={{ animationDelay: `${0.08 * i}s` }}
               >
@@ -380,8 +380,8 @@ export default function LandingPage() {
         {/* ── Footer ── */}
         <footer className="px-6 py-8 border-t border-[var(--border)] flex flex-col sm:flex-row items-center justify-between gap-4 text-[var(--text-secondary)] text-xs max-w-6xl mx-auto w-full">
           <div className="flex items-center gap-2">
-            <img src="/logo-light.png" alt="DraftMeet" className="logo-light w-5 h-5 rounded" />
-            <img src="/logo-dark.png"  alt="DraftMeet" className="logo-dark  w-5 h-5 rounded" />
+            <Image src="/logo-light.png" alt="DraftMeet" width={20} height={20} className="logo-light rounded" />
+            <Image src="/logo-dark.png"  alt="DraftMeet" width={20} height={20} className="logo-dark  rounded" />
             <span className="font-semibold text-[var(--text-primary)]">DraftMeet</span>
             <span className="mx-2 opacity-40">·</span>
             <span>© {new Date().getFullYear()} All rights reserved.</span>

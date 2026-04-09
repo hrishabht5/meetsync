@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { AuthCard } from "@/components/AuthCard";
 import { ThemeToggle } from "@/components/themeToggle";
 
@@ -20,8 +21,8 @@ export default function LoginPage() {
 
       <div className="relative z-10 flex flex-col items-center text-center max-w-2xl gap-8">
         <div className="flex items-center gap-3">
-          <img src="/logo-light.png" alt="DraftMeet" className="logo-light w-10 h-10 rounded-xl glow-brand-sm" />
-          <img src="/logo-dark.png" alt="DraftMeet" className="logo-dark w-10 h-10 rounded-xl glow-brand-sm" />
+          <Image src="/logo-light.png" alt="DraftMeet" width={40} height={40} className="logo-light rounded-xl glow-brand-sm" priority />
+          <Image src="/logo-dark.png"  alt="DraftMeet" width={40} height={40} className="logo-dark  rounded-xl glow-brand-sm" />
           <span className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">DraftMeet</span>
         </div>
 
