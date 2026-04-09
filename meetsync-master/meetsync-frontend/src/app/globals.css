@@ -112,12 +112,71 @@
   }
   .card-glow-hover {
     box-shadow: var(--shadow-card);
-    transition: box-shadow 0.2s, border-color 0.2s, transform 0.2s;
+    transition: box-shadow 0.25s, border-color 0.25s, transform 0.25s;
   }
   .card-glow-hover:hover {
     border-color: var(--border-accent);
     box-shadow: var(--shadow-card-hover);
+    transform: translateY(-3px);
   }
+
+  /* ── Animations ─────────────────────────────────────── */
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(28px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50%       { transform: translateY(-12px); }
+  }
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 0.25; }
+    50%       { opacity: 0.45; }
+  }
+  @keyframes shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position:  200% center; }
+  }
+  @keyframes scale-in {
+    from { opacity: 0; transform: scale(0.8); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  @keyframes slide-right {
+    from { opacity: 0; transform: translateX(-20px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  .animate-fade-up   { animation: fade-up  0.6s ease both; }
+  .animate-fade-in   { animation: fade-in  0.5s ease both; }
+  .animate-float     { animation: float    4s ease-in-out infinite; }
+  .animate-scale-in  { animation: scale-in 0.5s cubic-bezier(0.34,1.56,0.64,1) both; }
+  .animate-slide-right { animation: slide-right 0.5s ease both; }
+
+  /* Staggered delays */
+  .delay-100 { animation-delay: 0.10s; }
+  .delay-150 { animation-delay: 0.15s; }
+  .delay-200 { animation-delay: 0.20s; }
+  .delay-300 { animation-delay: 0.30s; }
+  .delay-400 { animation-delay: 0.40s; }
+  .delay-500 { animation-delay: 0.50s; }
+  .delay-600 { animation-delay: 0.60s; }
+  .delay-700 { animation-delay: 0.70s; }
+  .delay-800 { animation-delay: 0.80s; }
+
+  /* Shimmer badge */
+  .badge-shimmer {
+    background: linear-gradient(90deg, #5B35E8, #3B6AE8, #38BFFF, #3B6AE8, #5B35E8);
+    background-size: 200% auto;
+    animation: shimmer 3s linear infinite;
+    color: white;
+  }
+
+  /* Animated orb */
+  .orb-pulse { animation: pulse-glow 4s ease-in-out infinite; }
   /* Theme-aware logo switching (used in server components that can't use useTheme) */
   .logo-light { display: block; }
   .logo-dark  { display: none;  }
