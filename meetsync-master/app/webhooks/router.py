@@ -8,6 +8,7 @@ GET  /webhooks/logs      → recent delivery logs
 POST /webhooks/test      → send a test event to all endpoints
 """
 
+import secrets
 import uuid
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Request
 from app.core.config import supabase
@@ -35,18 +36,25 @@ def register_webhook(request: Request, payload: WebhookCreate):
     if invalid:
         raise HTTPException(status_code=400, detail=f"Unknown events: {invalid}. Valid: {VALID_EVENTS}")
 
+    # Auto-generate a secret if the user didn't supply one.
+    # The raw secret must be stored (plaintext) because it's used server-side
+    # to sign every webhook delivery via HMAC-SHA256. It is shown to the user
+    # exactly once here — it cannot be retrieved again via the API.
+    raw_secret = payload.secret or secrets.token_hex(32)
+
     row = {
         "id":        str(uuid.uuid4()),
         "url":       payload.url,
-        "secret":    payload.secret,
+        "secret":    raw_secret,
         "events":    payload.events,
         "is_active": True,
         "user_id":   user_id,
     }
     result = supabase.table("webhooks").insert(row).execute()
-    # Never return the secret after registration
     data = result.data[0]
-    data.pop("secret", None)
+    # Return the secret exactly once so the user can save it.
+    # It will never be returned again by any other endpoint.
+    data["secret"] = raw_secret
     return data
 
 

@@ -20,6 +20,10 @@ import secrets
 import uuid
 
 import bcrypt
+
+# Pre-computed hash used when the email doesn't exist — ensures bcrypt always
+# runs so response timing doesn't reveal whether an email is registered.
+_DUMMY_HASH = bcrypt.hashpw(b"draftmeet-timing-guard", bcrypt.gensalt(rounds=4)).decode()
 import httpx
 from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse
@@ -217,14 +221,14 @@ async def signup(request: Request, payload: SignupRequest, _=Depends(strict_rate
 async def login(request: Request, payload: LoginRequest, _=Depends(strict_rate_limit)):
     """Log in with email + password."""
     result = supabase.table("users").select("id,password_hash").eq("email", payload.email).execute()
-    if not result.data:
-        raise HTTPException(status_code=401, detail="Invalid email or password.")
+    user = result.data[0] if result.data else None
 
-    user = result.data[0]
-    if not user.get("password_hash"):
-        raise HTTPException(status_code=401, detail="Invalid email or password.")
+    # Always run bcrypt regardless of whether the user exists — prevents timing
+    # attacks that would let an attacker enumerate registered email addresses.
+    stored_hash = (user.get("password_hash") if user else None) or _DUMMY_HASH
+    password_valid = bcrypt.checkpw(payload.password.encode(), stored_hash.encode())
 
-    if not bcrypt.checkpw(payload.password.encode(), user["password_hash"].encode()):
+    if not user or not user.get("password_hash") or not password_valid:
         raise HTTPException(status_code=401, detail="Invalid email or password.")
 
     secure = _is_secure(request)

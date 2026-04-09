@@ -18,10 +18,10 @@ import logging
 import secrets
 import uuid
 from datetime import datetime, timezone
-from fastapi import APIRouter, HTTPException, BackgroundTasks, Request
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Request, Depends
 from fastapi.responses import StreamingResponse
-
 from app.core.config import supabase, FRONTEND_URL
+from app.core.rate_limit import guest_rate_limit
 from app.core.schemas import (
     BookingCreate,
     BookingCancel,
@@ -69,7 +69,7 @@ def _preferred_calendar_id(host_user_id: str) -> str:
 # ═══════════════════════════════════════════════════════════
 
 @router.post("/", status_code=201)
-async def create_booking(request: Request, payload: BookingCreate, background_tasks: BackgroundTasks):
+async def create_booking(request: Request, payload: BookingCreate, background_tasks: BackgroundTasks, _=Depends(guest_rate_limit)):
     """
     Full booking flow:
       1. Validate one-time link (if provided)
@@ -248,7 +248,7 @@ def _get_booking_by_token(management_token: str) -> dict:
 
 
 @router.get("/manage/{management_token}")
-def guest_get_booking(management_token: str):
+def guest_get_booking(management_token: str, _=Depends(guest_rate_limit)):
     """
     Public endpoint — returns booking details for the management token.
     Only exposes guest-safe fields (no calendar_event_id, etc.).
@@ -275,6 +275,7 @@ async def guest_cancel_booking(
     management_token: str,
     payload: BookingCancel,
     background_tasks: BackgroundTasks,
+    _=Depends(guest_rate_limit),
 ):
     """
     Guest-initiated cancellation.
@@ -327,6 +328,7 @@ async def guest_reschedule_booking(
     management_token: str,
     payload: BookingReschedule,
     background_tasks: BackgroundTasks,
+    _=Depends(guest_rate_limit),
 ):
     """
     Guest-initiated reschedule.
@@ -492,7 +494,7 @@ def export_bookings_csv(request: Request, status: str = None):
     query = supabase.table("bookings").select("*").eq("user_id", user_id)
     if status:
         query = query.eq("status", status)
-    result = query.order("scheduled_at", desc=True).execute()
+    result = query.order("scheduled_at", desc=True).limit(10_000).execute()
     rows = result.data or []
 
     COLUMNS = [

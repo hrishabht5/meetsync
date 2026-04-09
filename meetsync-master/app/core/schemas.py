@@ -291,3 +291,13 @@ class LoginRequest(BaseModel):
 
 class CalendarPreferenceRequest(BaseModel):
     calendar_id: str
+
+    @field_validator("calendar_id")
+    @classmethod
+    def validate_calendar_id(cls, v: str) -> str:
+        if v == "primary":
+            return v
+        # Google Calendar IDs are email-like strings
+        if not _re.fullmatch(r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}", v):
+            raise ValueError("Invalid calendar ID — must be 'primary' or a valid calendar email ID")
+        return v

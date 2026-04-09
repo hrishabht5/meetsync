@@ -219,6 +219,11 @@ def get_permanent_link_by_username_slug(username: str, slug: str) -> tuple[dict,
     return result.data[0], profile["user_id"]
 
 
+_ALLOWED_PLINK_CUSTOMIZE = frozenset({
+    "description", "cover_image_url", "bg_image_url", "accent_color", "custom_title"
+})
+
+
 def customize_permanent_link(user_id: str, link_id: str, updates: dict) -> dict:
     """Update customization fields on a permanent link."""
     row = (
@@ -231,7 +236,8 @@ def customize_permanent_link(user_id: str, link_id: str, updates: dict) -> dict:
         raise ValueError("Link not found.")
     if row.data[0].get("user_id") != user_id:
         raise ValueError("Forbidden.")
-    updated = supabase.table("permanent_links").update(updates).eq("id", link_id).execute()
+    safe_updates = {k: v for k, v in updates.items() if k in _ALLOWED_PLINK_CUSTOMIZE}
+    updated = supabase.table("permanent_links").update(safe_updates).eq("id", link_id).execute()
     return updated.data[0]
 
 
