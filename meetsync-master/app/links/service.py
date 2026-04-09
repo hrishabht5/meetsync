@@ -104,13 +104,20 @@ def validate_otl(token: str) -> dict:
     return otl
 
 
-def mark_otl_used(token: str, booking_id: str):
-    """Atomically mark a link as used and record which booking consumed it."""
-    supabase.table("one_time_links").update({
+def mark_otl_used(token: str, booking_id: str) -> bool:
+    """
+    Atomically claim a one-time link.
+
+    Uses a conditional UPDATE (WHERE status = 'active') so that only one
+    concurrent request can succeed. Returns True if claimed, False if another
+    request already claimed it (race condition detected).
+    """
+    result = supabase.table("one_time_links").update({
         "status":     OTLStatus.used,
         "used_at":    datetime.now(timezone.utc).isoformat(),
         "booking_id": booking_id,
-    }).eq("id", token).execute()
+    }).eq("id", token).eq("status", OTLStatus.active).execute()
+    return bool(result.data)
 
 
 def revoke_otl(token: str):

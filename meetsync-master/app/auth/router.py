@@ -14,14 +14,18 @@ POST /auth/logout               → clear session cookie
 DELETE /auth/account            → GDPR account deletion
 """
 
+import hmac
+import logging as _logging
+import secrets
 import uuid
-from fastapi import APIRouter, Depends, Request, HTTPException
-from fastapi.responses import RedirectResponse, JSONResponse
-from app.core.rate_limit import strict_rate_limit
+
 import bcrypt
 import httpx
+from fastapi import APIRouter, Depends, Request, HTTPException
+from fastapi.responses import RedirectResponse, JSONResponse
 
 from app.core.config import supabase, FRONTEND_URL
+from app.core.rate_limit import strict_rate_limit
 from app.core.schemas import SignupRequest, LoginRequest, CalendarPreferenceRequest
 from app.integrations import google_calendar
 from app.auth.middleware import (
@@ -67,8 +71,6 @@ def _upsert_user(user_id: str, email: str, password_hash: str = None):
     supabase.table("users").upsert(row, on_conflict="id").execute()
 
 
-import logging as _logging
-
 def _ensure_profile(user_id: str, email: str):
     try:
         from app.profiles.service import ensure_profile_exists
@@ -85,27 +87,54 @@ def google_auth(request: Request, mode: str = "signin"):
     Redirect to Google consent screen.
     mode=signin  → identity only (login / sign-up), no calendar tokens stored
     mode=connect → calendar connect for an already-logged-in user
+
+    CSRF protection: a random nonce is generated, stored in an HttpOnly cookie,
+    and embedded in the OAuth state parameter. The callback verifies they match.
     """
     if mode == "connect":
-        # Must be logged in to connect a calendar
         try:
             get_current_user_id(request)
         except Exception:
             raise HTTPException(status_code=401, detail="Must be logged in to connect Google Calendar")
 
-    auth_url = google_calendar.get_auth_url(state=mode)
-    return RedirectResponse(url=auth_url)
+    nonce = secrets.token_hex(16)
+    state = f"{mode}:{nonce}"
+    auth_url = google_calendar.get_auth_url(state=state)
+
+    secure = _is_secure(request)
+    response = RedirectResponse(url=auth_url)
+    response.set_cookie(
+        key="oauth_state",
+        value=nonce,
+        httponly=True,
+        secure=secure,
+        samesite="none" if secure else "lax",
+        max_age=600,   # 10 minutes — enough to complete the OAuth flow
+        path="/",
+    )
+    return response
 
 
 @router.get("/callback")
-async def google_callback(request: Request, code: str = None, error: str = None, state: str = "signin"):
+async def google_callback(request: Request, code: str = None, error: str = None, state: str = "signin:"):
     """
     Google redirects here after the user grants permission.
-    state == 'signin'  → upsert users row, set session, do NOT store calendar tokens
-    state == 'connect' → store calendar tokens for the logged-in user, redirect to settings
+    state format: '{mode}:{nonce}'
+      mode=signin  → upsert users row, set session, do NOT store calendar tokens
+      mode=connect → store calendar tokens for the logged-in user, redirect to settings
     """
     if error or not code:
         return RedirectResponse(url=f"{FRONTEND_URL}?auth_error={error or 'no_code'}")
+
+    # ── CSRF nonce verification ───────────────────────────
+    stored_nonce = request.cookies.get("oauth_state", "")
+    parts = state.split(":", 1)
+    mode = parts[0]
+    received_nonce = parts[1] if len(parts) > 1 else ""
+
+    if not stored_nonce or not hmac.compare_digest(stored_nonce, received_nonce):
+        _logging.warning("OAuth CSRF check failed — state mismatch")
+        return RedirectResponse(url=f"{FRONTEND_URL}?auth_error=invalid_state")
 
     try:
         token_data = await google_calendar.exchange_code(code)
@@ -113,7 +142,7 @@ async def google_callback(request: Request, code: str = None, error: str = None,
         if not access_token:
             return RedirectResponse(url=f"{FRONTEND_URL}?auth_error=missing_access_token")
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=10) as client:
             resp = await client.get(
                 "https://www.googleapis.com/oauth2/v1/userinfo?alt=json",
                 headers={"Authorization": f"Bearer {access_token}"},
@@ -128,24 +157,22 @@ async def google_callback(request: Request, code: str = None, error: str = None,
 
         secure = _is_secure(request)
 
-        if state == "connect":
+        if mode == "connect":
             # ── Calendar connect ──────────────────────────────────
-            # User is already logged in; store tokens against their session user_id
             try:
                 session_user_id = get_current_user_id(request)
             except Exception:
                 return RedirectResponse(url=f"{FRONTEND_URL}/dashboard/settings?auth_error=not_logged_in")
 
             google_calendar.store_tokens(session_user_id, token_data)
-            # Update the users row with the real email if we had a placeholder
             _upsert_user(session_user_id, email)
             redirect = RedirectResponse(url=f"{FRONTEND_URL}/dashboard/settings?calendar=connected")
+            # Clear the CSRF cookie
+            redirect.delete_cookie("oauth_state", path="/")
             return redirect
 
         else:
             # ── Sign-in / Sign-up ─────────────────────────────────
-            # If this Google email already belongs to an email/password account,
-            # log in as that existing account instead of creating a duplicate.
             existing = supabase.table("users").select("id").eq("email", email).execute()
             if existing.data:
                 actual_user_id = existing.data[0]["id"]
@@ -157,6 +184,7 @@ async def google_callback(request: Request, code: str = None, error: str = None,
 
             redirect = RedirectResponse(url=f"{FRONTEND_URL}/dashboard?auth=success")
             _set_session_cookie(redirect, actual_user_id, secure)
+            redirect.delete_cookie("oauth_state", path="/")
             return redirect
 
     except Exception as e:

@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Request
 from fastapi.responses import StreamingResponse
 
-from app.core.config import supabase
+from app.core.config import supabase, FRONTEND_URL
 from app.core.schemas import (
     BookingCreate,
     BookingCancel,
@@ -132,7 +132,7 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
 
     # Build calendar description with management link (will be filled after token is generated)
     management_token = secrets.token_hex(16)  # 32-char hex, 128-bit entropy
-    manage_url = f"{request.headers.get('origin', 'https://draftmeet.com')}/manage/{management_token}"
+    manage_url = f"{FRONTEND_URL}/manage/{management_token}"
     cal_description = (
         f"{payload.notes or ''}\n\n"
         f"──────────────────\n"
@@ -180,9 +180,23 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
     }
     supabase.table("bookings").insert(booking_row).execute()
 
-    # ── 5. Mark OTL used ──────────────────────────────────
+    # ── 5. Atomically claim OTL ──────────────────────────
     if otl:
-        otl_service.mark_otl_used(payload.one_time_link_id, booking_id)
+        claimed = otl_service.mark_otl_used(payload.one_time_link_id, booking_id)
+        if not claimed:
+            # Race: another concurrent request claimed this OTL first.
+            # Roll back: delete the booking and best-effort delete the GCal event.
+            supabase.table("bookings").delete().eq("id", booking_id).execute()
+            try:
+                await google_calendar.delete_calendar_event(
+                    host_user_id, meet_data["calendar_event_id"], preferred_cal
+                )
+            except Exception:
+                pass
+            raise HTTPException(
+                status_code=409,
+                detail="This booking link was just used by someone else. Please request a new one."
+            )
 
     # ── 6. Fire webhooks (background) ─────────────────────
     # Exclude management_token from external webhook payloads
