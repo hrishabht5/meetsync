@@ -18,6 +18,9 @@ meetsync-frontend/lint_output.txt
 meetsync-frontend/lint_full.txt
 meetsync-frontend/lint_results.json
 
+# Claude Code config (local dev tool, not project code)
+.claude/
+
 # OS files
 .DS_Store
 Thumbs.db

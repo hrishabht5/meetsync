@@ -44,13 +44,14 @@ def _set_session_cookie(response, user_id: str, secure: bool):
         secure=secure,
         samesite=samesite,
         path="/",
+        domain=".draftmeet.com",
         max_age=60 * 60 * 24 * 30,  # 30 days
     )
 
 
 def _clear_session_cookie(response, secure: bool):
     samesite = "none" if secure else "lax"
-    response.delete_cookie(key="draftmeet_user", path="/", secure=secure, samesite=samesite)
+    response.delete_cookie(key="draftmeet_user", path="/", secure=secure, samesite=samesite, domain=".draftmeet.com")
 
 
 def _is_secure(request: Request) -> bool:
