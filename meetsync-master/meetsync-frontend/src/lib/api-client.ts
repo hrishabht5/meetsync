@@ -1,5 +1,5 @@
 // API Client — single module for all calls to the DraftMeet FastAPI backend
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/$/, "");
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   // Only set `Content-Type: application/json` when we actually send a request body.
