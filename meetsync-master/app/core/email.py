@@ -129,6 +129,24 @@ def _detail_table(*rows: str) -> str:
 
 # ── Public API ─────────────────────────────────────────────────────────────────
 
+async def send_waitlist_welcome(email: str) -> None:
+    body = f"""
+<h2 style="margin:0 0 8px;color:#111827;font-size:20px;">You're on the waitlist!</h2>
+<p style="margin:0 0 20px;color:#6b7280;font-size:14px;">
+  Thanks for joining the DraftMeet waitlist. We'll notify you the moment early access opens up.
+</p>
+<p style="margin:0 0 20px;color:#6b7280;font-size:14px;">
+  DraftMeet is a smart scheduling tool that lets you share a booking link, let guests pick a time,
+  and have meetings land on your calendar automatically — no back-and-forth needed.
+</p>
+{_btn("Learn more", FRONTEND_URL, "#6366f1")}
+<p style="margin:24px 0 0;color:#6b7280;font-size:13px;">
+  We'll be in touch soon. Stay tuned!
+</p>
+"""
+    await _send(email, "You're on the DraftMeet waitlist!", _base("Waitlist confirmed", body))
+
+
 async def send_booking_confirmation_to_guest(
     guest_email: str,
     guest_name: str,

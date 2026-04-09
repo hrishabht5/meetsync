@@ -32,3 +32,7 @@ FRONTEND_URL  = os.getenv("FRONTEND_URL", "http://localhost:3000").rstrip("/")
 SECRET_KEY    = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
     raise ValueError("Missing required environment variable: SECRET_KEY")
+
+# ── Resend (email) ────────────────────────────────────────
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
+FROM_EMAIL     = os.getenv("FROM_EMAIL", "DraftMeet <notification@draftmeet.com>")

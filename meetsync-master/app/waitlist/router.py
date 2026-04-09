@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, EmailStr
 from app.core.config import supabase
 from app.core.rate_limit import strict_rate_limit
+from app.core.email import send_waitlist_welcome
 
 router = APIRouter()
 
@@ -15,6 +16,7 @@ class WaitlistRequest(BaseModel):
 async def join_waitlist(payload: WaitlistRequest, _=Depends(strict_rate_limit)):
     try:
         supabase.table("waitlist").insert({"email": payload.email}).execute()
+        await send_waitlist_welcome(payload.email)
         return {"status": "ok", "message": "You've been added to the waitlist"}
     except Exception as e:
         err_str = str(e)
