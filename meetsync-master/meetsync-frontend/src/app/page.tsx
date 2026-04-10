@@ -19,14 +19,12 @@ export const metadata = {
       "Share a booking link, let clients self-schedule, and auto-create Google Meet events. No back-and-forth. Free to start — built for founders & freelancers.",
     url: "https://www.draftmeet.com",
     type: "website",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "DraftMeet — Smart Scheduling" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "DraftMeet: Free Calendly Alternative with Automatic Google Meet",
     description:
       "One-time booking links. Permanent booking pages. Automatic Google Meet. The free Calendly alternative for freelancers and founders.",
-    images: ["/og-image.png"],
   },
 };
 

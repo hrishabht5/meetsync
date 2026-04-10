@@ -41,14 +41,12 @@ export const metadata: Metadata = {
     description:
       "Share a booking link, let clients self-schedule, and auto-create Google Meet events. No back-and-forth. Free to start — built for founders & freelancers.",
     siteName: "DraftMeet",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "DraftMeet — Smart Scheduling" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "DraftMeet: Free Calendly Alternative with Google Meet",
     description:
       "One-time booking links. Permanent booking pages. Automatic Google Meet. The free Calendly alternative built for freelancers and founders.",
-    images: ["/og-image.png"],
   },
   icons: {
     icon: "/logo-light.png",
