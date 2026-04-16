@@ -48,6 +48,30 @@ class AvailabilitySettings(BaseModel):
     timezone:        str = "Asia/Kolkata"
     allow_double_booking: bool = False  # Bypasses checking for conflicts
     default_questions: Optional[List[CustomField]] = None
+    min_notice_hours:     int           = 0     # 0 = no minimum
+    max_days_ahead:       Optional[int] = None  # None = unlimited
+    max_bookings_per_day: Optional[int] = None  # None = unlimited
+
+    @field_validator("min_notice_hours")
+    @classmethod
+    def _validate_notice(cls, v: int) -> int:
+        if v not in {0, 1, 2, 4, 8, 24, 48, 72}:
+            raise ValueError("min_notice_hours must be one of 0,1,2,4,8,24,48,72")
+        return v
+
+    @field_validator("max_days_ahead")
+    @classmethod
+    def _validate_window(cls, v: Optional[int]) -> Optional[int]:
+        if v is not None and v not in {7, 14, 30, 60, 90, 180}:
+            raise ValueError("max_days_ahead must be one of 7,14,30,60,90,180 or null")
+        return v
+
+    @field_validator("max_bookings_per_day")
+    @classmethod
+    def _validate_daily_cap(cls, v: Optional[int]) -> Optional[int]:
+        if v is not None and not (1 <= v <= 10):
+            raise ValueError("max_bookings_per_day must be between 1 and 10 or null")
+        return v
 
 
 class AvailabilityOverrideCreate(BaseModel):

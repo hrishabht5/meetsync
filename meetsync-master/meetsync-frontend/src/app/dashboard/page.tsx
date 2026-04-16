@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { api, BookingRow } from "@/lib/api-client";
 import { errMsg } from "@/lib/errors";
 import { Badge, Button, Card, EmptyState, SectionHeader, Spinner } from "@/components/ui";
+import { HostRescheduleModal } from "@/components/hostRescheduleModal";
 
 const isPast = (scheduledAt: string) => new Date(scheduledAt) < new Date();
 
@@ -11,6 +12,7 @@ export default function BookingsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
   const [cancelling, setCancelling] = useState<string | null>(null);
+  const [reschedulingBooking, setReschedulingBooking] = useState<BookingRow | null>(null);
   const [error, setError] = useState("");
   const [savingOutcome, setSavingOutcome] = useState<string | null>(null);
   const [outcomeSelections, setOutcomeSelections] = useState<Record<string, { outcome: string; notes: string }>>({});
@@ -56,6 +58,11 @@ export default function BookingsPage() {
       await api.bookings.exportCsv(filter || undefined);
     } catch (e: unknown) { alert(errMsg(e)); }
     finally { setExporting(false); }
+  };
+
+  const handleRescheduled = (updated: BookingRow) => {
+    setBookings((b) => b.map((bk) => bk.id === updated.id ? updated : bk));
+    setReschedulingBooking(null);
   };
 
   const handleCancel = async (id: string) => {
@@ -173,7 +180,26 @@ export default function BookingsPage() {
                     </div>
                   )}
                 </div>
-                {bk.status !== "cancelled" && (
+                {bk.status !== "cancelled" && !isPast(bk.scheduled_at) && (
+                  <div className="flex flex-col gap-2 shrink-0">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setReschedulingBooking(bk)}
+                    >
+                      Reschedule
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      loading={cancelling === bk.id}
+                      onClick={() => handleCancel(bk.id)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                )}
+                {bk.status !== "cancelled" && isPast(bk.scheduled_at) && (
                   <Button
                     variant="danger"
                     size="sm"
@@ -187,6 +213,14 @@ export default function BookingsPage() {
             </Card>
           ))}
         </div>
+      )}
+
+      {reschedulingBooking && (
+        <HostRescheduleModal
+          booking={reschedulingBooking}
+          onRescheduled={handleRescheduled}
+          onClose={() => setReschedulingBooking(null)}
+        />
       )}
     </>
   );

@@ -40,11 +40,14 @@ def _get_settings(user_id: str) -> dict:
         return row
     # Defaults
     return {
-        "working_days":   ["Mon", "Tue", "Wed", "Thu", "Fri"],
-        "daily_shifts":   DEFAULT_SHIFTS,
-        "slot_duration":  30,
-        "buffer_minutes": 15,
-        "timezone":       "Asia/Kolkata",
+        "working_days":        ["Mon", "Tue", "Wed", "Thu", "Fri"],
+        "daily_shifts":        DEFAULT_SHIFTS,
+        "slot_duration":       30,
+        "buffer_minutes":      15,
+        "timezone":            "Asia/Kolkata",
+        "min_notice_hours":    0,
+        "max_days_ahead":      None,
+        "max_bookings_per_day": None,
     }
 
 
@@ -85,7 +88,10 @@ async def get_available_slots(
         settings = _get_settings(user_id)
     except Exception:
         return {"date": date, "slots": [], "timezone": "UTC"}
-    allow_double = settings.get("allow_double_booking", False)
+    allow_double        = settings.get("allow_double_booking", False)
+    min_notice_hours    = settings.get("min_notice_hours", 0) or 0
+    max_days_ahead      = settings.get("max_days_ahead")
+    max_bookings_per_day = settings.get("max_bookings_per_day")
 
     # Check for date override first
     override = _get_override(user_id, date)
@@ -137,7 +143,9 @@ async def get_available_slots(
         slot_dt = datetime.combine(target_date, time(h, m), tzinfo=tz)
         slots.append(slot_dt.isoformat())
 
-    now = datetime.now(tz=tz)
+    now            = datetime.now(tz=tz)
+    notice_cutoff  = now + timedelta(hours=min_notice_hours)
+    window_cutoff  = (now + timedelta(days=max_days_ahead)) if max_days_ahead is not None else None
 
     # Always check DraftMeet DB bookings (these are always managed)
     day_start_local = datetime.combine(target_date, time(0, 0), tzinfo=tz)
@@ -173,7 +181,7 @@ async def get_available_slots(
             bk_start = datetime.fromisoformat(bk_iso)
             if bk_start.tzinfo is None:
                 bk_start = bk_start.replace(tzinfo=timezone.utc)
-            bk_dur = int(duration_map.get(bk["event_type"], slot_duration) or slot_duration)
+            bk_dur = int(DURATION_MAP.get(bk["event_type"], slot_duration) or slot_duration)
             bk_end = bk_start + timedelta(minutes=bk_dur + buffer)
             if not (slot_end <= bk_start - timedelta(minutes=buffer) or slot_start >= bk_end):
                 return True
@@ -195,9 +203,16 @@ async def get_available_slots(
         slot_in_guest_tz = slot_dt.astimezone(guest_day_start.tzinfo)
         return guest_day_start <= slot_in_guest_tz <= guest_day_end
 
+    # Enforce daily cap early — return empty if the day is already full
+    if max_bookings_per_day is not None and len(booked) >= max_bookings_per_day:
+        return {"date": date, "slots": [], "reason": "No availability remaining for this day", "timezone": settings["timezone"]}
+
     available = [
         s for s in slots
-        if (dt := datetime.fromisoformat(s)) > now and not conflicts(dt) and in_guest_day(dt)
+        if (dt := datetime.fromisoformat(s)) > notice_cutoff
+        and (window_cutoff is None or dt <= window_cutoff)
+        and not conflicts(dt)
+        and in_guest_day(dt)
     ]
 
     return {

@@ -122,6 +122,11 @@ export const api = {
         method: "PATCH",
         body: JSON.stringify({ reason }),
       }),
+    reschedule: (id: string, newScheduledAt: string) =>
+      request<{ status: string; booking_id: string; scheduled_at: string; meet_link: string }>(
+        `/bookings/${id}/reschedule/`,
+        { method: "PATCH", body: JSON.stringify({ new_scheduled_at: newScheduledAt }) }
+      ),
     setOutcome: (
       id: string,
       outcome: "completed" | "no_show" | "cancelled_by_guest",
@@ -317,6 +322,9 @@ export interface AvailabilitySettingsResponse {
   timezone: string;
   allow_double_booking?: boolean;
   default_questions?: CustomField[];
+  min_notice_hours?: number;
+  max_days_ahead?: number | null;
+  max_bookings_per_day?: number | null;
 }
 
 export interface AvailabilitySettingsUpdate {
@@ -327,6 +335,9 @@ export interface AvailabilitySettingsUpdate {
   timezone: string;
   allow_double_booking?: boolean;
   default_questions?: CustomField[];
+  min_notice_hours?: number;
+  max_days_ahead?: number | null;
+  max_bookings_per_day?: number | null;
 }
 
 export interface AvailabilityOverride {

@@ -121,6 +121,32 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
             detail="This time slot has just been taken. Please go back and choose another time."
         )
 
+    # ── 2b. Daily booking limit guard ────────────────────
+    from app.availability.router import _get_settings
+    from zoneinfo import ZoneInfo
+    avail = _get_settings(host_user_id)
+    max_per_day = avail.get("max_bookings_per_day")
+    if max_per_day is not None:
+        try:
+            host_tz = ZoneInfo(avail.get("timezone", "UTC"))
+        except Exception:
+            host_tz = timezone.utc
+        sched_local = sched_utc.astimezone(host_tz)
+        day_start = datetime.combine(sched_local.date(), datetime.min.time(), tzinfo=host_tz).astimezone(timezone.utc)
+        day_end   = datetime.combine(sched_local.date(), datetime.max.time().replace(microsecond=0), tzinfo=host_tz).astimezone(timezone.utc)
+        day_count = supabase.table("bookings") \
+            .select("id", count="exact") \
+            .eq("user_id", host_user_id) \
+            .neq("status", "cancelled") \
+            .gte("scheduled_at", day_start.isoformat()) \
+            .lte("scheduled_at", day_end.isoformat()) \
+            .execute()
+        if (day_count.count or 0) >= max_per_day:
+            raise HTTPException(
+                status_code=409,
+                detail="The host has reached their maximum bookings for this day. Please choose a different date."
+            )
+
     # ── 3. Create Google Meet event ───────────────────────
     duration = DURATION_MAP.get(payload.event_type, 30)
     preferred_cal = _preferred_calendar_id(host_user_id)
@@ -556,6 +582,144 @@ async def cancel_booking(request: Request, booking_id: str, payload: BookingCanc
         user_id,
     )
     return {"status": "cancelled", "booking_id": booking_id}
+
+
+@router.patch("/{booking_id}/reschedule")
+async def host_reschedule_booking(
+    request: Request,
+    booking_id: str,
+    payload: BookingReschedule,
+    background_tasks: BackgroundTasks,
+):
+    """
+    Host-initiated reschedule (auth-guarded).
+    Creates the new GCal event before deleting the old one — safe on failure.
+    """
+    user_id = get_current_user_id(request)
+    result = supabase.table("bookings").select("*").eq("id", booking_id).eq("user_id", user_id).execute()
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    booking = result.data[0]
+
+    if booking["status"] == BookingStatus.cancelled:
+        raise HTTPException(status_code=400, detail="Cannot reschedule a cancelled booking")
+
+    scheduled_dt = datetime.fromisoformat(booking["scheduled_at"].replace("Z", "+00:00"))
+    if scheduled_dt.tzinfo is None:
+        scheduled_dt = scheduled_dt.replace(tzinfo=timezone.utc)
+    if scheduled_dt <= datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="Cannot reschedule a booking that has already passed")
+
+    new_dt = payload.new_scheduled_at
+    if new_dt.tzinfo is None:
+        new_dt = new_dt.replace(tzinfo=timezone.utc)
+    if new_dt <= datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="The new time must be in the future")
+
+    # Double-booking guard (exclude the booking being moved)
+    new_iso = new_dt.astimezone(timezone.utc).isoformat()
+    conflict = supabase.table("bookings") \
+        .select("id") \
+        .eq("user_id", user_id) \
+        .eq("scheduled_at", new_iso) \
+        .neq("status", "cancelled") \
+        .neq("id", booking_id) \
+        .execute()
+    if conflict.data:
+        raise HTTPException(status_code=409, detail="This time slot is already taken. Please choose another time.")
+
+    # Daily limit guard (check new day, exclude this booking from count)
+    from app.availability.router import _get_settings
+    from zoneinfo import ZoneInfo
+    avail = _get_settings(user_id)
+    max_per_day = avail.get("max_bookings_per_day")
+    if max_per_day is not None:
+        try:
+            host_tz = ZoneInfo(avail.get("timezone", "UTC"))
+        except Exception:
+            host_tz = timezone.utc
+        new_local   = new_dt.astimezone(host_tz)
+        day_start   = datetime.combine(new_local.date(), datetime.min.time(), tzinfo=host_tz).astimezone(timezone.utc)
+        day_end     = datetime.combine(new_local.date(), datetime.max.time().replace(microsecond=0), tzinfo=host_tz).astimezone(timezone.utc)
+        day_count   = supabase.table("bookings") \
+            .select("id", count="exact") \
+            .eq("user_id", user_id) \
+            .neq("status", "cancelled") \
+            .neq("id", booking_id) \
+            .gte("scheduled_at", day_start.isoformat()) \
+            .lte("scheduled_at", day_end.isoformat()) \
+            .execute()
+        if (day_count.count or 0) >= max_per_day:
+            raise HTTPException(status_code=409, detail="That day is fully booked. Please choose a different date.")
+
+    old_event_id = booking.get("calendar_event_id")
+    cal_id       = _preferred_calendar_id(user_id)
+    duration     = DURATION_MAP.get(booking["event_type"], 30)
+    display_title = booking.get("custom_title") or booking["event_type"]
+    manage_url   = f"{FRONTEND_URL}/manage/{booking['management_token']}"
+    cal_desc     = (f"{booking.get('notes') or ''}\n\n──────────────────\nManage this booking:\n{manage_url}").strip()
+
+    # Create new event FIRST — delete old only after success
+    try:
+        meet_data = await google_calendar.create_meet_event(
+            user_id      = user_id,
+            guest_name   = booking["guest_name"],
+            guest_email  = booking["guest_email"],
+            summary      = f"{display_title} — {booking['guest_name']}",
+            start_dt     = payload.new_scheduled_at,
+            duration_min = duration,
+            description  = cal_desc,
+            calendar_id  = cal_id,
+        )
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not create the new calendar event. Please try again.")
+
+    if old_event_id:
+        try:
+            await google_calendar.delete_calendar_event(user_id, old_event_id, cal_id)
+        except Exception:
+            pass  # non-critical — new event is already live
+
+    old_scheduled_at = booking["scheduled_at"]
+    supabase.table("bookings").update({
+        "scheduled_at":      new_dt.isoformat(),
+        "status":            BookingStatus.confirmed,
+        "meet_link":         meet_data["meet_link"],
+        "calendar_event_id": meet_data["calendar_event_id"],
+    }).eq("id", booking_id).execute()
+
+    from app.core.email import send_reschedule_email_to_guest
+    background_tasks.add_task(
+        send_reschedule_email_to_guest,
+        guest_email      = booking["guest_email"],
+        guest_name       = booking["guest_name"],
+        old_scheduled_at = old_scheduled_at,
+        new_scheduled_at = new_dt.isoformat(),
+        event_type       = booking["event_type"],
+        meet_link        = meet_data["meet_link"],
+        manage_token     = booking["management_token"],
+    )
+    background_tasks.add_task(
+        webhook_service.fire_event,
+        "booking.rescheduled",
+        {
+            "booking_id":    booking_id,
+            "guest_name":    booking["guest_name"],
+            "guest_email":   booking["guest_email"],
+            "previous_time": old_scheduled_at,
+            "new_time":      new_dt.isoformat(),
+            "meet_link":     meet_data["meet_link"],
+            "rescheduled_by": "host",
+        },
+        user_id,
+    )
+
+    return {
+        "status":       "rescheduled",
+        "booking_id":   booking_id,
+        "scheduled_at": new_dt.isoformat(),
+        "meet_link":    meet_data["meet_link"],
+    }
 
 
 @router.patch("/{booking_id}/outcome")

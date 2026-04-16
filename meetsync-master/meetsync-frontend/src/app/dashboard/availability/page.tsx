@@ -16,6 +16,9 @@ export default function AvailabilityPage() {
     timezone: "Asia/Kolkata",
     allow_double_booking: false,
     default_questions: [],
+    min_notice_hours: 0,
+    max_days_ahead: null,
+    max_bookings_per_day: null,
   });
   const [overrides, setOverrides] = useState<AvailabilityOverride[]>([]);
   const [loading, setLoading] = useState(true);
@@ -163,6 +166,50 @@ export default function AvailabilityPage() {
                 className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
               >
                 {[0, 5, 10, 15, 30].map((v) => <option key={v}>{v}</option>)}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-[var(--text-primary)]">Minimum Notice</label>
+              <select
+                value={settings.min_notice_hours ?? 0}
+                onChange={(e) => setSettings((s) => ({ ...s, min_notice_hours: Number(e.target.value) }))}
+                className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
+              >
+                <option value={0}>None</option>
+                <option value={1}>1 hour</option>
+                <option value={2}>2 hours</option>
+                <option value={4}>4 hours</option>
+                <option value={8}>8 hours</option>
+                <option value={24}>24 hours</option>
+                <option value={48}>48 hours</option>
+                <option value={72}>72 hours</option>
+              </select>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-[var(--text-primary)]">Booking Window</label>
+              <select
+                value={settings.max_days_ahead ?? ""}
+                onChange={(e) => setSettings((s) => ({ ...s, max_days_ahead: e.target.value === "" ? null : Number(e.target.value) }))}
+                className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
+              >
+                <option value="">Unlimited</option>
+                <option value={7}>7 days</option>
+                <option value={14}>14 days</option>
+                <option value={30}>30 days</option>
+                <option value={60}>60 days</option>
+                <option value={90}>90 days</option>
+                <option value={180}>180 days</option>
+              </select>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-[var(--text-primary)]">Max Bookings Per Day</label>
+              <select
+                value={settings.max_bookings_per_day ?? ""}
+                onChange={(e) => setSettings((s) => ({ ...s, max_bookings_per_day: e.target.value === "" ? null : Number(e.target.value) }))}
+                className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
+              >
+                <option value="">Unlimited</option>
+                {[1,2,3,4,5,6,7,8,9,10].map((v) => <option key={v} value={v}>{v}</option>)}
               </select>
             </div>
           </div>
