@@ -43,6 +43,13 @@ router = APIRouter()
 
 # ── Helpers ───────────────────────────────────────────────
 
+def _cookie_domain(secure: bool) -> str | None:
+    # Only set domain in production (HTTPS). On localhost the browser ignores
+    # the domain attribute for non-public suffixes anyway, and a wildcard
+    # domain on prod would allow any subdomain to read the session cookie.
+    return "draftmeet.com" if secure else None
+
+
 def _set_session_cookie(response, user_id: str, secure: bool):
     samesite = "none" if secure else "lax"
     response.set_cookie(
@@ -52,14 +59,20 @@ def _set_session_cookie(response, user_id: str, secure: bool):
         secure=secure,
         samesite=samesite,
         path="/",
-        domain=".draftmeet.com",
+        domain=_cookie_domain(secure),
         max_age=60 * 60 * 24 * 30,  # 30 days
     )
 
 
 def _clear_session_cookie(response, secure: bool):
     samesite = "none" if secure else "lax"
-    response.delete_cookie(key="draftmeet_user", path="/", secure=secure, samesite=samesite, domain=".draftmeet.com")
+    response.delete_cookie(
+        key="draftmeet_user",
+        path="/",
+        secure=secure,
+        samesite=samesite,
+        domain=_cookie_domain(secure),
+    )
 
 
 def _is_secure(request: Request) -> bool:

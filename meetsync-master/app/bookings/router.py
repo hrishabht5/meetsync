@@ -375,19 +375,12 @@ async def guest_reschedule_booking(
             detail="This time slot has just been taken. Please choose another time."
         )
 
-    # ── Delete old Google Calendar event ──────────────────
     old_event_id = booking.get("calendar_event_id")
     cal_id = _preferred_calendar_id(host_user_id)
 
-    if old_event_id:
-        try:
-            await google_calendar.delete_calendar_event(
-                host_user_id, old_event_id, cal_id
-            )
-        except Exception:
-            pass  # Best-effort deletion
-
-    # ── Create new Google Calendar event ──────────────────
+    # ── Create new Google Calendar event FIRST ────────────
+    # Must succeed before we touch the old event — avoids data
+    # loss if GCal is temporarily unavailable during reschedule.
     duration = DURATION_MAP.get(booking["event_type"], 30)
     display_title = booking.get("custom_title") or booking["event_type"]
 
@@ -402,11 +395,20 @@ async def guest_reschedule_booking(
             description  = booking.get("notes"),
             calendar_id  = cal_id,
         )
-    except Exception as e:
+    except Exception:
         raise HTTPException(
             status_code=502,
             detail="Could not create the new calendar event. Please try again."
         )
+
+    # ── Delete old Google Calendar event (only after new one is confirmed) ──
+    if old_event_id:
+        try:
+            await google_calendar.delete_calendar_event(
+                host_user_id, old_event_id, cal_id
+            )
+        except Exception:
+            pass  # Best-effort — new event is already live, old event cleanup is non-critical
 
     # ── Update booking row in-place ───────────────────────
     old_scheduled_at = booking["scheduled_at"]

@@ -10,9 +10,19 @@ State machine:  active → used  (on first booking)
 import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Optional
+from urllib.parse import urlparse
 
 from app.core.config import supabase, FRONTEND_URL
 from app.core.schemas import OTLStatus
+
+
+def _validate_image_url(url: Optional[str], field: str) -> None:
+    """Reject non-HTTPS and non-HTTP(S) schemes to prevent SSRF / XSS via javascript: or data: URLs."""
+    if not url:
+        return
+    parsed = urlparse(url)
+    if parsed.scheme not in ("https",):
+        raise ValueError(f"{field} must use an https:// URL.")
 
 
 def _generate_token(prefix: str = "lnk") -> str:
@@ -44,6 +54,8 @@ def create_otl(
     bg_image_url: Optional[str] = None,
     accent_color: Optional[str] = None,
 ) -> dict:
+    _validate_image_url(cover_image_url, "cover_image_url")
+    _validate_image_url(bg_image_url, "bg_image_url")
     """
     Generate a new one-time booking link and persist it.
 
@@ -158,6 +170,8 @@ _ALLOWED_OTL_CUSTOMIZE = frozenset({
 
 def customize_otl(token: str, user_id: str, updates: dict) -> dict:
     """Update customization fields (description, cover_image_url, accent_color) on an OTL."""
+    _validate_image_url(updates.get("cover_image_url"), "cover_image_url")
+    _validate_image_url(updates.get("bg_image_url"), "bg_image_url")
     row = supabase.table("one_time_links").select("user_id").eq("id", token).execute()
     if not row.data:
         raise ValueError("Link not found.")

@@ -41,6 +41,11 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'none'; "
+            "frame-ancestors 'none'; "
+            "form-action 'none'"
+        )
         return response
 
 
@@ -77,6 +82,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             return JSONResponse(
                 status_code=429,
                 content={"error": True, "message": "Too many requests. Please try again later."},
+                headers={"Retry-After": "60"},
             )
 
         self.ip_requests[client_ip].append(now)
