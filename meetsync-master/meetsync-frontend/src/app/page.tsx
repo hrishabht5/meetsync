@@ -8,6 +8,8 @@ import {
 import { ThemeToggle } from "@/components/themeToggle";
 import { WaitlistForm } from "@/components/WaitlistForm";
 
+const IS_LIVE = (process.env.NEXT_PUBLIC_LAUNCH_MODE ?? process.env.LAUNCH_MODE) === "live";
+
 export const metadata = {
   title: "DraftMeet: Free Calendly Alternative with Automatic Google Meet",
   description:
@@ -158,7 +160,7 @@ const STEPS = [
 const TRUST_PILLS = [
   { Icon: Shield,   label: "No credit card required" },
   { Icon: Zap,      label: "Instant Google Meet" },
-  { Icon: Sparkles, label: "Free early access" },
+  { Icon: Sparkles, label: IS_LIVE ? "Free to start" : "Free early access" },
 ];
 
 const FAQS = [
@@ -218,7 +220,7 @@ export default function LandingPage() {
           <div className="relative z-10 flex flex-col items-center gap-7 max-w-3xl">
             <span className="animate-scale-in inline-flex items-center gap-2 px-4 py-1.5 rounded-full badge-shimmer text-white text-xs font-semibold tracking-wide shadow-lg">
               <Sparkles size={13} />
-              Coming Soon — Join the waitlist
+              {IS_LIVE ? "Free to start — no credit card" : "Coming Soon — Join the waitlist"}
             </span>
 
             {/* H1 — primary keyword in first 6 words */}
@@ -244,12 +246,32 @@ export default function LandingPage() {
               ))}
             </div>
 
-            {/* Waitlist form */}
+            {/* Hero CTA */}
             <div className="animate-fade-up delay-400 w-full max-w-md">
-              <WaitlistForm />
-              <p className="text-xs text-[var(--text-secondary)] mt-3">
-                Be the first to know when we launch. No spam, ever.
-              </p>
+              {IS_LIVE ? (
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Link
+                    href="/login"
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-brand-gradient text-white font-semibold text-sm shadow-lg hover:opacity-90 transition-opacity"
+                  >
+                    <Zap size={15} />
+                    Get Started Free
+                  </Link>
+                  <Link
+                    href="/login"
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)] font-semibold text-sm hover:border-[var(--accent)] transition-colors"
+                  >
+                    Sign In
+                  </Link>
+                </div>
+              ) : (
+                <>
+                  <WaitlistForm />
+                  <p className="text-xs text-[var(--text-secondary)] mt-3">
+                    Be the first to know when we launch. No spam, ever.
+                  </p>
+                </>
+              )}
             </div>
           </div>
 
@@ -360,17 +382,29 @@ export default function LandingPage() {
           <div className="relative z-10 flex flex-col items-center gap-7 max-w-xl animate-fade-up">
             <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[var(--bg-card)] border border-[var(--border-accent)] text-[var(--accent)] text-xs font-semibold">
               <Sparkles size={13} />
-              Limited early access
+              {IS_LIVE ? "Free to start" : "Limited early access"}
             </span>
             <h2 className="text-3xl sm:text-4xl font-bold text-[var(--text-primary)]">
               Start scheduling in{" "}
               <span className="text-gradient-brand">under 2 minutes</span>
             </h2>
             <p className="text-[var(--text-secondary)] text-base leading-relaxed">
-              Join the waitlist and be the first to get free early access to DraftMeet — the scheduling tool that eliminates back-and-forth for good.
+              {IS_LIVE
+                ? "Create your free DraftMeet account and send your first booking link in under 2 minutes — no credit card required."
+                : "Join the waitlist and be the first to get free early access to DraftMeet — the scheduling tool that eliminates back-and-forth for good."}
             </p>
             <div className="w-full max-w-md">
-              <WaitlistForm />
+              {IS_LIVE ? (
+                <Link
+                  href="/login"
+                  className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-brand-gradient text-white font-semibold text-sm shadow-lg hover:opacity-90 transition-opacity"
+                >
+                  <Zap size={15} />
+                  Create free account
+                </Link>
+              ) : (
+                <WaitlistForm />
+              )}
             </div>
           </div>
         </section>
