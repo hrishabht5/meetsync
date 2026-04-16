@@ -9,7 +9,9 @@ import { NextRequest, NextResponse } from "next/server";
 //
 // Current default: "waitlist" (only the landing page + waitlist are accessible)
 // ─────────────────────────────────────────────────────────────────────────────
-const LAUNCH_MODE = process.env.LAUNCH_MODE ?? "waitlist";
+// NEXT_PUBLIC_ prefix ensures this is available in Edge middleware at runtime.
+// Set NEXT_PUBLIC_LAUNCH_MODE=live in Vercel env vars to open the full app.
+const LAUNCH_MODE = process.env.NEXT_PUBLIC_LAUNCH_MODE ?? process.env.LAUNCH_MODE ?? "waitlist";
 
 // Hostnames that enforce waitlist-only access when LAUNCH_MODE=waitlist
 const PUBLIC_ONLY_HOSTS = ["www.draftmeet.com", "draftmeet.com"];
