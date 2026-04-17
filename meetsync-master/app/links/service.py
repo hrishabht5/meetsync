@@ -124,19 +124,20 @@ def mark_otl_used(token: str, booking_id: str) -> bool:
     concurrent request can succeed. Returns True if claimed, False if another
     request already claimed it (race condition detected).
     """
+    # Use string literals in .eq() — in Python < 3.11, f"{str_enum_member}" serializes
+    # as "ClassName.member" not the value, which would make the WHERE clause match nothing.
     supabase.table("one_time_links").update({
-        "status":     OTLStatus.used,
+        "status":     "used",
         "used_at":    datetime.now(timezone.utc).isoformat(),
         "booking_id": booking_id,
-    }).eq("id", token).eq("status", OTLStatus.active).execute()
+    }).eq("id", token).eq("status", "active").execute()
 
-    # Verify actual DB state — some supabase-py versions return empty result.data
-    # for a successful UPDATE, so we can't rely on it to detect a race condition.
+    # Verify via SELECT — result.data from UPDATE is unreliable across supabase-py versions.
     check = supabase.table("one_time_links").select("status, booking_id").eq("id", token).execute()
     if not check.data:
         return False
     row = check.data[0]
-    return row["status"] == OTLStatus.used and row["booking_id"] == booking_id
+    return row["status"] == "used" and row["booking_id"] == booking_id
 
 
 def revoke_otl(token: str):
