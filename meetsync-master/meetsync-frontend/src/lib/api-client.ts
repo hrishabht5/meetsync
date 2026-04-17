@@ -86,12 +86,20 @@ export const api = {
 
   // ── Availability ───────────────────────────────────────
   availability: {
-    getSlots: (date: string, event_type: string, host_user_id?: string, timezone?: string) =>
-      request<{ date: string; slots: string[]; timezone: string; guest_timezone?: string; reason?: string }>(
-        `/availability/slots/?date=${date}&event_type=${encodeURIComponent(event_type)}${
-          host_user_id ? `&user_id=${encodeURIComponent(host_user_id)}` : ""
-        }${timezone ? `&guest_timezone=${encodeURIComponent(timezone)}` : ""}`
-      ),
+    getSlots: (
+      date: string,
+      event_type: string,
+      opts?: { one_time_link_id?: string; permanent_link_id?: string; management_token?: string; timezone?: string }
+    ) => {
+      const p = new URLSearchParams({ date, event_type });
+      if (opts?.one_time_link_id)   p.set("one_time_link_id",  opts.one_time_link_id);
+      if (opts?.permanent_link_id)  p.set("permanent_link_id", opts.permanent_link_id);
+      if (opts?.management_token)   p.set("management_token",  opts.management_token);
+      if (opts?.timezone)           p.set("guest_timezone",    opts.timezone);
+      return request<{ date: string; slots: string[]; timezone: string; guest_timezone?: string; reason?: string }>(
+        `/availability/slots/?${p.toString()}`
+      );
+    },
     getSettings: () =>
       request<AvailabilitySettingsResponse>("/availability/settings/"),
     updateSettings: (data: AvailabilitySettingsUpdate) =>

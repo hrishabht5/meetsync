@@ -62,8 +62,7 @@ function BookingPageInner() {
       const res = await api.availability.getSlots(
         date,
         otl?.event_type ?? EVENT_TYPES[1],
-        otl?.user_id,
-        guestTz
+        { one_time_link_id: token, timezone: guestTz }
       );
       setSlots(res.slots);
       setHostTz(res.timezone);

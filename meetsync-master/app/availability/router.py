@@ -70,6 +70,7 @@ async def get_available_slots(
     user_id: str | None = None,
     one_time_link_id: str | None = None,
     permanent_link_id: str | None = None,
+    management_token: str | None = None,
     guest_timezone: str | None = None,
     _=Depends(guest_rate_limit),
 ):
@@ -84,7 +85,13 @@ async def get_available_slots(
         raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
 
     # Resolve host user_id from link token (guests) or auth session (hosts)
-    if one_time_link_id:
+    if management_token:
+        from app.core.config import supabase as _sb
+        bk = _sb.table("bookings").select("user_id").eq("management_token", management_token).execute()
+        if not bk.data:
+            raise HTTPException(status_code=404, detail="Booking not found")
+        user_id = bk.data[0]["user_id"]
+    elif one_time_link_id:
         from app.links.service import validate_otl
         try:
             otl = validate_otl(one_time_link_id)

@@ -121,7 +121,7 @@ export function RescheduleFlow({ booking, token, onRescheduled, onBack }: Resche
       const res = await api.availability.getSlots(
         date,
         booking.event_type,
-        booking.host_user_id
+        { management_token: token }
       );
       setSlots(res.slots);
       setStep("pick-slot");

@@ -71,7 +71,7 @@ function PermanentLinkBookingPageInner() {
     setSlots([]);
     setSelectedSlot("");
     try {
-      const res = await api.availability.getSlots(date, eventType, hostUserId, guestTz);
+      const res = await api.availability.getSlots(date, eventType, { permanent_link_id: permanentLinkId, timezone: guestTz });
       setSlots(res.slots);
       setHostTz(res.timezone);
       setStep("pick-slot");
