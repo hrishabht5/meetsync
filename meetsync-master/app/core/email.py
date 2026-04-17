@@ -10,6 +10,7 @@ Required env vars:
                      During testing: "DraftMeet <onboarding@resend.dev>"
 """
 
+import html as _html
 import logging
 from datetime import datetime, timezone
 
@@ -90,6 +91,11 @@ def _base(title: str, body: str) -> str:
   </table>
 </body>
 </html>"""
+
+
+def _e(value: str | None) -> str:
+    """HTML-escape a user-supplied value. Returns empty string for None."""
+    return _html.escape(str(value)) if value is not None else ""
 
 
 def _fmt_dt(iso: str) -> str:
@@ -181,20 +187,20 @@ async def send_booking_confirmation_to_guest(
     notes: str | None = None,
 ) -> None:
     manage_url = f"{FRONTEND_URL.rstrip('/')}/manage/{manage_token}"
-    host_label = host_display_name or "your host"
+    host_label = _e(host_display_name) or "your host"
 
     details = _detail_table(
-        _detail_row("Meeting", event_type),
+        _detail_row("Meeting", _e(event_type)),
         _detail_row("When", _fmt_dt(scheduled_at)),
         _detail_row("Host", host_label),
-        *([ _detail_row("Meet link", f'<a href="{meet_link}" style="color:#6366f1;">{meet_link}</a>') ] if meet_link else []),
-        *([ _detail_row("Your notes", notes) ] if notes else []),
+        *([ _detail_row("Meet link", f'<a href="{meet_link}" style="color:#6366f1;">{_e(meet_link)}</a>') ] if meet_link else []),
+        *([ _detail_row("Your notes", _e(notes)) ] if notes else []),
     )
 
     body = f"""
 <h2 style="margin:0 0 8px;color:#111827;font-size:20px;">Your meeting is confirmed!</h2>
 <p style="margin:0 0 20px;color:#6b7280;font-size:14px;">
-  Hi {guest_name}, your booking with {host_label} has been scheduled.
+  Hi {_e(guest_name)}, your booking with {host_label} has been scheduled.
 </p>
 {details}
 {"<p style='margin:12px 0;'>" + _btn("Join Google Meet", meet_link, "#059669") + "</p>" if meet_link else ""}
@@ -220,19 +226,19 @@ async def send_booking_notification_to_host(
     meet_link: str | None,
     notes: str | None = None,
 ) -> None:
-    host_label = host_display_name or "there"
+    host_label = _e(host_display_name) or "there"
     details = _detail_table(
-        _detail_row("Guest", f"{guest_name} &lt;{guest_email}&gt;"),
-        _detail_row("Meeting type", event_type),
+        _detail_row("Guest", f"{_e(guest_name)} &lt;{_e(guest_email)}&gt;"),
+        _detail_row("Meeting type", _e(event_type)),
         _detail_row("When", _fmt_dt(scheduled_at)),
-        *([ _detail_row("Meet link", f'<a href="{meet_link}" style="color:#6366f1;">{meet_link}</a>') ] if meet_link else []),
-        *([ _detail_row("Guest notes", notes) ] if notes else []),
+        *([ _detail_row("Meet link", f'<a href="{meet_link}" style="color:#6366f1;">{_e(meet_link)}</a>') ] if meet_link else []),
+        *([ _detail_row("Guest notes", _e(notes)) ] if notes else []),
     )
 
     body = f"""
 <h2 style="margin:0 0 8px;color:#111827;font-size:20px;">New booking received</h2>
 <p style="margin:0 0 20px;color:#6b7280;font-size:14px;">
-  Hi {host_label}, {guest_name} has just booked a meeting with you.
+  Hi {host_label}, {_e(guest_name)} has just booked a meeting with you.
 </p>
 {details}
 {"<p style='margin:12px 0;'>" + _btn("Join Google Meet", meet_link, "#059669") + "</p>" if meet_link else ""}
@@ -255,15 +261,15 @@ async def send_cancellation_email_to_guest(
     reason: str | None = None,
 ) -> None:
     details = _detail_table(
-        _detail_row("Meeting", event_type),
+        _detail_row("Meeting", _e(event_type)),
         _detail_row("Was scheduled for", _fmt_dt(scheduled_at)),
-        *([ _detail_row("Reason", reason) ] if reason else []),
+        *([ _detail_row("Reason", _e(reason)) ] if reason else []),
     )
 
     body = f"""
 <h2 style="margin:0 0 8px;color:#111827;font-size:20px;">Booking cancelled</h2>
 <p style="margin:0 0 20px;color:#6b7280;font-size:14px;">
-  Hi {guest_name}, your booking has been successfully cancelled.
+  Hi {_e(guest_name)}, your booking has been successfully cancelled.
 </p>
 {details}
 <p style="margin:20px 0 0;color:#6b7280;font-size:14px;">
@@ -289,16 +295,16 @@ async def send_reschedule_email_to_guest(
 ) -> None:
     manage_url = f"{FRONTEND_URL.rstrip('/')}/manage/{manage_token}"
     details = _detail_table(
-        _detail_row("Meeting", event_type),
+        _detail_row("Meeting", _e(event_type)),
         _detail_row("Previous time", _fmt_dt(old_scheduled_at)),
         _detail_row("New time", _fmt_dt(new_scheduled_at)),
-        *([ _detail_row("Meet link", f'<a href="{meet_link}" style="color:#6366f1;">{meet_link}</a>') ] if meet_link else []),
+        *([ _detail_row("Meet link", f'<a href="{meet_link}" style="color:#6366f1;">{_e(meet_link)}</a>') ] if meet_link else []),
     )
 
     body = f"""
 <h2 style="margin:0 0 8px;color:#111827;font-size:20px;">Your booking has been rescheduled</h2>
 <p style="margin:0 0 20px;color:#6b7280;font-size:14px;">
-  Hi {guest_name}, your meeting has been moved to a new time.
+  Hi {_e(guest_name)}, your meeting has been moved to a new time.
 </p>
 {details}
 {"<p style='margin:12px 0;'>" + _btn("Join Google Meet", meet_link, "#059669") + "</p>" if meet_link else ""}
@@ -310,5 +316,67 @@ async def send_reschedule_email_to_guest(
     await _send(
         guest_email,
         f"Booking rescheduled — {_fmt_dt(new_scheduled_at)}",
+        _base("Booking rescheduled", body),
+    )
+
+
+async def send_cancellation_email_to_host(
+    host_email: str,
+    guest_name: str,
+    guest_email: str,
+    scheduled_at: str,
+    event_type: str,
+) -> None:
+    details = _detail_table(
+        _detail_row("Guest", f"{_e(guest_name)} &lt;{_e(guest_email)}&gt;"),
+        _detail_row("Meeting", _e(event_type)),
+        _detail_row("Was scheduled for", _fmt_dt(scheduled_at)),
+    )
+    body = f"""
+<h2 style="margin:0 0 8px;color:#111827;font-size:20px;">A booking was cancelled</h2>
+<p style="margin:0 0 20px;color:#6b7280;font-size:14px;">
+  {_e(guest_name)} has cancelled their booking with you.
+</p>
+{details}
+<p style="margin:20px 0 0;color:#6b7280;font-size:13px;">
+  The Google Calendar event has been removed automatically.
+</p>
+"""
+    await _send(
+        host_email,
+        f"Booking cancelled by {_e(guest_name)} — {_fmt_dt(scheduled_at)}",
+        _base("Booking cancelled", body),
+    )
+
+
+async def send_reschedule_notification_to_host(
+    host_email: str,
+    guest_name: str,
+    guest_email: str,
+    old_scheduled_at: str,
+    new_scheduled_at: str,
+    event_type: str,
+    meet_link: str | None,
+) -> None:
+    details = _detail_table(
+        _detail_row("Guest", f"{_e(guest_name)} &lt;{_e(guest_email)}&gt;"),
+        _detail_row("Meeting", _e(event_type)),
+        _detail_row("Previous time", _fmt_dt(old_scheduled_at)),
+        _detail_row("New time", _fmt_dt(new_scheduled_at)),
+        *([ _detail_row("Meet link", f'<a href="{meet_link}" style="color:#6366f1;">{_e(meet_link)}</a>') ] if meet_link else []),
+    )
+    body = f"""
+<h2 style="margin:0 0 8px;color:#111827;font-size:20px;">A booking was rescheduled</h2>
+<p style="margin:0 0 20px;color:#6b7280;font-size:14px;">
+  {_e(guest_name)} has moved their booking to a new time.
+</p>
+{details}
+<p style="margin:20px 0 0;color:#6b7280;font-size:13px;">
+  Your Google Calendar has been updated automatically.
+</p>
+"""
+    await _send(
+        host_email,
+        f"Booking rescheduled by {_e(guest_name)} — {_fmt_dt(new_scheduled_at)}",
         _base("Booking rescheduled", body),
     )

@@ -15,7 +15,7 @@ FAKE_EMAIL = "testprofile@example.com"
 def _auth_cookies(user_id: str) -> dict:
     """Return a properly signed session cookie for test requests."""
     from app.auth.middleware import make_user_session_cookie_value
-    return {"meetsync_user": make_user_session_cookie_value(user_id)}
+    return {"draftmeet_user": make_user_session_cookie_value(user_id)}
 
 
 def _seed_profile(client: TestClient) -> dict:

@@ -41,8 +41,8 @@ class CustomField(BaseModel):
 
 # ── Availability ──────────────────────────────────────────
 class AvailabilitySettings(BaseModel):
-    working_days:    List[str]          # ["Mon", "Tue", "Wed", "Thu", "Fri"]
-    daily_shifts:    List[str]          # ["11:30", "12:00", "16:00"]
+    working_days:    List[str]
+    daily_shifts:    List[str]
     slot_duration:   int = 30           # minutes
     buffer_minutes:  int = 15           # gap between meetings
     timezone:        str = "Asia/Kolkata"
@@ -51,6 +51,24 @@ class AvailabilitySettings(BaseModel):
     min_notice_hours:     int           = 0     # 0 = no minimum
     max_days_ahead:       Optional[int] = None  # None = unlimited
     max_bookings_per_day: Optional[int] = None  # None = unlimited
+
+    @field_validator("working_days")
+    @classmethod
+    def working_days_must_be_valid(cls, v: List[str]) -> List[str]:
+        valid = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}
+        bad = [d for d in v if d not in valid]
+        if bad:
+            raise ValueError(f"Invalid working_days values: {bad}. Use Mon/Tue/Wed/Thu/Fri/Sat/Sun.")
+        return v
+
+    @field_validator("daily_shifts")
+    @classmethod
+    def daily_shifts_must_be_valid(cls, v: List[str]) -> List[str]:
+        import re as _re2
+        for s in v:
+            if not _re2.fullmatch(r"([01]\d|2[0-3]):[0-5]\d", s):
+                raise ValueError(f"Invalid shift time '{s}'. Use HH:MM (00:00–23:59).")
+        return v
 
     @field_validator("min_notice_hours")
     @classmethod
@@ -75,10 +93,19 @@ class AvailabilitySettings(BaseModel):
 
 
 class AvailabilityOverrideCreate(BaseModel):
-    override_date: str               # "YYYY-MM-DD"
-    is_available:  bool = False      # false = blocked out
+    override_date: str
+    is_available:  bool = False
     custom_shifts: Optional[List[str]] = None
     reason:        Optional[str] = Field(default=None, max_length=500)
+
+    @field_validator("override_date")
+    @classmethod
+    def validate_date_format(cls, v: str) -> str:
+        try:
+            datetime.strptime(v, "%Y-%m-%d")
+        except ValueError:
+            raise ValueError("override_date must be in YYYY-MM-DD format")
+        return v
 
 
 # ── Booking ───────────────────────────────────────────────
@@ -86,11 +113,27 @@ class BookingCreate(BaseModel):
     guest_name:      str = Field(max_length=100)
     guest_email:     EmailStr
     scheduled_at:    datetime    # ISO 8601 with timezone
-    event_type:      str         # "30-min intro", "60-min deep dive", etc.
+    event_type:      str
     notes:           Optional[str] = Field(default=None, max_length=2000)
-    one_time_link_id:   Optional[str] = None  # lnk_xxxxx if booked via OTL
-    permanent_link_id:  Optional[str] = None  # UUID if booked via permanent link
-    custom_answers:     Optional[dict] = None  # answers to custom questions
+    one_time_link_id:   Optional[str] = None
+    permanent_link_id:  Optional[str] = None
+    custom_answers:     Optional[dict] = None
+
+    @field_validator("event_type")
+    @classmethod
+    def event_type_must_be_valid(cls, v: str) -> str:
+        valid = set(DURATION_MAP.keys())
+        if v not in valid:
+            raise ValueError(f"event_type must be one of: {', '.join(sorted(valid))}")
+        return v
+
+    @field_validator("guest_name")
+    @classmethod
+    def guest_name_no_control_chars(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("guest_name cannot be blank")
+        return v
 
 
 class BookingResponse(BaseModel):

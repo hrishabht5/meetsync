@@ -9,11 +9,12 @@ GET  /availability/overrides          → list all overrides
 DELETE /availability/overrides/{id}   → remove an override
 """
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from datetime import datetime, timedelta, time, timezone
 from zoneinfo import ZoneInfo
 from typing import List
 from app.core.config import supabase
+from app.core.rate_limit import guest_rate_limit
 from app.core.schemas import AvailabilitySettings, AvailabilityOverrideCreate
 import json
 
@@ -67,22 +68,50 @@ async def get_available_slots(
     date: str,
     event_type: str = "30-min intro call",
     user_id: str | None = None,
+    one_time_link_id: str | None = None,
+    permanent_link_id: str | None = None,
     guest_timezone: str | None = None,
+    _=Depends(guest_rate_limit),
 ):
     """
     Returns a list of available ISO-8601 time slots for a given date.
-    Uses shift-based availability and respects date overrides.
+    Guests must supply one_time_link_id or permanent_link_id to identify the host.
+    Authenticated hosts can omit link IDs to query their own availability.
     """
     try:
         target_date = datetime.strptime(date, "%Y-%m-%d").date()
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
 
-    # For guests: `user_id` comes from the booking link's host.
-    # For hosts/admin dashboard: it comes from the authenticated cookie.
-    if not user_id:
+    # Resolve host user_id from link token (guests) or auth session (hosts)
+    if one_time_link_id:
+        from app.links.service import validate_otl
+        try:
+            otl = validate_otl(one_time_link_id)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        user_id = otl["user_id"]
+    elif permanent_link_id:
+        from app.profiles.service import get_permanent_link_by_id
+        plink = get_permanent_link_by_id(permanent_link_id)
+        if not plink or not plink.get("is_active"):
+            raise HTTPException(status_code=400, detail="Invalid booking link")
+        user_id = plink["user_id"]
+    elif not user_id:
         from app.auth.middleware import get_current_user_id
         user_id = get_current_user_id(request)
+    else:
+        # user_id passed directly — must be authenticated as that user
+        from app.auth.middleware import get_current_user_id
+        try:
+            auth_uid = get_current_user_id(request)
+        except HTTPException:
+            raise HTTPException(
+                status_code=403,
+                detail="A booking link (one_time_link_id or permanent_link_id) is required to view availability.",
+            )
+        if auth_uid != user_id:
+            raise HTTPException(status_code=403, detail="Cannot view another user's availability directly")
 
     try:
         settings = _get_settings(user_id)
@@ -139,9 +168,12 @@ async def get_available_slots(
 
     slots: List[str] = []
     for shift_time_str in shifts:
-        h, m = map(int, shift_time_str.split(":"))
-        slot_dt = datetime.combine(target_date, time(h, m), tzinfo=tz)
-        slots.append(slot_dt.isoformat())
+        try:
+            h, m = map(int, shift_time_str.split(":"))
+            slot_dt = datetime.combine(target_date, time(h, m), tzinfo=tz)
+            slots.append(slot_dt.isoformat())
+        except (ValueError, TypeError):
+            continue  # skip malformed shift entries
 
     now            = datetime.now(tz=tz)
     notice_cutoff  = now + timedelta(hours=min_notice_hours)

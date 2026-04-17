@@ -167,9 +167,13 @@ async def google_callback(request: Request, code: str = None, error: str = None,
             resp.raise_for_status()
             user_info = resp.json()
 
-        google_sub = user_info.get("sub") or user_info.get("id") or user_info.get("email")
-        email = user_info.get("email", "")
-        if not google_sub:
+        # Reject unverified Google accounts (Workspace / external IdP may have verified_email=False)
+        if not user_info.get("verified_email"):
+            return RedirectResponse(url=f"{FRONTEND_URL}?auth_error=email_not_verified")
+
+        google_sub = user_info.get("sub") or user_info.get("id")
+        email = user_info.get("email", "").lower().strip()
+        if not google_sub or not email:
             return RedirectResponse(url=f"{FRONTEND_URL}?auth_error=missing_user_identity")
 
         secure = _is_secure(request)
@@ -214,14 +218,14 @@ async def google_callback(request: Request, code: str = None, error: str = None,
 @router.post("/signup")
 async def signup(request: Request, payload: SignupRequest, _=Depends(strict_rate_limit)):
     """Create a new account with email + password. Session is set immediately."""
-    # Check if email already exists
-    existing = supabase.table("users").select("id").eq("email", payload.email).execute()
+    norm_email = payload.email.lower().strip()
+    existing = supabase.table("users").select("id").eq("email", norm_email).execute()
     if existing.data:
         raise HTTPException(status_code=409, detail="An account with this email already exists.")
 
     user_id = "usr_" + uuid.uuid4().hex[:16]
     password_hash = bcrypt.hashpw(payload.password.encode(), bcrypt.gensalt()).decode()
-    _upsert_user(user_id, payload.email, password_hash)
+    _upsert_user(user_id, norm_email, password_hash)
     _ensure_profile(user_id, payload.email)
 
     secure = _is_secure(request)
@@ -233,7 +237,7 @@ async def signup(request: Request, payload: SignupRequest, _=Depends(strict_rate
 @router.post("/login")
 async def login(request: Request, payload: LoginRequest, _=Depends(strict_rate_limit)):
     """Log in with email + password."""
-    result = supabase.table("users").select("id,password_hash").eq("email", payload.email).execute()
+    result = supabase.table("users").select("id,password_hash").eq("email", payload.email.lower().strip()).execute()
     user = result.data[0] if result.data else None
 
     # Always run bcrypt regardless of whether the user exists — prevents timing

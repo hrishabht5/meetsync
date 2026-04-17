@@ -17,7 +17,7 @@ import io
 import logging
 import secrets
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Request, Depends
 from fastapi.responses import StreamingResponse
 from app.core.config import supabase, FRONTEND_URL
@@ -121,10 +121,33 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
             detail="This time slot has just been taken. Please go back and choose another time."
         )
 
-    # ── 2b. Daily booking limit guard ────────────────────
+    # ── 2b. Past-time guard ───────────────────────────────
+    if sched_utc <= datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="Cannot book a time in the past.")
+
+    # ── 2c. Availability settings guards ─────────────────
     from app.availability.router import _get_settings
     from zoneinfo import ZoneInfo
     avail = _get_settings(host_user_id)
+
+    min_notice_hours = int(avail.get("min_notice_hours") or 0)
+    if min_notice_hours > 0:
+        cutoff = datetime.now(timezone.utc) + timedelta(hours=min_notice_hours)
+        if sched_utc < cutoff:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Bookings require at least {min_notice_hours} hours' notice.",
+            )
+
+    max_days_ahead = avail.get("max_days_ahead")
+    if max_days_ahead is not None:
+        if sched_utc > datetime.now(timezone.utc) + timedelta(days=max_days_ahead):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Bookings can only be made up to {max_days_ahead} days in advance.",
+            )
+
+    # ── 2d. Daily booking limit guard ────────────────────
     max_per_day = avail.get("max_bookings_per_day")
     if max_per_day is not None:
         try:
@@ -200,7 +223,22 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
         "user_id":            host_user_id,
         "management_token":   management_token,
     }
-    supabase.table("bookings").insert(booking_row).execute()
+    try:
+        supabase.table("bookings").insert(booking_row).execute()
+    except Exception as insert_err:
+        err_str = str(insert_err).lower()
+        if "23505" in err_str or "duplicate" in err_str or "unique" in err_str:
+            try:
+                await google_calendar.delete_calendar_event(
+                    host_user_id, meet_data["calendar_event_id"], preferred_cal
+                )
+            except Exception:
+                pass
+            raise HTTPException(
+                status_code=409,
+                detail="This time slot was just taken. Please go back and choose another time.",
+            )
+        raise
 
     # ── 5. Atomically claim OTL ──────────────────────────
     if otl:
@@ -372,7 +410,26 @@ async def guest_cancel_booking(
         "cancellation_note": payload.reason or "Cancelled by guest",
     }).eq("id", booking["id"]).execute()
 
-    # Fire webhook
+    from app.core.email import send_cancellation_email_to_guest, send_cancellation_email_to_host
+    display_type = booking.get("custom_title") or booking["event_type"]
+    background_tasks.add_task(
+        send_cancellation_email_to_guest,
+        guest_email=booking["guest_email"],
+        guest_name=booking["guest_name"],
+        scheduled_at=booking["scheduled_at"],
+        event_type=display_type,
+        reason=payload.reason or "Cancelled by guest",
+    )
+    host_row = supabase.table("users").select("email").eq("id", host_user_id).execute()
+    if host_row.data:
+        background_tasks.add_task(
+            send_cancellation_email_to_host,
+            host_email=host_row.data[0]["email"],
+            guest_name=booking["guest_name"],
+            guest_email=booking["guest_email"],
+            scheduled_at=booking["scheduled_at"],
+            event_type=display_type,
+        )
     background_tasks.add_task(
         webhook_service.fire_event,
         "booking.cancelled",
@@ -421,7 +478,7 @@ async def guest_reschedule_booking(
         raise HTTPException(status_code=400, detail="The new time must be in the future")
 
     # ── Double-booking guard for the new slot ─────────────
-    new_iso = payload.new_scheduled_at.isoformat()
+    new_iso = new_dt.astimezone(timezone.utc).isoformat()
     conflict = supabase.table("bookings") \
         .select("id") \
         .eq("user_id", host_user_id) \
@@ -472,14 +529,39 @@ async def guest_reschedule_booking(
 
     # ── Update booking row in-place ───────────────────────
     old_scheduled_at = booking["scheduled_at"]
+    new_utc_iso = new_dt.astimezone(timezone.utc).isoformat()
     supabase.table("bookings").update({
-        "scheduled_at":      payload.new_scheduled_at.isoformat(),
+        "scheduled_at":      new_utc_iso,
         "status":            BookingStatus.confirmed,
         "meet_link":         meet_data["meet_link"],
         "calendar_event_id": meet_data["calendar_event_id"],
     }).eq("id", booking["id"]).execute()
 
-    # ── Fire webhook ──────────────────────────────────────
+    # ── Send emails + fire webhook ────────────────────────
+    display_type = booking.get("custom_title") or booking["event_type"]
+    from app.core.email import send_reschedule_email_to_guest, send_reschedule_notification_to_host
+    background_tasks.add_task(
+        send_reschedule_email_to_guest,
+        guest_email=booking["guest_email"],
+        guest_name=booking["guest_name"],
+        old_scheduled_at=old_scheduled_at,
+        new_scheduled_at=new_utc_iso,
+        event_type=display_type,
+        meet_link=meet_data["meet_link"],
+        manage_token=booking["management_token"],
+    )
+    host_row = supabase.table("users").select("email").eq("id", host_user_id).execute()
+    if host_row.data:
+        background_tasks.add_task(
+            send_reschedule_notification_to_host,
+            host_email=host_row.data[0]["email"],
+            guest_name=booking["guest_name"],
+            guest_email=booking["guest_email"],
+            old_scheduled_at=old_scheduled_at,
+            new_scheduled_at=new_utc_iso,
+            event_type=display_type,
+            meet_link=meet_data["meet_link"],
+        )
     background_tasks.add_task(
         webhook_service.fire_event,
         "booking.rescheduled",
@@ -488,7 +570,7 @@ async def guest_reschedule_booking(
             "guest_name":         booking["guest_name"],
             "guest_email":        booking["guest_email"],
             "previous_time":      old_scheduled_at,
-            "new_time":           payload.new_scheduled_at.isoformat(),
+            "new_time":           new_utc_iso,
             "meet_link":          meet_data["meet_link"],
             "rescheduled_by":     "guest",
         },
@@ -498,7 +580,7 @@ async def guest_reschedule_booking(
     return {
         "status":       "rescheduled",
         "booking_id":   booking["id"],
-        "scheduled_at": payload.new_scheduled_at.isoformat(),
+        "scheduled_at": new_utc_iso,
         "meet_link":    meet_data["meet_link"],
     }
 
@@ -609,6 +691,15 @@ async def cancel_booking(request: Request, booking_id: str, payload: BookingCanc
         "cancellation_note": payload.reason,
     }).eq("id", booking_id).execute()
 
+    from app.core.email import send_cancellation_email_to_guest
+    background_tasks.add_task(
+        send_cancellation_email_to_guest,
+        guest_email=booking["guest_email"],
+        guest_name=booking["guest_name"],
+        scheduled_at=booking["scheduled_at"],
+        event_type=booking.get("custom_title") or booking["event_type"],
+        reason=payload.reason,
+    )
     background_tasks.add_task(
         webhook_service.fire_event,
         "booking.cancelled",
@@ -715,21 +806,23 @@ async def host_reschedule_booking(
             pass  # non-critical — new event is already live
 
     old_scheduled_at = booking["scheduled_at"]
+    new_utc_iso = new_dt.astimezone(timezone.utc).isoformat()
     supabase.table("bookings").update({
-        "scheduled_at":      new_dt.isoformat(),
+        "scheduled_at":      new_utc_iso,
         "status":            BookingStatus.confirmed,
         "meet_link":         meet_data["meet_link"],
         "calendar_event_id": meet_data["calendar_event_id"],
     }).eq("id", booking_id).execute()
 
+    display_type = booking.get("custom_title") or booking["event_type"]
     from app.core.email import send_reschedule_email_to_guest
     background_tasks.add_task(
         send_reschedule_email_to_guest,
         guest_email      = booking["guest_email"],
         guest_name       = booking["guest_name"],
         old_scheduled_at = old_scheduled_at,
-        new_scheduled_at = new_dt.isoformat(),
-        event_type       = booking["event_type"],
+        new_scheduled_at = new_utc_iso,
+        event_type       = display_type,
         meet_link        = meet_data["meet_link"],
         manage_token     = booking["management_token"],
     )
@@ -741,7 +834,7 @@ async def host_reschedule_booking(
             "guest_name":    booking["guest_name"],
             "guest_email":   booking["guest_email"],
             "previous_time": old_scheduled_at,
-            "new_time":      new_dt.isoformat(),
+            "new_time":      new_utc_iso,
             "meet_link":     meet_data["meet_link"],
             "rescheduled_by": "host",
         },
@@ -751,7 +844,7 @@ async def host_reschedule_booking(
     return {
         "status":       "rescheduled",
         "booking_id":   booking_id,
-        "scheduled_at": new_dt.isoformat(),
+        "scheduled_at": new_utc_iso,
         "meet_link":    meet_data["meet_link"],
     }
 
