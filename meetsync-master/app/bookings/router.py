@@ -220,7 +220,41 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
                 detail="This booking link was just used by someone else. Please request a new one."
             )
 
-    # ── 6. Fire webhooks (background) ─────────────────────
+    # ── 6. Send confirmation emails (background) ──────────
+    from app.core.email import (
+        send_booking_confirmation_to_guest,
+        send_booking_notification_to_host,
+    )
+    host_user_row = supabase.table("users").select("email").eq("id", host_user_id).execute()
+    host_email = host_user_row.data[0]["email"] if host_user_row.data else None
+    host_profile = profiles_service.get_profile_by_user_id(host_user_id)
+    host_display_name = host_profile.get("display_name") if host_profile else None
+
+    background_tasks.add_task(
+        send_booking_confirmation_to_guest,
+        guest_email      = payload.guest_email,
+        guest_name       = payload.guest_name,
+        scheduled_at     = stored_scheduled_at,
+        event_type       = display_title,
+        meet_link        = meet_data.get("meet_link"),
+        manage_token     = management_token,
+        host_display_name= host_display_name,
+        notes            = payload.notes,
+    )
+    if host_email:
+        background_tasks.add_task(
+            send_booking_notification_to_host,
+            host_email       = host_email,
+            host_display_name= host_display_name,
+            guest_name       = payload.guest_name,
+            guest_email      = payload.guest_email,
+            scheduled_at     = stored_scheduled_at,
+            event_type       = display_title,
+            meet_link        = meet_data.get("meet_link"),
+            notes            = payload.notes,
+        )
+
+    # ── 7. Fire webhooks (background) ─────────────────────
     # Exclude management_token from external webhook payloads
     webhook_payload = {k: v for k, v in booking_row.items() if k != "management_token"}
     background_tasks.add_task(
