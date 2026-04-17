@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DraftMeet — Social Media Launch Guide</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    color: #1e1b4b;
+    background: #fff;
+    line-height: 1.6;
+    font-size: 14px;
+  }
+
+  /* ── COVER PAGE ── */
+  .cover {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #5B35E8 0%, #3B6AE8 55%, #38BFFF 100%);
+    color: white;
+    text-align: center;
+    padding: 60px 40px;
+    page-break-after: always;
+  }
+  .cover-badge {
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 100px;
+    padding: 6px 18px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 32px;
+  }
+  .cover h1 {
+    font-size: 52px;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 16px;
+  }
+  .cover h2 {
+    font-size: 22px;
+    font-weight: 400;
+    opacity: 0.85;
+    margin-bottom: 40px;
+  }
+  .cover-meta {
+    font-size: 13px;
+    opacity: 0.7;
+    margin-top: 60px;
+  }
+
+  /* ── LAYOUT ── */
+  .page { padding: 48px 56px; max-width: 900px; margin: 0 auto; }
+  .page-break { page-break-before: always; }
+
+  /* ── SECTION HEADERS ── */
+  .section-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #5B35E8;
+    margin-bottom: 8px;
+  }
+  h1.section-title {
+    font-size: 32px;
+    font-weight: 800;
+    color: #1e1b4b;
+    margin-bottom: 8px;
+  }
+  .section-sub {
+    font-size: 15px;
+    color: #6d6a8a;
+    margin-bottom: 36px;
+  }
+  h2.platform-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1e1b4b;
+    margin-bottom: 4px;
+  }
+  h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e1b4b;
+    margin: 20px 0 8px;
+  }
+
+  /* ── PLATFORM CARD ── */
+  .platform-card {
+    border: 1.5px solid #e8e6f8;
+    border-radius: 16px;
+    padding: 28px 32px;
+    margin-bottom: 32px;
+    page-break-inside: avoid;
+  }
+  .platform-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f0eeff;
+  }
+  .platform-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: 800;
+    color: white;
+    flex-shrink: 0;
+  }
+  .platform-handle {
+    font-size: 12px;
+    color: #9795b5;
+    font-weight: 500;
+    margin-top: 2px;
+  }
+  .priority-badge {
+    margin-left: auto;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 100px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .priority-high { background: #fef2f2; color: #dc2626; }
+  .priority-med  { background: #fef9ec; color: #d97706; }
+  .priority-low  { background: #f0fdf4; color: #16a34a; }
+
+  /* ── STEPS ── */
+  .steps { display: flex; flex-direction: column; gap: 10px; margin: 12px 0; }
+  .step {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .step-num {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #5B35E8, #38BFFF);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .step-text { font-size: 13.5px; color: #374151; }
+  .step-text strong { color: #1e1b4b; }
+
+  /* ── POST BOX ── */
+  .post-box {
+    background: #f8f7ff;
+    border: 1px solid #e8e6f8;
+    border-left: 4px solid #5B35E8;
+    border-radius: 8px;
+    padding: 18px 20px;
+    font-size: 13.5px;
+    color: #1e1b4b;
+    white-space: pre-wrap;
+    line-height: 1.65;
+    margin: 12px 0;
+  }
+  .post-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #5B35E8;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+
+  /* ── INFO ROW ── */
+  .info-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 12px 0;
+  }
+  .info-pill {
+    background: #f0eeff;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 12.5px;
+  }
+  .info-pill span { font-weight: 600; color: #5B35E8; }
+
+  /* ── TABLE ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin: 16px 0;
+  }
+  th {
+    background: #f8f7ff;
+    color: #5B35E8;
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 2px solid #e8e6f8;
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #f0eeff;
+    color: #374151;
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+
+  /* ── TIP BOX ── */
+  .tip {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-size: 13px;
+    color: #92400e;
+    margin: 14px 0;
+  }
+  .tip strong { color: #78350f; }
+
+  .warning {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-size: 13px;
+    color: #991b1b;
+    margin: 14px 0;
+  }
+
+  /* ── DIVIDER ── */
+  hr { border: none; border-top: 1px solid #f0eeff; margin: 28px 0; }
+
+  /* ── PRINT ── */
+  @media print {
+    body { font-size: 13px; }
+    .cover { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .platform-icon { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .step-num { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .priority-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .post-box { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- COVER PAGE                                            -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="cover">
+  <div class="cover-badge">Pre-Launch Playbook</div>
+  <h1>DraftMeet<br/>Social Media<br/>Launch Guide</h1>
+  <h2>Account Setup · First Posts · 30-Day Strategy</h2>
+  <p style="font-size:14px;opacity:0.75;max-width:480px;line-height:1.7">
+    A complete guide to creating and launching DraftMeet's presence on every major social platform — from account creation to your first viral post.
+  </p>
+  <div class="cover-meta">
+    Generated April 2026 · draftmeet.com · For internal use
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- PAGE 1 — OVERVIEW                                     -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-label">Overview</div>
+  <h1 class="section-title">Platform Priority Map</h1>
+  <p class="section-sub">Start with the platforms where your audience already lives. DraftMeet targets founders, freelancers, remote teams, and developers.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Platform</th>
+        <th>Handle</th>
+        <th>Priority</th>
+        <th>Primary Goal</th>
+        <th>Audience</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>𝕏 (Twitter)</strong></td>
+        <td>@draftmeet</td>
+        <td><span class="priority-badge priority-high">🔴 Day 1</span></td>
+        <td>Waitlist signups + awareness</td>
+        <td>Founders, developers, indie hackers</td>
+      </tr>
+      <tr>
+        <td><strong>LinkedIn</strong></td>
+        <td>DraftMeet (Company Page)</td>
+        <td><span class="priority-badge priority-high">🔴 Day 1</span></td>
+        <td>B2B leads + professional credibility</td>
+        <td>Consultants, freelancers, teams</td>
+      </tr>
+      <tr>
+        <td><strong>Instagram</strong></td>
+        <td>@draftmeet</td>
+        <td><span class="priority-badge priority-med">🟡 Week 1</span></td>
+        <td>Brand visual identity + awareness</td>
+        <td>Freelancers, creators, solopreneurs</td>
+      </tr>
+      <tr>
+        <td><strong>Reddit</strong></td>
+        <td>u/draftmeet</td>
+        <td><span class="priority-badge priority-med">🟡 Week 1</span></td>
+        <td>Organic community reach + waitlist</td>
+        <td>Developers, startup founders</td>
+      </tr>
+      <tr>
+        <td><strong>Facebook</strong></td>
+        <td>DraftMeet (Page)</td>
+        <td><span class="priority-badge priority-med">🟡 Week 1</span></td>
+        <td>Small business reach + Groups community</td>
+        <td>SMBs, consultants, freelancers 25–45</td>
+      </tr>
+      <tr>
+        <td><strong>Product Hunt</strong></td>
+        <td>DraftMeet</td>
+        <td><span class="priority-badge priority-low">🟢 Launch Day</span></td>
+        <td>Launch day spike + early adopters</td>
+        <td>Tech early adopters</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="tip">
+    <strong>💡 Handle tip:</strong> Claim <strong>@draftmeet</strong> on every platform immediately — even ones you won't use yet. Squatters are fast. Go to each platform now and register the username before posting.
+  </div>
+
+  <hr/>
+
+  <div class="section-label">Universal Profile Setup</div>
+  <h1 class="section-title">Use These Across All Platforms</h1>
+
+  <div class="info-row">
+    <div class="info-pill"><span>Name:</span> DraftMeet</div>
+    <div class="info-pill"><span>Handle:</span> @draftmeet</div>
+    <div class="info-pill"><span>Website:</span> https://www.draftmeet.com</div>
+  </div>
+
+  <h3>Bio (short — for Twitter/Instagram)</h3>
+  <div class="post-box">Smart scheduling links without the back-and-forth.
+Share a link → guest picks a slot → Google Meet created instantly.
+🚀 Coming soon · Join the waitlist 👇
+draftmeet.com</div>
+
+  <h3>Bio (long — for LinkedIn)</h3>
+  <div class="post-box">DraftMeet is a smart scheduling platform for founders, freelancers, and remote teams who are tired of email back-and-forth just to book a meeting.
+
+Create a one-time or permanent booking link. Your guest picks a slot from your real-time availability. A Google Meet event is created automatically and lands in both inboxes.
+
+No accounts needed. No friction. No back-and-forth.
+
+🔗 One-time booking links (expire after one use)
+🔁 Permanent booking pages with custom slug
+📅 Google Calendar sync — real-time availability
+⚡ Auto-creates Google Meet on every booking
+📊 Analytics, Webhooks, API Keys included
+
+Currently in pre-launch. Join the waitlist at draftmeet.com</div>
+
+  <h3>Profile Photo</h3>
+  <p style="color:#374151;font-size:13.5px">Use the <strong>DraftMeet logo (logo-light.png)</strong> as the profile picture on all platforms. Make sure it's square-cropped and clear at small sizes.</p>
+
+  <h3>Cover / Banner Image</h3>
+  <p style="color:#374151;font-size:13.5px">Create a 1500×500px banner in Canva with the brand gradient (<span style="color:#5B35E8">#5B35E8 → #3B6AE8 → #38BFFF</span>) and the tagline: <strong>"Schedule meetings without the back-and-forth"</strong></p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- PAGE 2 — TWITTER / X                                  -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="platform-card">
+    <div class="platform-header">
+      <div class="platform-icon" style="background:#000">𝕏</div>
+      <div>
+        <h2 class="platform-title">Twitter / X</h2>
+        <div class="platform-handle">@draftmeet · twitter.com/draftmeet</div>
+      </div>
+      <span class="priority-badge priority-high">🔴 Day 1 Priority</span>
+    </div>
+
+    <h3>📋 Step-by-Step Account Setup</h3>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-text">Go to <strong>x.com</strong> → click Sign Up → use <strong>draftmeet@gmail.com</strong> (or your main email)</div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-text">Set display name: <strong>DraftMeet</strong></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-text">Set username: <strong>@draftmeet</strong> (check availability first)</div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-text">Upload profile photo: DraftMeet logo (square, 400×400px minimum)</div></div>
+      <div class="step"><div class="step-num">5</div><div class="step-text">Upload header/banner: branded 1500×500px gradient image</div></div>
+      <div class="step"><div class="step-num">6</div><div class="step-text">Add bio (short version), website: <strong>draftmeet.com</strong>, location: Remote 🌍</div></div>
+      <div class="step"><div class="step-num">7</div><div class="step-text">Pin your launch tweet (written below) immediately after posting it</div></div>
+    </div>
+
+    <hr/>
+
+    <h3>🚀 First Tweet (Pin This)</h3>
+    <div class="post-label">Launch Announcement Thread — Post as a thread, tweet 1 of 4</div>
+    <div class="post-box">I'm building a scheduling tool that doesn't exist yet.
+
+One-time booking links that expire after a single use.
+Your guest picks a slot. Google Meet is created. Done.
+
+No Calendly. No friction. No back-and-forth.
+
+🧵 Here's why I built it and why I think scheduling is broken:</div>
+
+    <div class="post-label">Thread — Tweet 2 of 4</div>
+    <div class="post-box">The problem:
+
+You email someone to book a meeting.
+They send you 3 time options.
+None work. You send 3 more.
+By the time you agree, you've sent 9 emails.
+
+Then you still have to create the Google Meet manually.
+
+This wastes 15+ minutes per meeting. That's 1+ hour/week just scheduling.</div>
+
+    <div class="post-label">Thread — Tweet 3 of 4</div>
+    <div class="post-box">DraftMeet solves it:
+
+→ Generate a one-time booking link (expires after 1 use)
+→ Send it to whoever you're meeting
+→ They pick a slot from your real availability
+→ Google Meet auto-created. Both inboxes. Done.
+
+No back-and-forth. No double bookings. No manual Meet link.</div>
+
+    <div class="post-label">Thread — Tweet 4 of 4 (CTA)</div>
+    <div class="post-box">We're pre-launch and building in public 🚀
+
+Join the waitlist → draftmeet.com
+
+If you book 5+ meetings a week, this will save you real time.
+
+RT if you're tired of scheduling back-and-forth 🙏
+
+#scheduling #productivity #buildinpublic #saas #indiehacker</div>
+
+    <hr/>
+
+    <h3>📅 First Week Tweet Ideas</h3>
+    <div class="steps">
+      <div class="step"><div class="step-num">D2</div><div class="step-text"><strong>Pain point tweet:</strong> "Name something more annoying than: 'Does Thursday at 2pm work?' 'No, how about Friday?' 'I'm busy Friday...' [just use DraftMeet]"</div></div>
+      <div class="step"><div class="step-num">D3</div><div class="step-text"><strong>Feature spotlight:</strong> Thread on one-time links vs permanent booking pages — what's the difference and when to use each</div></div>
+      <div class="step"><div class="step-num">D4</div><div class="step-text"><strong>Build in public:</strong> Share a screenshot of the dashboard or a metric ("X people joined the waitlist in 48 hours")</div></div>
+      <div class="step"><div class="step-num">D5</div><div class="step-text"><strong>Engagement tweet:</strong> "What's the worst scheduling experience you've ever had? 👇" — reply to every response</div></div>
+      <div class="step"><div class="step-num">D7</div><div class="step-text"><strong>Week recap:</strong> Share waitlist number, what you built, what you learned — build in public</div></div>
+    </div>
+
+    <div class="tip">
+      <strong>💡 Twitter skill rule:</strong> Reply to every comment within the first 60 minutes of posting. Twitter's algorithm ranks posts by early engagement velocity. Be online when you post.
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- PAGE 3 — LINKEDIN                                     -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="platform-card">
+    <div class="platform-header">
+      <div class="platform-icon" style="background:#0A66C2">in</div>
+      <div>
+        <h2 class="platform-title">LinkedIn</h2>
+        <div class="platform-handle">DraftMeet Company Page · linkedin.com/company/draftmeet</div>
+      </div>
+      <span class="priority-badge priority-high">🔴 Day 1 Priority</span>
+    </div>
+
+    <h3>📋 Step-by-Step Account Setup</h3>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-text">Log into your personal LinkedIn → click <strong>Work (grid icon)</strong> → <strong>Create a Company Page</strong></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-text">Select <strong>Small Business</strong> → Company name: <strong>DraftMeet</strong></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-text">URL: <strong>linkedin.com/company/draftmeet</strong></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-text">Industry: <strong>Software Development</strong> · Company size: <strong>1–10</strong> · Type: <strong>Privately held</strong></div></div>
+      <div class="step"><div class="step-num">5</div><div class="step-text">Upload logo, add tagline: <strong>"Schedule meetings without the back-and-forth"</strong></div></div>
+      <div class="step"><div class="step-num">6</div><div class="step-text">Add website: <strong>https://www.draftmeet.com</strong></div></div>
+      <div class="step"><div class="step-num">7</div><div class="step-text">Paste the <em>long bio</em> from Page 2 into the About section</div></div>
+      <div class="step"><div class="step-num">8</div><div class="step-text">Upload a 1128×191px banner image (branded gradient with tagline)</div></div>
+    </div>
+
+    <div class="tip">
+      <strong>💡 Also post from YOUR personal profile.</strong> LinkedIn company pages get far less organic reach than personal profiles. Post the launch content from your personal account and tag @DraftMeet.
+    </div>
+
+    <hr/>
+
+    <h3>🚀 First Post (Personal Profile — Not Company Page)</h3>
+    <div class="post-label">Founder Launch Post — No links in the body (LinkedIn rule)</div>
+    <div class="post-box">I just built something I've needed for years.
+
+Last month I sent 11 emails just to book a 30-minute call.
+11 emails. For a 30-minute call.
+
+So I built DraftMeet.
+
+Here's how it works:
+→ You generate a one-time booking link
+→ Your guest picks a slot from your real availability
+→ A Google Meet event is created automatically in both your inboxes
+→ The link expires. No double bookings. No follow-ups.
+
+The whole thing takes 10 seconds.
+
+We're pre-launch and building something for founders, freelancers, and consultants who book 5+ meetings a week and are tired of the back-and-forth.
+
+If that's you — the waitlist link is in the comments.
+
+I'd love to know: what's your biggest scheduling frustration right now? 👇</div>
+
+    <div class="post-label">Comment immediately after posting — add the link here</div>
+    <div class="post-box">👉 Waitlist: https://www.draftmeet.com
+
+Join free. Be the first to know when we launch.</div>
+
+    <hr/>
+
+    <h3>📅 LinkedIn Rules (from LinkedIn Content Creator skill)</h3>
+    <div class="steps">
+      <div class="step"><div class="step-num">✓</div><div class="step-text"><strong>Never put links in the post body</strong> — LinkedIn suppresses these. Always put the link in the first comment.</div></div>
+      <div class="step"><div class="step-num">✓</div><div class="step-text"><strong>Reply to every comment within 60 minutes</strong> — this is the algorithm quality window.</div></div>
+      <div class="step"><div class="step-num">✓</div><div class="step-text"><strong>Use max 3–5 hashtags</strong>: #scheduling #productivity #saas #freelance #founders</div></div>
+      <div class="step"><div class="step-num">✓</div><div class="step-text"><strong>Post 3× per week</strong> from personal profile. Best times: Tuesday–Thursday, 8–10am or 12–1pm.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- PAGE 4 — INSTAGRAM                                    -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="platform-card">
+    <div class="platform-header">
+      <div class="platform-icon" style="background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)">📸</div>
+      <div>
+        <h2 class="platform-title">Instagram</h2>
+        <div class="platform-handle">@draftmeet · instagram.com/draftmeet</div>
+      </div>
+      <span class="priority-badge priority-med">🟡 Week 1</span>
+    </div>
+
+    <h3>📋 Step-by-Step Account Setup</h3>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-text">Download Instagram app → Sign up with email → Username: <strong>draftmeet</strong></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-text">Switch to <strong>Professional Account</strong> → Category: <strong>Software</strong> or <strong>Internet Company</strong></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-text">Upload profile photo: DraftMeet logo (cropped to circle — make sure logo is centred)</div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-text">Add bio (short version from Page 2) + website: <strong>draftmeet.com</strong></div></div>
+      <div class="step"><div class="step-num">5</div><div class="step-text">Add a <strong>Link in Bio</strong> button pointing to <strong>draftmeet.com</strong></div></div>
+    </div>
+
+    <hr/>
+
+    <h3>🚀 First Post (Reel — Most Reach)</h3>
+    <div class="post-label">Reel Script (15–30 seconds, text on screen)</div>
+    <div class="post-box">HOOK (0–3s): "Stop sending scheduling emails. 🛑"
+
+PROBLEM (3–10s):
+"You email someone.
+They reply with 3 times.
+None work.
+You send 3 more.
+9 emails. For one meeting. 😩"
+
+SOLUTION (10–22s):
+"DraftMeet:
+→ Share a link
+→ Guest picks a slot
+→ Google Meet auto-created ⚡
+Done."
+
+CTA (22–30s):
+"Coming soon 🚀
+Join the waitlist — link in bio
+@draftmeet"</div>
+
+    <div class="post-label">Caption for the Reel</div>
+    <div class="post-box">Stop wasting 15 minutes booking a 30-minute meeting 😮‍💨
+
+DraftMeet creates one-time booking links that auto-generate Google Meet events the second someone books.
+
+No back-and-forth. No manual calendar invites. No friction.
+
+🚀 Coming soon — join the waitlist (link in bio)
+
+#scheduling #productivity #workhacks #remotework #freelancerlife #entrepreneurmindset #techstartup #saas #meetings #timemanagement #calendly #googlecalendar</div>
+
+    <hr/>
+
+    <h3>📅 Instagram Content Mix (1/3 Rule from Instagram Curator skill)</h3>
+    <table>
+      <thead><tr><th>Type</th><th>Frequency</th><th>Example</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Brand content</strong></td><td>33%</td><td>Feature reveals, product screenshots, "how it works" carousels</td></tr>
+        <tr><td><strong>Educational</strong></td><td>33%</td><td>"5 ways to stop wasting time on scheduling", productivity tips</td></tr>
+        <tr><td><strong>Community</strong></td><td>33%</td><td>Reposts, questions ("how many emails does it take you to book a meeting?"), polls in Stories</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- PAGE 5 — FACEBOOK                                     -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="platform-card">
+    <div class="platform-header">
+      <div class="platform-icon" style="background:#1877F2">f</div>
+      <div>
+        <h2 class="platform-title">Facebook</h2>
+        <div class="platform-handle">DraftMeet Page · facebook.com/draftmeet</div>
+      </div>
+      <span class="priority-badge priority-med">🟡 Week 1</span>
+    </div>
+
+    <h3>📋 Step-by-Step Page Setup</h3>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-text">Log into Facebook → click <strong>Pages</strong> in the left sidebar → <strong>Create New Page</strong></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-text">Page name: <strong>DraftMeet</strong> · Category: <strong>Software</strong> or <strong>Internet Company</strong></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-text">Username: <strong>@draftmeet</strong> → this sets your URL to <strong>facebook.com/draftmeet</strong></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-text">Upload profile photo: DraftMeet logo (square, 170×170px minimum)</div></div>
+      <div class="step"><div class="step-num">5</div><div class="step-text">Upload cover photo: branded 1640×624px banner with gradient and tagline</div></div>
+      <div class="step"><div class="step-num">6</div><div class="step-text">Add About section using the <em>long bio</em> from Page 2 · Website: <strong>https://www.draftmeet.com</strong></div></div>
+      <div class="step"><div class="step-num">7</div><div class="step-text">Add a <strong>Call to Action button</strong> → choose <strong>"Sign Up"</strong> → link to <strong>draftmeet.com</strong></div></div>
+      <div class="step"><div class="step-num">8</div><div class="step-text">Turn on <strong>Messaging</strong> in Page settings so prospects can contact you directly</div></div>
+    </div>
+
+    <div class="tip">
+      <strong>💡 Facebook Groups are your real channel.</strong> The DraftMeet Page alone will get very little organic reach. The real reach comes from posting in relevant Facebook Groups where your audience already is — without spamming. Join groups first, add value for 1 week, then share DraftMeet naturally.
+    </div>
+
+    <hr/>
+
+    <h3>🎯 Target Facebook Groups to Join</h3>
+    <div class="info-row">
+      <div class="info-pill"><span>Group:</span> Freelancers &amp; Entrepreneurs</div>
+      <div class="info-pill"><span>Group:</span> SaaS Founders &amp; Entrepreneurs</div>
+      <div class="info-pill"><span>Group:</span> Remote Work &amp; Digital Nomads</div>
+      <div class="info-pill"><span>Group:</span> Productivity &amp; Time Management</div>
+      <div class="info-pill"><span>Group:</span> Small Business Owners</div>
+      <div class="info-pill"><span>Group:</span> Indie Hackers &amp; Bootstrappers</div>
+    </div>
+
+    <hr/>
+
+    <h3>🚀 First Page Post</h3>
+    <div class="post-label">Launch Post — Use an image with the DraftMeet logo + tagline</div>
+    <div class="post-box">We're building the scheduling tool we always wished existed. 🚀
+
+You know that feeling when you spend 15 minutes just trying to book a 30-minute call?
+
+→ "Does Tuesday work?"
+→ "I'm free Thursday"
+→ "Thursday doesn't work for me..."
+
+DraftMeet kills that entirely.
+
+✅ Generate a one-time booking link in seconds
+✅ Your guest picks a slot from your real availability
+✅ Google Meet is auto-created and lands in both inboxes
+✅ The link expires after one use — no double bookings
+
+We're pre-launch and building in public.
+
+👉 Join the waitlist for free early access → https://www.draftmeet.com
+
+Drop a 🙋 in the comments if you've wasted too much time scheduling meetings!</div>
+
+    <hr/>
+
+    <h3>🚀 First Facebook Group Post (after building presence)</h3>
+    <div class="post-label">Post to a relevant group — e.g. "Freelancers &amp; Entrepreneurs"</div>
+    <div class="post-box">Honest question for this group 👇
+
+How many emails does it take you to book a single meeting?
+
+For me it was 8–11 per meeting on average. I timed it.
+
+I was spending 45 minutes a week just on scheduling emails. So I built something to fix it.
+
+DraftMeet: generate a one-time booking link → guest picks a slot → Google Meet auto-created. Link expires. Done.
+
+No back-and-forth. No manual calendar invite. Takes 10 seconds.
+
+We're pre-launch — if you book 3+ meetings a week, I'd love your feedback. Waitlist is free: draftmeet.com
+
+What's your biggest scheduling frustration? 👇</div>
+
+    <hr/>
+
+    <h3>📅 Facebook Content Rules</h3>
+    <div class="steps">
+      <div class="step"><div class="step-num">✓</div><div class="step-text"><strong>Post 3–4× per week on your Page.</strong> Best times: Tuesday–Thursday, 9–11am and 1–3pm local time.</div></div>
+      <div class="step"><div class="step-num">✓</div><div class="step-text"><strong>Always include an image or video.</strong> Text-only posts get ~50% less reach on Facebook. Use a branded graphic from Canva for every post.</div></div>
+      <div class="step"><div class="step-num">✓</div><div class="step-text"><strong>Use Facebook Stories.</strong> Post a Story daily — it's separate from the feed algorithm and keeps your page visible.</div></div>
+      <div class="step"><div class="step-num">✓</div><div class="step-text"><strong>Ask questions.</strong> Facebook's algorithm heavily boosts posts that generate comments. End every post with a question.</div></div>
+      <div class="step"><div class="step-num">✓</div><div class="step-text"><strong>Groups: 90/10 rule.</strong> Be helpful 90% of the time. Only mention DraftMeet when it naturally solves someone's stated problem.</div></div>
+      <div class="step"><div class="step-num">✓</div><div class="step-text"><strong>Boost your launch post</strong> with even $5–10 of Facebook Ads once you have 3–5 comments — the algorithm will amplify a post that already has engagement.</div></div>
+    </div>
+
+    <div class="tip">
+      <strong>💡 Facebook audience:</strong> Skews 25–45, small business owners, consultants, and freelancers. Slightly older and more business-focused than Instagram. Write in plain, direct language — no tech jargon. Lead with the time-saving benefit, not the feature.
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- PAGE 6 — REDDIT + PRODUCT HUNT                       -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="platform-card">
+    <div class="platform-header">
+      <div class="platform-icon" style="background:#FF4500">R</div>
+      <div>
+        <h2 class="platform-title">Reddit</h2>
+        <div class="platform-handle">u/draftmeet · reddit.com/u/draftmeet</div>
+      </div>
+      <span class="priority-badge priority-med">🟡 Week 1</span>
+    </div>
+
+    <h3>📋 Account Setup</h3>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-text">Go to <strong>reddit.com</strong> → Sign up → Username: <strong>draftmeet</strong></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-text">Add a profile photo (DraftMeet logo) and short bio</div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-text"><strong>Do NOT post promotional content immediately.</strong> Build karma first by commenting helpfully in target subreddits for 1–2 weeks.</div></div>
+    </div>
+
+    <h3>🎯 Target Subreddits</h3>
+    <div class="info-row">
+      <div class="info-pill"><span>r/</span>entrepreneur</div>
+      <div class="info-pill"><span>r/</span>SaaS</div>
+      <div class="info-pill"><span>r/</span>Indiehackers</div>
+      <div class="info-pill"><span>r/</span>freelance</div>
+      <div class="info-pill"><span>r/</span>remotework</div>
+      <div class="info-pill"><span>r/</span>productivity</div>
+      <div class="info-pill"><span>r/</span>startups</div>
+    </div>
+
+    <h3>🚀 First Reddit Post (after building karma)</h3>
+    <div class="post-label">Post to r/SaaS or r/Indiehackers — title:</div>
+    <div class="post-box">I got so tired of scheduling back-and-forth that I built a tool to kill it. Here's what I learned.</div>
+    <div class="post-label">Post body:</div>
+    <div class="post-box">After tracking my time for a month, I realised I was spending 45+ minutes a week just scheduling meetings through email.
+
+So I built DraftMeet — a tool that generates one-time booking links. Guest picks a slot, Google Meet is auto-created, the link expires. Done.
+
+Happy to share what I've learned building in public. AMA about the tech stack (Next.js + FastAPI + Supabase), the waitlist strategy, or anything else.
+
+[link to draftmeet.com in the comments per subreddit rules]</div>
+
+    <div class="warning">
+      <strong>⚠️ Reddit rule (90/10):</strong> 90% of your Reddit activity should be genuinely helpful comments. Only 10% can be about DraftMeet. Violating this will get you banned and your karma destroyed.
+    </div>
+  </div>
+
+  <div class="platform-card">
+    <div class="platform-header">
+      <div class="platform-icon" style="background:#DA552F">PH</div>
+      <div>
+        <h2 class="platform-title">Product Hunt</h2>
+        <div class="platform-handle">producthunt.com — schedule for launch day</div>
+      </div>
+      <span class="priority-badge priority-low">🟢 Launch Day</span>
+    </div>
+
+    <h3>📋 Setup Steps</h3>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-text">Create account at <strong>producthunt.com</strong> → username: <strong>draftmeet</strong></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-text">Upvote and comment on other products daily for 2–4 weeks before your launch (builds community cred)</div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-text">On launch day, submit DraftMeet at <strong>12:01am PST</strong> (when the day resets) for maximum upvote time</div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-text">Tagline: <strong>"One-time booking links with auto Google Meet — no back-and-forth"</strong></div></div>
+      <div class="step"><div class="step-num">5</div><div class="step-text">Email your waitlist on launch day asking them to upvote on Product Hunt</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- PAGE 6 — 30-DAY CALENDAR                             -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-label">Strategy</div>
+  <h1 class="section-title">30-Day Content Calendar</h1>
+  <p class="section-sub">A simple repeating rhythm across all platforms for the first month.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Week</th>
+        <th>Theme</th>
+        <th>Twitter/X</th>
+        <th>LinkedIn</th>
+        <th>Instagram</th>
+        <th>Facebook</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Week 1</strong></td>
+        <td>Launch & Problem</td>
+        <td>Launch thread + pain point tweets + engagement questions</td>
+        <td>Founder story post (personal profile)</td>
+        <td>Launch Reel + Story poll</td>
+        <td>Launch Page post with image + join relevant Groups</td>
+      </tr>
+      <tr>
+        <td><strong>Week 2</strong></td>
+        <td>Features & How It Works</td>
+        <td>Feature spotlight threads (one feature/day)</td>
+        <td>"How DraftMeet works" carousel post</td>
+        <td>3-slide feature carousel post</td>
+        <td>Short video demo post + Group post asking "how many emails to book a meeting?"</td>
+      </tr>
+      <tr>
+        <td><strong>Week 3</strong></td>
+        <td>Social Proof & Build in Public</td>
+        <td>Waitlist milestone tweet + behind the scenes</td>
+        <td>Share waitlist number + what you learned</td>
+        <td>Screenshot of dashboard or waitlist counter</td>
+        <td>Share waitlist milestone + boost post with $5–10 ad spend</td>
+      </tr>
+      <tr>
+        <td><strong>Week 4</strong></td>
+        <td>Community & CTA Push</td>
+        <td>Final pre-launch countdown thread</td>
+        <td>"We're almost ready" teaser post</td>
+        <td>Countdown Story + waitlist CTA Reel</td>
+        <td>Final CTA post + Stories countdown sticker + Group "we're launching soon" post</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr/>
+
+  <div class="section-label">Key Rules</div>
+  <h1 class="section-title">Cross-Platform Golden Rules</h1>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-text"><strong>Post every day on Twitter.</strong> Twitter requires daily presence. Miss 3 days and your reach drops significantly.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-text"><strong>LinkedIn 3× per week from personal profile.</strong> Company pages alone get minimal reach. Your personal account is the engine.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-text"><strong>Reply to every comment within 1 hour of posting.</strong> Every platform rewards early engagement velocity.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-text"><strong>Build in public.</strong> Share waitlist numbers, behind the scenes, bugs you fixed, features you shipped. Founders love founders.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-text"><strong>One primary CTA only.</strong> Every post ends with one clear action: "Join the waitlist at draftmeet.com" — never multiple asks.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-text"><strong>Adapt content, don't copy-paste.</strong> Same core message, but written natively for each platform's tone and format.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">7</div>
+      <div class="step-text"><strong>Hashtags:</strong> Twitter (3–5 relevant), Instagram (10–15 mixed size), LinkedIn (3–5 professional). No hashtags on Reddit.</div>
+    </div>
+  </div>
+
+  <hr/>
+
+  <div class="section-label">First Actions</div>
+  <h1 class="section-title">Do This Today — In Order</h1>
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div class="step-text">Claim <strong>@draftmeet</strong> on Twitter, Instagram, Reddit, LinkedIn, Facebook, and Product Hunt simultaneously — do this before anything else</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-text">Set up all profiles with logo, bio, website link, and cover banner</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-text">Post the <strong>Twitter launch thread</strong> and pin it to your profile</div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-text">Post the <strong>LinkedIn founder story</strong> from your personal profile (link in comments)</div></div>
+    <div class="step"><div class="step-num">5</div><div class="step-text">Create and post the <strong>Instagram Reel</strong> (15–30 sec, use CapCut or Canva)</div></div>
+    <div class="step"><div class="step-num">6</div><div class="step-text">Post the <strong>Facebook launch post</strong> on your Page with an image · Add a "Sign Up" CTA button pointing to draftmeet.com</div></div>
+    <div class="step"><div class="step-num">7</div><div class="step-text">Join 3–5 relevant <strong>Facebook Groups</strong> — do not post yet, just introduce yourself and engage</div></div>
+    <div class="step"><div class="step-num">8</div><div class="step-text">Start upvoting/commenting on Product Hunt to build cred before your launch</div></div>
+    <div class="step"><div class="step-num">9</div><div class="step-text">Begin commenting helpfully in Reddit target subreddits (no promotion yet)</div></div>
+  </div>
+
+  <div style="margin-top:48px;padding:24px;background:linear-gradient(135deg,#5B35E8,#38BFFF);border-radius:16px;color:white;text-align:center;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;opacity:0.8;margin-bottom:8px">Remember</div>
+    <div style="font-size:20px;font-weight:700;line-height:1.4">Consistency beats perfection.<br/>Post every day. Reply to everything.<br/>The waitlist grows from momentum, not one viral post.</div>
+  </div>
+
+  <p style="text-align:center;margin-top:40px;font-size:12px;color:#9795b5">DraftMeet Social Media Launch Guide · April 2026 · draftmeet.com</p>
+</div>
+
+</body>
+</html>

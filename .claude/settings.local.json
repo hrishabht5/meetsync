@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cp \"C:/Users/HP/OneDrive/Desktop/meetsync/meetsync-master/Draftmeet logo light.png\" \"C:/Users/HP/OneDrive/Desktop/meetsync/meetsync-master/meetsync-frontend/public/logo-light.png\")",
+      "Bash(cp \"C:/Users/HP/OneDrive/Desktop/meetsync/meetsync-master/draftmeet logo dark .png\" \"C:/Users/HP/OneDrive/Desktop/meetsync/meetsync-master/meetsync-frontend/public/logo-dark.png\")",
+      "Bash(ls:*)",
+      "Bash(rm:*)",
+      "Bash(mkdir -p db/migrations)",
+      "Bash(mv migration_v2.sql migration_v3.sql migration_v4.sql migration_v5.sql migration_v6.sql migration_v6_patch.sql migration_v7.sql migration_v8.sql migration_v9.sql migration_v10.sql db/migrations/)",
+      "Bash(mv supabase_schema.sql db/schema.sql)",
+      "Bash(rm refactor.py)",
+      "Bash(rmdir \"Waitlst landing\")",
+      "Bash(npm install:*)",
+      "WebSearch",
+      "Bash(node -e ':*)",
+      "Bash(wc:*)",
+      "Bash(xargs grep:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(gh api *)",
+      "WebFetch(domain:claude.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(mkdir -p c:/Users/HP/OneDrive/Desktop/meetsync/meetsync-master/.claude/skills/caveman)",
+      "Bash(curl -sL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/skills/caveman/SKILL.md -o c:/Users/HP/OneDrive/Desktop/meetsync/meetsync-master/.claude/skills/caveman/SKILL.md)",
+      "Bash(echo \"Downloaded caveman SKILL.md: $?\")",
+      "Bash(curl -sL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/skills/caveman-commit/SKILL.md -o c:/Users/HP/OneDrive/Desktop/meetsync/meetsync-master/.claude/skills/caveman/caveman-commit.SKILL.md)",
+      "Bash(echo \"Downloaded caveman-commit: $?\")",
+      "Bash(npm --version)",
+      "Bash(npx --version)",
+      "Bash(CLAUDE_CONFIG_DIR=\"c:/Users/HP/OneDrive/Desktop/meetsync/meetsync-master/.claude\" npx --yes claude-mem install)",
+      "Bash(git push *)",
+      "Bash(python3 -c \"from enum import Enum; class OTLStatus\\(str, Enum\\): active='active'; print\\(f'f-string: {OTLStatus.active}'\\); print\\(f'str\\(\\): {str\\(OTLStatus.active\\)}'\\); print\\(f'.value: {OTLStatus.active.value}'\\)\")",
+      "Bash(python -c \"from enum import Enum; class OTLStatus\\(str, Enum\\): active='active'; print\\('f-string: ' + str\\(f'{OTLStatus.active}'\\)\\); print\\('str\\(\\): ' + str\\(str\\(OTLStatus.active\\)\\)\\)\")"
+    ]
+  }
+}
