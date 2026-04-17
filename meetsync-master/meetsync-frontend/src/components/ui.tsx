@@ -26,7 +26,7 @@ export function Badge({ status, children }: { status: string; children: React.Re
 }
 
 // ── Button ────────────────────────────────────────────
-type BtnVariant = "primary" | "danger" | "ghost" | "secondary";
+type BtnVariant = "primary" | "warm" | "danger" | "ghost" | "secondary";
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: BtnVariant;
   loading?: boolean;
@@ -34,12 +34,13 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const btnBase =
-  "inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed";
+  "inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97]";
 const btnVariants: Record<BtnVariant, string> = {
-  primary:   "bg-brand-gradient text-white shadow-lg shadow-[rgba(59,106,232,0.30)] hover:opacity-90 hover:-translate-y-0.5 hover:shadow-[rgba(56,191,255,0.25)]",
+  primary:   "bg-brand-gradient text-white shadow-lg shadow-[rgba(59,106,232,0.30)] hover:brightness-110 hover:-translate-y-0.5 hover:shadow-[rgba(56,191,255,0.25)] active:brightness-95 active:translate-y-0 active:scale-[0.97]",
   danger:    "bg-red-600/10 hover:bg-red-600/20 text-red-400 ring-1 ring-red-500/30",
   ghost:     "hover:bg-[var(--accent)]/8 text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
   secondary: "bg-[var(--bg-card-hover)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] ring-1 ring-[var(--border)] hover:ring-[var(--border-accent)]",
+  warm:      "bg-warm-gradient text-white shadow-lg shadow-[rgba(245,158,11,0.25)] glow-warm hover:brightness-110 hover:-translate-y-0.5 active:brightness-95 active:translate-y-0 active:scale-[0.97]",
 };
 const btnSizes = { sm: "px-3 py-1.5 text-sm", md: "px-5 py-2.5 text-sm" };
 

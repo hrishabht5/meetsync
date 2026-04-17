@@ -208,7 +208,7 @@ export default function LandingPage() {
         </nav>
 
         {/* ── Hero ── */}
-        <section className="relative flex flex-col items-center justify-center text-center px-6 py-28 gap-8 min-h-[92vh]">
+        <section className="relative flex flex-col lg:flex-row items-center px-6 lg:px-0 py-20 lg:py-0 gap-12 min-h-[92vh]">
           {/* Animated orbs */}
           <div className="absolute top-[-60px] left-1/2 -translate-x-1/2 w-[800px] h-[600px] rounded-full blur-[160px] pointer-events-none orb-pulse"
                style={{ background: "radial-gradient(circle, rgba(91,53,232,0.55) 0%, rgba(59,106,232,0.25) 40%, transparent 70%)" }} />
@@ -217,7 +217,7 @@ export default function LandingPage() {
           <div className="absolute top-[30%] left-[5%] w-[250px] h-[250px] rounded-full blur-[120px] pointer-events-none orb-pulse"
                style={{ background: "radial-gradient(circle, rgba(91,53,232,0.2), transparent 70%)", animationDelay: "1s" }} />
 
-          <div className="relative z-10 flex flex-col items-center gap-7 max-w-3xl">
+          <div className="relative z-10 flex flex-col items-start gap-7 max-w-xl lg:pl-20 lg:w-[55%] text-left">
             <span className="animate-scale-in inline-flex items-center gap-2 px-4 py-1.5 rounded-full badge-shimmer text-white text-xs font-semibold tracking-wide shadow-lg">
               <Sparkles size={13} />
               {IS_LIVE ? "Free to start — no credit card" : "Coming Soon — Join the waitlist"}
@@ -237,7 +237,7 @@ export default function LandingPage() {
             </p>
 
             {/* Trust pills */}
-            <div className="animate-fade-up delay-300 flex flex-wrap justify-center gap-3">
+            <div className="animate-fade-up delay-300 flex flex-wrap justify-start gap-3">
               {TRUST_PILLS.map(({ Icon, label }) => (
                 <span key={label} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-secondary)] text-xs font-medium">
                   <Icon size={12} className="text-[var(--accent)]" />
@@ -247,12 +247,12 @@ export default function LandingPage() {
             </div>
 
             {/* Hero CTA */}
-            <div className="animate-fade-up delay-400 w-full max-w-md">
+            <div className="animate-fade-up delay-400 w-full max-w-sm">
               {IS_LIVE ? (
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Link
                     href="/login"
-                    className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-brand-gradient text-white font-semibold text-sm shadow-lg hover:opacity-90 transition-opacity"
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-warm-gradient text-white font-semibold text-sm shadow-lg glow-warm hover:brightness-110 hover:-translate-y-0.5 active:scale-[0.97] active:brightness-95 transition-all duration-150"
                   >
                     <Zap size={15} />
                     Get Started Free
@@ -286,7 +286,7 @@ export default function LandingPage() {
         {/* ── Features ── */}
         <section className="px-6 py-24 max-w-6xl mx-auto w-full">
           <div className="text-center mb-14 animate-fade-up">
-            <p className="text-xs font-semibold tracking-widest text-[var(--accent)] uppercase mb-3">Features</p>
+            <p className="text-xs font-semibold tracking-widest text-[var(--accent-warm)] uppercase mb-3">Features</p>
             {/* H2 — secondary keyword */}
             <h2 className="text-3xl sm:text-4xl font-bold text-[var(--text-primary)]">
               Everything you need.{" "}
@@ -322,7 +322,7 @@ export default function LandingPage() {
         <section className="px-6 py-24 border-y border-[var(--border)]" style={{ background: "var(--bg-deep, var(--bg-card))" }}>
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-14 animate-fade-up">
-              <p className="text-xs font-semibold tracking-widest text-[var(--accent)] uppercase mb-3">How it works</p>
+              <p className="text-xs font-semibold tracking-widest text-[var(--accent-warm)] uppercase mb-3">How it works</p>
               {/* H2 — long-tail keyword: "schedule a meeting without back and forth" */}
               <h2 className="text-3xl sm:text-4xl font-bold text-[var(--text-primary)]">
                 Eliminate the back-and-forth in 3 steps
@@ -351,7 +351,7 @@ export default function LandingPage() {
         {/* ── FAQ ── */}
         <section className="px-6 py-24 max-w-3xl mx-auto w-full">
           <div className="text-center mb-12 animate-fade-up">
-            <p className="text-xs font-semibold tracking-widest text-[var(--accent)] uppercase mb-3">FAQ</p>
+            <p className="text-xs font-semibold tracking-widest text-[var(--accent-warm)] uppercase mb-3">FAQ</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-[var(--text-primary)]">
               Frequently asked questions
             </h2>
@@ -397,7 +397,7 @@ export default function LandingPage() {
               {IS_LIVE ? (
                 <Link
                   href="/login"
-                  className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-brand-gradient text-white font-semibold text-sm shadow-lg hover:opacity-90 transition-opacity"
+                  className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-warm-gradient text-white font-semibold text-sm shadow-lg glow-warm hover:brightness-110 hover:-translate-y-0.5 active:scale-[0.97] active:brightness-95 transition-all duration-150"
                 >
                   <Zap size={15} />
                   Create free account

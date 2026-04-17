@@ -5,15 +5,16 @@ import { useEffect } from "react";
 import { api } from "@/lib/api-client";
 import { ThemeToggle } from "@/components/themeToggle";
 import { useTheme } from "@/components/themeProvider";
+import { Calendar, BarChart2, Link2, User, Clock, Webhook, Settings, LogOut } from "lucide-react";
 
 const nav = [
-  { href: "/dashboard", label: "Bookings", icon: "📅" },
-  { href: "/dashboard/analytics", label: "Analytics", icon: "📊" },
-  { href: "/dashboard/links", label: "Links", icon: "🔗" },
-  { href: "/dashboard/profile", label: "Profile", icon: "👤" },
-  { href: "/dashboard/availability", label: "Availability", icon: "⏰" },
-  { href: "/dashboard/webhooks", label: "API & Webhooks", icon: "🔔" },
-  { href: "/dashboard/settings", label: "Settings", icon: "⚙️" },
+  { href: "/dashboard", label: "Bookings", Icon: Calendar },
+  { href: "/dashboard/analytics", label: "Analytics", Icon: BarChart2 },
+  { href: "/dashboard/links", label: "Links", Icon: Link2 },
+  { href: "/dashboard/profile", label: "Profile", Icon: User },
+  { href: "/dashboard/availability", label: "Availability", Icon: Clock },
+  { href: "/dashboard/webhooks", label: "API & Webhooks", Icon: Webhook },
+  { href: "/dashboard/settings", label: "Settings", Icon: Settings },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -50,13 +51,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
+                className={`flex items-center gap-3 py-2.5 rounded-xl text-sm font-medium transition-all
                   ${active
-                    ? "bg-brand-gradient text-white shadow-sm glow-brand-sm"
-                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--accent)]/8"
+                    ? "bg-[var(--accent)]/10 text-[var(--accent)] border-l-2 border-[var(--accent)] pl-[10px] pr-3"
+                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--accent)]/8 border-l-2 border-transparent pl-[10px] pr-3"
                   }`}
               >
-                <span className="text-base">{item.icon}</span>
+                <item.Icon size={16} strokeWidth={1.5} />
                 {item.label}
               </Link>
             );
@@ -83,7 +84,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             }}
             className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-red-500/70 hover:text-red-400 hover:bg-red-500/10 transition-all text-left w-full"
           >
-            <span className="text-base">🚪</span>
+            <LogOut size={16} strokeWidth={1.5} />
             Logout
           </button>
         </div>

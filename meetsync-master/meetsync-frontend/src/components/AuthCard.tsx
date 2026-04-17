@@ -125,30 +125,42 @@ export function AuthCard() {
 
       {/* Email/Password Form */}
       <form onSubmit={handleEmailAuth} className="flex flex-col gap-3">
-        <input
-          type="email"
-          placeholder="Email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full px-4 py-2.5 rounded-xl bg-[var(--bg-input)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--border-accent)]"
-        />
-        <input
-          type="password"
-          placeholder={tab === "signup" ? "Password (min. 8 characters)" : "Password"}
-          required
-          minLength={tab === "signup" ? 8 : undefined}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full px-4 py-2.5 rounded-xl bg-[var(--bg-input)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--border-accent)]"
-        />
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="auth-email" className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wide">
+            Email address
+          </label>
+          <input
+            id="auth-email"
+            type="email"
+            placeholder="you@company.com"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full px-4 py-2.5 rounded-xl bg-[var(--bg-input)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 focus:border-[var(--accent)]/40 transition-all"
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="auth-password" className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wide">
+            Password{tab === "signup" ? " (min. 8 characters)" : ""}
+          </label>
+          <input
+            id="auth-password"
+            type="password"
+            placeholder={tab === "signup" ? "Create a strong password" : "Enter your password"}
+            required
+            minLength={tab === "signup" ? 8 : undefined}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full px-4 py-2.5 rounded-xl bg-[var(--bg-input)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 focus:border-[var(--accent)]/40 transition-all"
+          />
+        </div>
         {formError && (
           <p className="text-red-400 text-xs">{formError}</p>
         )}
         <button
           type="submit"
           disabled={submitting}
-          className="w-full py-2.5 rounded-xl bg-brand-gradient text-white font-semibold text-sm shadow-lg shadow-[rgba(59,106,232,0.3)] hover:opacity-90 transition-all disabled:opacity-50"
+          className="w-full py-2.5 rounded-xl bg-warm-gradient text-white font-semibold text-sm shadow-lg glow-warm hover:brightness-110 hover:-translate-y-0.5 active:scale-[0.97] active:brightness-95 transition-all duration-150 disabled:opacity-50"
         >
           {submitting ? <Spinner size={16} /> : tab === "login" ? "Log In" : "Create Account"}
         </button>

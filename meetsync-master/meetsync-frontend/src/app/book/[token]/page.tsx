@@ -181,7 +181,7 @@ function BookingPageInner() {
 
           {/* Pick Date */}
           {(step === "pick-date" || step === "pick-slot") && (
-            <div className="p-6 flex flex-col gap-5">
+            <div className="p-6 flex flex-col gap-5 animate-fade-up">
               <div>
                 <p className="text-xs text-[var(--accent-cyan)] font-semibold uppercase tracking-wider mb-1">Booking Link</p>
                 <h2 className="text-xl font-bold text-[var(--text-primary)]">{otl?.custom_title || otl?.event_type}</h2>
@@ -243,7 +243,7 @@ function BookingPageInner() {
 
           {/* Booking Form */}
           {step === "form" && (
-            <div className="p-6 flex flex-col gap-5">
+            <div className="p-6 flex flex-col gap-5 animate-fade-up">
               <div>
                 <button onClick={() => setStep("pick-slot")} className="text-xs text-[var(--accent)] hover:text-[var(--accent-cyan)] mb-3 flex items-center gap-1 transition-colors">
                   ← Change time
@@ -350,7 +350,7 @@ function BookingPageInner() {
 
           {/* Success */}
           {step === "success" && (
-            <div className="flex flex-col items-center gap-5 py-14 px-8 text-center">
+            <div className="flex flex-col items-center gap-5 py-14 px-8 text-center animate-scale-in">
               <div className="text-6xl">🎉</div>
               <div>
                 <p className="font-bold text-[var(--text-primary)] text-xl">Booking Confirmed!</p>

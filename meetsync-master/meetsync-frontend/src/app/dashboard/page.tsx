@@ -80,6 +80,7 @@ export default function BookingsPage() {
 
   return (
     <>
+      <div className="animate-fade-up">
       <SectionHeader
         title="Bookings"
         subtitle="All scheduled meetings with guests"
@@ -104,17 +105,19 @@ export default function BookingsPage() {
           </div>
         }
       />
+      </div>
 
       {loading ? (
         <div className="flex justify-center py-20"><Spinner /></div>
       ) : error ? (
         <Card className="p-6 text-center text-red-400">⚠️ {error}</Card>
       ) : bookings.length === 0 ? (
-        <EmptyState icon="📅" title="No bookings yet" subtitle="Share a one-time link to get your first booking" />
+        <div className="animate-fade-up"><EmptyState icon="📅" title="No bookings yet" subtitle="Share a one-time link to get your first booking" /></div>
       ) : (
         <div className="flex flex-col gap-3">
-          {bookings.map((bk) => (
-            <Card key={bk.id} className="p-5">
+          {bookings.map((bk, i) => (
+            <div key={bk.id} className="animate-fade-up" style={{ animationDelay: `${i * 60}ms` }}>
+            <Card className="p-5">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex flex-col gap-2 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -211,6 +214,7 @@ export default function BookingsPage() {
                 )}
               </div>
             </Card>
+            </div>
           ))}
         </div>
       )}

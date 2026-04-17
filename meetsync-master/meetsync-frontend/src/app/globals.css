@@ -20,6 +20,10 @@
     --accent-hover:    #5B35E8;
     --accent-glow:     rgba(59, 106, 232, 0.15);
     --accent-cyan:     #0ea5c9;
+    --accent-warm:      #f59e0b;
+    --accent-warm-hover: #d97706;
+    --accent-warm-glow: rgba(245, 158, 11, 0.18);
+    --font-serif: 'DM Serif Display', Georgia, serif;
 
     --text-primary:    #1e1b4b;
     --text-secondary:  #6d6a8a;
@@ -34,22 +38,26 @@
 
   /* ── DARK MODE — activated via [data-theme="dark"] on <html> ── */
   [data-theme="dark"] {
-    --bg:              #080c18;
-    --bg-card:         #0f1628;
-    --bg-card-hover:   #162040;
-    --bg-input:        #0a1020;
-    --bg-deep:         #060911;
+    --bg:              #09090f;
+    --bg-card:         #13131f;
+    --bg-card-hover:   #1a1a2e;
+    --bg-input:        #0d0d18;
+    --bg-deep:         #1a1a2e;
 
-    --border:          #1e2d52;
-    --border-accent:   rgba(91, 53, 232, 0.35);
+    --border:          rgba(139, 92, 246, 0.15);
+    --border-accent:   rgba(91, 53, 232, 0.40);
 
-    --gradient-bg:     linear-gradient(135deg, #080c18 0%, #0d1535 100%);
+    --gradient-bg:     linear-gradient(135deg, #09090f 0%, #0d1535 100%);
     --gradient-glow:   radial-gradient(circle, rgba(59, 106, 232, 0.35), transparent 70%);
 
     --accent:          #3B6AE8;
     --accent-hover:    #5B35E8;
     --accent-glow:     rgba(59, 106, 232, 0.25);
     --accent-cyan:     #38BFFF;
+    --accent-warm:     #f59e0b;
+    --accent-warm-hover: #d97706;
+    --accent-warm-glow: rgba(245, 158, 11, 0.22);
+    --font-serif:      'DM Serif Display', Georgia, serif;
 
     --text-primary:    #e8edf8;
     --text-secondary:  #7b8db8;
@@ -58,8 +66,8 @@
     --warning: #f59e0b;
     --danger:  #ef4444;
 
-    --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.4);
-    --shadow-card-hover: 0 4px 16px 0 rgba(59, 106, 232, 0.18);
+    --shadow-card: 0 0 0 1px rgba(139, 92, 246, 0.12), 0 4px 16px rgba(0, 0, 0, 0.5);
+    --shadow-card-hover: 0 0 0 1px rgba(139, 92, 246, 0.2), 0 8px 24px rgba(59, 106, 232, 0.18);
   }
 
   * { box-sizing: border-box; }
@@ -71,6 +79,11 @@
     font-family: var(--font-inter), 'Segoe UI', system-ui, sans-serif;
     min-height: 100vh;
     transition: background 0.2s ease, color 0.2s ease;
+  }
+
+  h1, h2 {
+    font-family: var(--font-serif);
+    letter-spacing: -0.03em;
   }
 
   a { color: var(--accent); text-decoration: none; }
@@ -108,6 +121,13 @@
   }
   [data-theme="dark"] .glow-brand-sm {
     box-shadow: 0 4px 24px 0 rgba(59, 106, 232, 0.28);
+  }
+  .bg-warm-gradient {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+  }
+  .glow-warm {
+    box-shadow: 0 4px 24px 0 var(--accent-warm-glow);
   }
   /* Card hover — only transform/opacity are GPU-composited (no box-shadow/border-color jank) */
   .card-glow-hover {
