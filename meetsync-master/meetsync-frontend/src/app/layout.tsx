@@ -100,6 +100,13 @@ const jsonLd = [
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${inter.variable} ${dmSerif.variable}`}>
+      <head>
+        <script
+          defer
+          src="https://cloud.umami.is/script.js"
+          data-website-id="0cc2c9e9-76df-43ab-a328-e9f602ebb430"
+        />
+      </head>
       <body>
         <script
           type="application/ld+json"
