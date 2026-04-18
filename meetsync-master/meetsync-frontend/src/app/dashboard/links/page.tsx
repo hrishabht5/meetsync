@@ -230,7 +230,7 @@ function OneTimeLinksTab() {
     }
     setCreating(true);
     try {
-      await api.links.create({
+      const newLink = await api.links.create({
         event_type: eventType,
         expires_in: expires,
         custom_fields: customFields.length > 0 ? customFields : undefined,
@@ -241,8 +241,15 @@ function OneTimeLinksTab() {
         accent_color: createCustomize.accent_color || undefined,
       });
       setMeetingTitle("");
-      // Keep customFields + customization — pre-filled for next link
+      // Close modal and refresh list
+      setShowCreateModal(false);
       fetchPage(1, search, statusFilter, false);
+      // Auto-copy the booking URL to clipboard
+      if (newLink?.booking_url) {
+        navigator.clipboard.writeText(newLink.booking_url).catch(() => {});
+        setCopied(newLink.id);
+        setTimeout(() => setCopied(null), 3000);
+      }
     } catch (e: unknown) { alert(errMsg(e)); }
     finally { setCreating(false); }
   };
