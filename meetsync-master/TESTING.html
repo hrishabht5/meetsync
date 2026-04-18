@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DraftMeet — Manual Test Plan</title>
+<style>
+  :root {
+    --blue: #1d4ed8;
+    --blue-light: #dbeafe;
+    --blue-bg: #eff6ff;
+    --green: #15803d;
+    --green-bg: #dcfce7;
+    --red: #b91c1c;
+    --red-bg: #fee2e2;
+    --yellow-bg: #fefce8;
+    --gray: #6b7280;
+    --border: #e5e7eb;
+    --text: #111827;
+    --text-muted: #6b7280;
+    --bg: #ffffff;
+    --bg-alt: #f9fafb;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; font-size: 14px; color: var(--text); background: var(--bg); line-height: 1.6; }
+
+  /* ── Layout ── */
+  .sidebar { position: fixed; top: 0; left: 0; width: 220px; height: 100vh; overflow-y: auto; background: #1e293b; color: #cbd5e1; padding: 20px 0; font-size: 13px; z-index: 10; }
+  .sidebar h2 { color: #fff; font-size: 13px; font-weight: 700; padding: 0 16px 10px; border-bottom: 1px solid #334155; margin-bottom: 10px; }
+  .sidebar a { display: block; padding: 5px 16px; color: #94a3b8; text-decoration: none; transition: all .15s; border-left: 3px solid transparent; }
+  .sidebar a:hover, .sidebar a.active { background: #334155; color: #fff; border-left-color: #3b82f6; }
+  .main { margin-left: 220px; padding: 32px 40px 80px; max-width: 1000px; }
+
+  /* ── Cover ── */
+  .cover { background: linear-gradient(135deg, #1d4ed8 0%, #0f172a 100%); color: #fff; padding: 40px 36px; border-radius: 12px; margin-bottom: 36px; }
+  .cover h1 { font-size: 26px; font-weight: 800; margin-bottom: 6px; letter-spacing: -.5px; }
+  .cover .sub { font-size: 14px; color: #bfdbfe; }
+  .cover .meta { margin-top: 16px; font-size: 12px; color: #93c5fd; display: flex; gap: 20px; flex-wrap: wrap; }
+  .cover .badge { background: rgba(255,255,255,.15); padding: 3px 10px; border-radius: 20px; font-size: 12px; }
+
+  /* ── How to use ── */
+  .howto { background: var(--blue-bg); border: 1px solid #bfdbfe; border-radius: 8px; padding: 14px 18px; margin-bottom: 28px; font-size: 13px; color: #1e40af; }
+  .howto strong { color: var(--blue); }
+
+  /* ── Preflight ── */
+  .preflight { background: var(--bg-alt); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin-bottom: 28px; }
+  .preflight h3 { font-size: 13px; font-weight: 700; margin-bottom: 10px; color: var(--text); }
+  .preflight ul { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .preflight li { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; }
+  .preflight li::before { content: "☐"; font-size: 15px; color: var(--blue); flex-shrink: 0; line-height: 1.3; }
+  .preflight code { background: #e5e7eb; padding: 1px 5px; border-radius: 3px; font-size: 12px; font-family: monospace; }
+
+  /* ── Section headings ── */
+  .section { margin-bottom: 36px; }
+  .section-title { font-size: 17px; font-weight: 800; color: var(--blue); border-bottom: 2px solid var(--blue-light); padding-bottom: 6px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .section-title .num { background: var(--blue); color: #fff; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+  .subsection { margin-bottom: 20px; }
+  .subsection-title { font-size: 13px; font-weight: 700; color: #374151; margin-bottom: 10px; padding: 4px 0 4px 10px; border-left: 3px solid var(--blue-light); }
+
+  /* ── Note blockquote ── */
+  .note { background: #fffbeb; border-left: 3px solid #f59e0b; padding: 8px 14px; border-radius: 0 6px 6px 0; font-size: 12.5px; color: #92400e; margin-bottom: 10px; }
+
+  /* ── Tables ── */
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-bottom: 4px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+  thead th { background: var(--blue); color: #fff; padding: 8px 10px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; white-space: nowrap; }
+  tbody td { padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:nth-child(even) td { background: var(--bg-alt); }
+  tbody tr:hover td { background: var(--blue-bg); }
+  td:first-child { font-weight: 700; color: var(--blue); width: 32px; text-align: center; }
+  td:nth-child(2) { width: 36%; }
+  td:nth-child(3) { width: 30%; color: var(--text-muted); }
+  td:nth-child(4) { width: 80px; text-align: center; }
+  td:nth-child(5) { color: var(--text-muted); font-size: 11.5px; }
+
+  /* Result column styling */
+  td:nth-child(4) { font-size: 16px; }
+
+  /* ── Code inline ── */
+  code { font-family: "Consolas","Courier New",monospace; background: #f3f4f6; padding: 1px 5px; border-radius: 3px; font-size: 11.5px; color: #dc2626; }
+  pre { background: #1e293b; color: #e2e8f0; padding: 14px 16px; border-radius: 8px; overflow-x: auto; font-size: 12px; font-family: monospace; margin: 4px 0 16px; line-height: 1.7; }
+  pre code { background: none; color: inherit; padding: 0; font-size: 12px; }
+
+  /* ── Log table ── */
+  .log-table thead th { background: #374151; }
+  .log-table td:first-child { width: auto; color: var(--text); font-weight: 400; text-align: left; }
+
+  /* ── Issue template ── */
+  .issue-template { background: var(--bg-alt); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; }
+  .issue-template h3 { font-size: 13px; font-weight: 700; margin-bottom: 10px; }
+
+  /* ── Stats bar ── */
+  .stats-bar { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 28px; }
+  .stat-card { background: var(--bg-alt); border: 1px solid var(--border); border-radius: 8px; padding: 12px 18px; flex: 1; min-width: 100px; text-align: center; }
+  .stat-card .num { font-size: 24px; font-weight: 800; color: var(--blue); }
+  .stat-card .label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  /* ── Print ── */
+  @media print {
+    .sidebar { display: none; }
+    .main { margin-left: 0; padding: 20px; }
+    table { page-break-inside: avoid; }
+    .section { page-break-inside: avoid; }
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 700px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; padding: 16px; }
+  }
+
+  /* ── Scrollbar ── */
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: #475569; border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<nav class="sidebar">
+  <h2>DraftMeet Tests</h2>
+  <a href="#preflight">☑ Pre-flight</a>
+  <a href="#s1">1 — Auth</a>
+  <a href="#s2">2 — One-Time Links</a>
+  <a href="#s3">3 — Permanent Links</a>
+  <a href="#s4">4 — Guest Booking (OTL)</a>
+  <a href="#s5">5 — Guest Booking (Perm)</a>
+  <a href="#s6">6 — Bookings Dashboard</a>
+  <a href="#s7">7 — Guest Manage Page</a>
+  <a href="#s8">8 — Availability</a>
+  <a href="#s9">9 — Profile</a>
+  <a href="#s10">10 — Settings</a>
+  <a href="#s11">11 — Webhooks</a>
+  <a href="#s12">12 — API Keys</a>
+  <a href="#s13">13 — Analytics</a>
+  <a href="#s14">14 — Admin Dashboard</a>
+  <a href="#s15">15 — Public Profile</a>
+  <a href="#s16">16 — Custom Domain</a>
+  <a href="#s17">17 — Embedding</a>
+  <a href="#s18">18 — UI / UX</a>
+  <a href="#s19">19 — Edge Cases</a>
+  <a href="#log">Test Run Log</a>
+  <a href="#issue">Issue Template</a>
+</nav>
+
+<!-- Main content -->
+<div class="main">
+
+  <!-- Cover -->
+  <div class="cover">
+    <h1>DraftMeet — Manual Test Plan</h1>
+    <div class="sub">Complete feature-by-feature testing guide for QA</div>
+    <div class="meta">
+      <span class="badge">193 test cases</span>
+      <span class="badge">19 sections</span>
+      <span class="badge">Generated 2026-04-18</span>
+    </div>
+  </div>
+
+  <!-- How to use -->
+  <div class="howto">
+    <strong>How to use:</strong> Work through each section in order.
+    Mark each test <strong>✅ Pass</strong>, <strong>❌ Fail</strong>, or <strong>⏭ Skip</strong> in the Result column.
+    For failures, note what happened in the Notes column.
+    Reset test data between full runs by creating a fresh test account where indicated.
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-bar">
+    <div class="stat-card"><div class="num">193</div><div class="label">Total Tests</div></div>
+    <div class="stat-card"><div class="num">19</div><div class="label">Sections</div></div>
+    <div class="stat-card"><div class="num">14</div><div class="label">Core Flows</div></div>
+    <div class="stat-card"><div class="num">5</div><div class="label">Edge / UX</div></div>
+  </div>
+
+  <!-- Pre-flight -->
+  <div id="preflight" class="preflight">
+    <h3>☑ Pre-flight checklist</h3>
+    <ul>
+      <li>App running at <code>https://draftmeet.com</code> (or local <code>http://localhost:3000</code>)</li>
+      <li>Backend running at <code>https://api.draftmeet.com</code> (or local <code>http://localhost:8000</code>)</li>
+      <li>Have two email addresses ready (host account + guest for booking)</li>
+      <li>Have a Google account available for OAuth testing</li>
+      <li>Set <code>ADMIN_EMAIL</code> to your email in the backend env vars</li>
+    </ul>
+  </div>
+
+  <!-- ── Section 1: Auth ── -->
+  <div id="s1" class="section">
+    <div class="section-title"><span class="num">1</span> Authentication</div>
+
+    <div class="subsection">
+      <div class="subsection-title">1.1 Sign up with email / password</div>
+      <table>
+        <thead><tr><th>#</th><th>Step</th><th>Expected Result</th><th>Result</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Go to <code>/login</code></td><td>Login page loads — Google button + Log In / Sign Up tabs</td><td></td><td></td></tr>
+          <tr><td>2</td><td>Click "Sign Up" tab</td><td>Form shows Email + Password fields</td><td></td><td></td></tr>
+          <tr><td>3</td><td>Enter valid email + password &lt;8 chars, click "Create Account"</td><td>Error: password too short</td><td></td><td></td></tr>
+          <tr><td>4</td><td>Enter valid email + password ≥8 chars, click "Create Account"</td><td>Redirects to <code>/dashboard</code></td><td></td><td></td></tr>
+          <tr><td>5</td><td>Log out, return to <code>/login</code>, enter same email + wrong password</td><td>Error: invalid credentials</td><td></td><td></td></tr>
+          <tr><td>6</td><td>Enter correct credentials, click "Log In"</td><td>Redirects to <code>/dashboard</code></td><td></td><td></td></tr>
+          <tr><td>7</td><td>Try to sign up with the same email again</td><td>Error: email already registered</td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">1.2 Google OAuth</div>
+      <table>
+        <thead><tr><th>#</th><th>Step</th><th>Expected Result</th><th>Result</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>8</td><td>Click "Continue with Google"</td><td>Redirected to Google consent screen</td><td></td><td></td></tr>
+          <tr><td>9</td><td>Complete Google sign-in</td><td>Redirected to <code>/dashboard</code>, account created</td><td></td><td></td></tr>
+          <tr><td>10</td><td>Go to <code>/dashboard/settings</code>, click "Connect Google Calendar"</td><td>Google consent screen (calendar scopes)</td><td></td><td></td></tr>
+          <tr><td>11</td><td>Grant calendar access</td><td>Redirected back, "Connected" status shown</td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">1.3 Session &amp; logout</div>
+      <table>
+        <thead><tr><th>#</th><th>Step</th><th>Expected Result</th><th>Result</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>12</td><td>While logged in, open <code>/login</code></td><td>Redirected to <code>/dashboard</code></td><td></td><td></td></tr>
+          <tr><td>13</td><td>Click "Logout" in sidebar</td><td>Redirected to <code>/</code>, session cleared</td><td></td><td></td></tr>
+          <tr><td>14</td><td>Try to access <code>/dashboard</code> after logout</td><td>Redirected to <code>/</code></td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Section 2: OTL ── -->
+  <div id="s2" class="section">
+    <div class="section-title"><span class="num">2</span> One-Time Links (OTL)</div>
+
+    <div class="subsection">
+      <div class="subsection-title">2.1 Creating links</div>
+      <table>
+        <thead><tr><th>#</th><th>Step</th><th>Expected Result</th><th>Result</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>15</td><td>Go to <code>/dashboard/links</code>, One-Time tab</td><td>Page loads, list empty or shows existing links</td><td></td><td></td></tr>
+          <tr><td>16</td><td>Click "+ New Link"</td><td>Modal opens with create form</td><td></td><td></td></tr>
+          <tr><td>17</td><td>Click backdrop or ✕ button</td><td>Modal closes, no link created</td><td></td><td></td></tr>
+          <tr><td>18</td><td>Open modal, leave all defaults, click "Generate Link"</td><td>New <code>active</code> link appears at top of list</td><td></td><td></td></tr>
+          <tr><td>19</td><td>Open modal, enter Meeting Title, pick "60-min 1:1", expires "24 hours", click "Generate Link"</td><td>Link created with correct type and expiry</td><td></td><td></td></tr>
+          <tr><td>20</td><td>Open modal, expand "▸ Add Custom Questions", click "+ Add Question"</td><td>New question row appears</td><td></td><td></td></tr>
+          <tr><td>21</td><td>Add a Dropdown question, click "+ Add Option" twice, add text, click "Generate Link"</td><td>Link created; dropdown options visible on booking page</td><td></td><td></td></tr>
+          <tr><td>22</td><td>Open modal, expand "▸ Set Page Customization", enter Description, click "Generate Link"</td><td>Link created with description</td><td></td><td></td></tr>
+          <tr><td>23</td><td>Open modal again</td><td>Description pre-filled from localStorage</td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">2.2 Link list actions (⋮ menu)</div>
+      <table>
+        <thead><tr><th>#</th><th>Step</th><th>Expected Result</th><th>Result</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>24</td><td>Click ⋮ on an active link</td><td>Dropdown: Copy URL, Embed Code, Customize, Revoke</td><td></td><td></td></tr>
+          <tr><td>25</td><td>Click "Copy URL"</td><td>Clipboard contains <code>https://draftmeet.com/book/lnk_...</code></td><td></td><td></td></tr>
+          <tr><td>26</td><td>Click ⋮ → "Embed Code"</td><td>Embed panel expands with <code>&lt;script&gt;</code> snippet</td><td></td><td></td></tr>
+          <tr><td>27</td><td>Click "Copy snippet" inside embed panel</td><td>Clipboard contains script tag</td><td></td><td></td></tr>
+          <tr><td>28</td><td>Click ⋮ → "Customize"</td><td>Customize panel expands, form pre-filled</td><td></td><td></td></tr>
+          <tr><td>29</td><td>Change accent color, click "Save"</td><td>Panel closes; color updated</td><td></td><td></td></tr>
+          <tr><td>30</td><td>Click ⋮ → "Revoke"</td><td>Confirm dialog appears</td><td></td><td></td></tr>
+          <tr><td>31</td><td>Confirm revoke</td><td>Status changes to <code>revoked</code>; ⋮ menu shows "Delete"</td><td></td><td></td></tr>
+          <tr><td>32</td><td>Click ⋮ → "Delete" on a non-active link</td><td>Confirm dialog, then link removed from list</td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">2.3 Search and filters</div>
+      <table>
+        <thead><tr><th>#</th><th>Step</th><th>Expected Result</th><th>Result</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>33</td><td>Type in search bar</td><td>List filters in real-time (debounced)</td><td></td><td></td></tr>
+          <tr><td>34</td><td>Select "Active" from status dropdown</td><td>Only active links shown</td><td></td><td></td></tr>
+          <tr><td>35</td><td>Select "Revoked"</td><td>Only revoked links shown</td><td></td><td></td></tr>
+          <tr><td>36</td><td>Search for a link ID snippet while status filtered</td><td>Shows matching link if status matches</td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">2.4 Bulk actions</div>
+      <table>
+        <thead><tr><th>#</th><th>Step</th><th>Expected Result</th><th>Result</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>37</td><td>Check two active links</td><td>Bottom bar: "2 selected" with Revoke / Delete buttons</td><td></td><td></td></tr>
+          <tr><td>38</td><td>Click "Revoke Selected"</td><td>Both links change to <code>revoked</code></td><td></td><td></td></tr>
+          <tr><td>39</td><td>Click "Clear"</td><td>Selection cleared, bottom bar disappears</td><td></td><td></td></tr>
+          <tr><td>40</td><td>Check "Select all" checkbox at top</td><td>All visible links selected</td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Section 3: Permanent Links ── -->
+  <div id="s3" class="section">
+    <div class="section-title"><span class="num">3</span> Permanent Links</div>
+
+    <div class="subsection">
+      <div class="subsection-title">3.1 Creating permanent links</div>
+      <table>
+        <thead><tr><th>#</th><th>Step</th><th>Expected Result</th><th>Result</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>41</td><td>Switch to "Permanent" tab</td><td>Permanent links list loads</td><td></td><td></td></tr>
+          <tr><td>42</td><td>Click "+ New Permanent Link"</td><td>Modal opens</td><td></td><td></td></tr>
+          <tr><td>43</td><td>Leave Slug empty, click "Create Link"</td><td>Button stays disabled</td><td></td><td></td></tr>
+          <tr><td>44</td><td>Enter slug "test-meeting", pick type, click "Create Link"</td><td>Link created at <code>@username/test-meeting</code></td><td></td><td></td></tr>
+          <tr><td>45</td><td>Try to create another link with same slug "test-meeting"</td><td>Error: slug already taken</td><td></td><td></td></tr>
+          <tr><td>46</td><td>Create link "my-intro" + Custom Questions + Customization</td><td>Link created with all data</td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">3.2 Permanent link actions</div>
+      <table>
+        <thead><tr><th>#</th><th>Step</th><th>Expected Result</th><th>Result</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>47</td><td>Click ⋮ → "Copy Link" on active link</td><td>Clipboard: <code>https://draftmeet.com/u/{username}/{slug}</code></td><td></td><td></td></tr>
+          <tr><td>48</td><td>Click ⋮ → "Pause"</td><td>Status badge → "Paused"; menu shows "Resume"</td><td></td><td></td></tr>
+          <tr><td>49</td><td>Click ⋮ → "Resume"</td><td>Status back to "Active"</td><td></td><td></td></tr>
+          <tr><td>50</td><td>Click ⋮ → "Delete"</td><td>Confirm dialog, link removed</td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Section 4: Guest Booking OTL ── -->
+  <div id="s4" class="section">
+    <div class="section-title"><span class="num">4</span> Guest Booking Flow — One-Time Link</div>
+    <div class="note">Use a link created in Section 2. Open in incognito / a different browser to avoid session conflicts.</div>
+
+    <div class="subsection">
+      <div class="subsection-title">4.1 Normal booking flow</div>
+      <table>
+        <thead><tr><th>#</th><th>Step</th><th>Expected Result</th><th>Result</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>51</td><td>Open <code>draftmeet.com/book/[active-token]</code></td><td>Loading spinner → date picker shown</td><td></td><td></td></tr>
+          <tr><td>52</td><td>Click a working day on the calendar</td><td>Slots appear in 3-column grid</td><td></td><td></td></tr>
+          <tr><td>53</td><td>Click a time slot</td><td>Form appears with Name, Email, Notes fields</td><td></td><td></td></tr>
+          <tr><td>54</td><td>Click "← Change time"</td><td>Back to slot picker</td><td></td><td></td></tr>
+          <tr><td>55</td><td>Fill Name + Email, click "Confirm Booking" without checking consent</td><td>Error: must agree to Terms</td><td></td><td></td></tr>
+          <tr><td>56</td><td>Check consent, click "Confirm Booking"</td><td>🎉 "Booking Confirmed!" success screen</td><td></td><td></td></tr>
+          <tr><td>57</td><td>If calendar connected: check for Meet button</td><td>"🎥 Join Google Meet" button visible and works</td><td></td><td></td></tr>
+          <tr><td>58</td><td>Check host's <code>/dashboard</code></td><td>Booking appears with correct guest + time</td><td></td><td></td></tr>
+          <tr><td>59</td><td>Check guest's email (if Resend configured)</td><td>Confirmation email received</td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">4.2 Error states</div>
+      <table>
+        <thead><tr><th>#</th><th>Step</th><th>Expected Result</th><th>Result</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>60</td><td>Open a revoked / used link</td><td>"Link Unavailable" error with 🔒 icon</td><td></td><td></td></tr>
+          <tr><td>61</td><td>Visit non-existent token <code>/book/fake123</code></td><td>"Link Unavailable"</td><td></td><td></td></tr>
+          <tr><td>62</td><td>Select a day with no available slots</td><td>"No available slots on this day."</td><td></td><td></td></tr>
+          <tr><td>63</td><td>Submit without filling Name</td><td>Validation error on Name field</td><td></td><td></td></tr>
+          <tr><td>64</td><td>Submit without filling Email</td><td>Validation error on Email field</td><td></td><td></td></tr>
+          <tr><td>65</td><td>Leave required custom question empty, submit</td><td>Validation error for that field</td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">4.3 Custom fields on booking page</div>
+      <table>
+        <thead><tr><th>#</th><th>Step</th><th>Expected Result</th><th>Result</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>66</td><td>Use link with a required Text question</td><td>Question appears with asterisk (*)</td><td></td><td></td></tr>
+          <tr><td>67</td><td>Submit without filling required question</td><td>Validation error</td><td></td><td></td></tr>
+          <tr><td>68</td><td>Fill question and submit</td><td>Booking created; answer visible in host's booking detail</td><td></td><td></td></tr>
+          <tr><td>69</td><td>Use link with a Dropdown question</td><td>Dropdown appears with all options</td><td></td><td></td></tr>
+          <tr><td>70</td><td>Use link with Long Text (textarea) question</td><td>Textarea with multiple rows appears</td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Section 5: Guest Booking Permanent ── -->
+  <div id="s5" class="section">
+    <div class="section-title"><span class="num">5</span> Guest Booking Flow — Permanent Link</div>
+    <div class="note">Use a permanent link from Section 3.</div>
+    <table>
+      <thead><tr><th>#</th><th>Step</th><th>Expected Result</th><th>Result</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>71</td><td>Open <code>draftmeet.com/u/{username}/{slug}</code></td><td>"@username" at top, same booking flow</td><td></td><td></td></tr>
+        <tr><td>72</td><td>Complete a booking</td><td>Success screen, same as OTL</td><td></td><td></td></tr>
+        <tr><td>73</td><td>Visit the same URL again</td><td>Booking form loads again (link is reusable)</td><td></td><td></td></tr>
+        <tr><td>74</td><td>Open a paused permanent link</td><td>"Link Unavailable" error</td><td></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Section 6: Bookings Dashboard ── -->
+  <div id="s6" class="section">
+    <div class="section-title"><span class="num">6</span> Bookings Dashboard</div>
+    <table>
+      <thead><tr><th>#</th><th>Step</th><th>Expected Result</th><th>Result</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>75</td><td>Go to <code>/dashboard</code></td><td>All bookings listed, max 20 shown</td><td></td><td></td></tr>
+        <tr><td>76</td><td>If &gt;20 bookings: "Load More (N remaining)" button visible</td><td>Click loads 20 more</td><td></td><td></td></tr>
+        <tr><td>77</td><td>Click "Confirmed" filter</td><td>Only confirmed bookings shown</td><td></td><td></td></tr>
+        <tr><td>78</td><td>Click "Cancelled" filter</td><td>Only cancelled bookings shown</td><td></td><td></td></tr>
+        <tr><td>79</td><td>Click "All"</td><td>All bookings shown</td><td></td><td></td></tr>
+        <tr><td>80</td><td>Click "↓ Export CSV"</td><td>CSV file downloads</td><td></td><td></td></tr>
+        <tr><td>81</td><td>Click "Reschedule" on an upcoming booking</td><td>Reschedule modal opens</td><td></td><td></td></tr>
+        <tr><td>82</td><td>Pick a new date + time, confirm</td><td>Booking updated, new time shown in list</td><td></td><td></td></tr>
+        <tr><td>83</td><td>Click "Cancel" on an upcoming booking</td><td>Confirm dialog; status changes to "cancelled"</td><td></td><td></td></tr>
+        <tr><td>84</td><td>For a past booking: "Record outcome →" link visible</td><td>Click opens outcome recorder</td><td></td><td></td></tr>
+        <tr><td>85</td><td>Select "Completed"</td><td>Outcome buttons highlighted</td><td></td><td></td></tr>
+        <tr><td>86</td><td>Enter notes, click "Save Outcome"</td><td>Badge shows "completed"; notes displayed</td><td></td><td></td></tr>
+        <tr><td>87</td><td>Click ✕ on outcome recorder (without saving)</td><td>Form collapses, no outcome saved</td><td></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Section 7: Manage Page ── -->
+  <div id="s7" class="section">
+    <div class="section-title"><span class="num">7</span> Guest Management Page</div>
+    <div class="note">Use the management link from a confirmation email or <code>/manage/{token}</code>.</div>
+    <table>
+      <thead><tr><th>#</th><th>Step</th><th>Expected Result</th><th>Result</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>88</td><td>Open <code>/manage/{valid-token}</code></td><td>Booking details: name, email, date, status, Meet link</td><td></td><td></td></tr>
+        <tr><td>89</td><td>Open <code>/manage/invalid-token</code></td><td>"Booking Not Found" error</td><td></td><td></td></tr>
+        <tr><td>90</td><td>Click "✕ Cancel" on upcoming booking</td><td>Confirm dialog appears</td><td></td><td></td></tr>
+        <tr><td>91</td><td>Confirm cancel</td><td>"Booking Cancelled" screen; host list shows "cancelled"</td><td></td><td></td></tr>
+        <tr><td>92</td><td>Revisit same management link</td><td>Shows as cancelled, no action buttons</td><td></td><td></td></tr>
+        <tr><td>93</td><td>Open a different booking's management link</td><td>Reschedule flow available</td><td></td><td></td></tr>
+        <tr><td>94</td><td>Click "🔄 Reschedule", pick new date/time, confirm</td><td>"Booking Rescheduled!" screen; host list updated</td><td></td><td></td></tr>
+        <tr><td>95</td><td>Open management link for a past booking</td><td>Buttons gone; "This booking has already passed" notice</td><td></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Section 8: Availability ── -->
+  <div id="s8" class="section">
+    <div class="section-title"><span class="num">8</span> Availability Settings</div>
+    <table>
+      <thead><tr><th>#</th><th>Step</th><th>Expected Result</th><th>Result</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>96</td><td>Go to <code>/dashboard/availability</code></td><td>Current settings shown</td><td></td><td></td></tr>
+        <tr><td>97</td><td>Uncheck Monday, click "Save Settings"</td><td>"✓ Saved!"; Monday removed from working days</td><td></td><td></td></tr>
+        <tr><td>98</td><td>Check guest booking page for next Monday</td><td>No slots available for Monday</td><td></td><td></td></tr>
+        <tr><td>99</td><td>Re-enable Monday</td><td>Slots available again</td><td></td><td></td></tr>
+        <tr><td>100</td><td>Add custom time "11:15", click "Add"</td><td>"11:15" appears in shifts list, sorted</td><td></td><td></td></tr>
+        <tr><td>101</td><td>Remove a shift by clicking ×</td><td>Shift removed from list</td><td></td><td></td></tr>
+        <tr><td>102</td><td>Change Buffer Between Meetings to "15", save</td><td>Slots 15 min apart now blocked</td><td></td><td></td></tr>
+        <tr><td>103</td><td>Set Minimum Notice to "24h", save</td><td>Slots within next 24 hours not shown on booking page</td><td></td><td></td></tr>
+        <tr><td>104</td><td>Set Max Bookings Per Day to "2", save</td><td>After 2 bookings that day shows "No availability"</td><td></td><td></td></tr>
+        <tr><td>105</td><td>Set a Date Override: block tomorrow</td><td>Tomorrow shows no slots on booking page</td><td></td><td></td></tr>
+        <tr><td>106</td><td>Set a Date Override: custom shifts for a date</td><td>Only those custom shifts appear for that date</td><td></td><td></td></tr>
+        <tr><td>107</td><td>Delete an override</td><td>Slots return to normal for that date</td><td></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Section 9: Profile ── -->
+  <div id="s9" class="section">
+    <div class="section-title"><span class="num">9</span> Profile</div>
+    <table>
+      <thead><tr><th>#</th><th>Step</th><th>Expected Result</th><th>Result</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>108</td><td>Go to <code>/dashboard/profile</code></td><td>Current username, display name, bio shown</td><td></td><td></td></tr>
+        <tr><td>109</td><td>Change display name, click "Save Profile"</td><td>"✓ Saved!"; name updated on public profile</td><td></td><td></td></tr>
+        <tr><td>110</td><td>Try to change username to one already taken</td><td>Error: username already taken</td><td></td><td></td></tr>
+        <tr><td>111</td><td>Change username to a valid unique value</td><td>Username updated; profile URL changes</td><td></td><td></td></tr>
+        <tr><td>112</td><td>Visit <code>draftmeet.com/u/{username}</code></td><td>Public profile: display name, bio, active permanent links</td><td></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Section 10: Settings ── -->
+  <div id="s10" class="section">
+    <div class="section-title"><span class="num">10</span> Settings</div>
+
+    <div class="subsection">
+      <div class="subsection-title">10.1 Google Calendar</div>
+      <table>
+        <thead><tr><th>#</th><th>Step</th><th>Expected Result</th><th>Result</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>113</td><td>If calendar connected: open calendar selector dropdown</td><td>Your Google calendars listed</td><td></td><td></td></tr>
+          <tr><td>114</td><td>Select a different calendar, click "Save"</td><td>"✓ Saved!"; new events go to that calendar</td><td></td><td></td></tr>
+          <tr><td>115</td><td>Click "Disconnect"</td><td>Calendar disconnected; status shows "Not connected"</td><td></td><td></td></tr>
+          <tr><td>116</td><td>Verify new bookings skip calendar when disconnected</td><td>Booking created but no Meet link generated</td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">10.2 Double Booking Prevention</div>
+      <table>
+        <thead><tr><th>#</th><th>Step</th><th>Expected Result</th><th>Result</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>117</td><td>Toggle prevention ON (default), save</td><td>External calendar events block slots</td><td></td><td></td></tr>
+          <tr><td>118</td><td>Create a Google Calendar event at 2pm tomorrow (directly in Google Calendar)</td><td>2pm slot NOT shown on booking page</td><td></td><td></td></tr>
+          <tr><td>119</td><td>Toggle prevention OFF, save</td><td>External events no longer block; 2pm shown</td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">10.3 Custom Domain</div>
+      <table>
+        <thead><tr><th>#</th><th>Step</th><th>Expected Result</th><th>Result</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>120</td><td>Enter domain with "https://" prefix, click "Save"</td><td>Domain saved without prefix</td><td></td><td></td></tr>
+          <tr><td>121</td><td>Enter invalid format (e.g. "not a domain"), click "Save"</td><td>Error: invalid domain format</td><td></td><td></td></tr>
+          <tr><td>122</td><td>Enter a valid domain, click "Save"</td><td>Domain registered; status "Pending DNS"</td><td></td><td></td></tr>
+          <tr><td>123</td><td>Click "Verify" before setting CNAME</td><td>"Not verified yet — check your DNS settings"</td><td></td><td></td></tr>
+          <tr><td>124</td><td>(After CNAME set) click "Verify"</td><td>Status changes to "Verified"</td><td></td><td></td></tr>
+          <tr><td>125</td><td>Visit <code>https://yourcustomdomain.com/coffee-chat</code></td><td>Booking page loads for that permanent link</td><td></td><td></td></tr>
+          <tr><td>126</td><td>Click "Remove"</td><td>Confirm dialog; domain removed</td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Section 11: Webhooks ── -->
+  <div id="s11" class="section">
+    <div class="section-title"><span class="num">11</span> Webhooks</div>
+    <table>
+      <thead><tr><th>#</th><th>Step</th><th>Expected Result</th><th>Result</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>127</td><td>Go to <code>/dashboard/webhooks</code>, Webhooks tab</td><td>"▸ Register Endpoint" collapsed by default</td><td></td><td></td></tr>
+        <tr><td>128</td><td>Click "▸ Register Endpoint"</td><td>Form expands with URL, Secret, Events</td><td></td><td></td></tr>
+        <tr><td>129</td><td>Click "Register" without URL</td><td>Button stays disabled</td><td></td><td></td></tr>
+        <tr><td>130</td><td>Enter valid HTTPS URL, check "booking.created", click "Register"</td><td>Webhook appears in list with "Active" badge</td><td></td><td></td></tr>
+        <tr><td>131</td><td>Webhook with 4+ events: check badge display</td><td>Shows 3 events + "+1 more" pill</td><td></td><td></td></tr>
+        <tr><td>132</td><td>Click "Pause"</td><td>Badge changes to "Paused"</td><td></td><td></td></tr>
+        <tr><td>133</td><td>Click "Resume"</td><td>Badge back to "Active"</td><td></td><td></td></tr>
+        <tr><td>134</td><td>Click "Send Test"</td><td>Alert: "Test event sent to all active endpoints!"</td><td></td><td></td></tr>
+        <tr><td>135</td><td>Click "View Logs"</td><td>Delivery log shows test event: Delivered or Failed</td><td></td><td></td></tr>
+        <tr><td>136</td><td>Click "Delete"</td><td>Confirm dialog; webhook removed</td><td></td><td></td></tr>
+        <tr><td>137</td><td>Create a booking with a webhook registered</td><td>Log shows "booking.created" delivery attempt</td><td></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Section 12: API Keys ── -->
+  <div id="s12" class="section">
+    <div class="section-title"><span class="num">12</span> API Keys</div>
+    <table>
+      <thead><tr><th>#</th><th>Step</th><th>Expected Result</th><th>Result</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>138</td><td>Go to <code>/dashboard/webhooks</code>, API Keys tab</td><td>Key list shown (or empty state)</td><td></td><td></td></tr>
+        <tr><td>139</td><td>Enter key name, click "Generate Key"</td><td>New key shown in monospace — <strong>copy it now</strong></td><td></td><td></td></tr>
+        <tr><td>140</td><td>Dismiss / navigate away — key no longer visible</td><td>Only prefix shown (e.g. <code>sk_...abc</code>)</td><td></td><td></td></tr>
+        <tr><td>141</td><td>Call <code>GET /api/v1/bookings/</code> with <code>Authorization: Bearer &lt;key&gt;</code></td><td>200 OK with your bookings</td><td></td><td></td></tr>
+        <tr><td>142</td><td>Click "Revoke" on the key</td><td>Confirm dialog; key deleted</td><td></td><td></td></tr>
+        <tr><td>143</td><td>Use the revoked key</td><td>401 Unauthorized</td><td></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Section 13: Analytics ── -->
+  <div id="s13" class="section">
+    <div class="section-title"><span class="num">13</span> Analytics</div>
+    <table>
+      <thead><tr><th>#</th><th>Step</th><th>Expected Result</th><th>Result</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>144</td><td>Go to <code>/dashboard/analytics</code></td><td>Stats cards show correct counts</td><td></td><td></td></tr>
+        <tr><td>145</td><td>Click "7d" period</td><td>Chart updates to last 7 days; subtitle changes</td><td></td><td></td></tr>
+        <tr><td>146</td><td>Click "30d"</td><td>Chart shows 30-day range</td><td></td><td></td></tr>
+        <tr><td>147</td><td>Click "90d"</td><td>Chart shows 90-day range</td><td></td><td></td></tr>
+        <tr><td>148</td><td>Check "By Event Type" breakdown</td><td>Percentages sum to 100%</td><td></td><td></td></tr>
+        <tr><td>149</td><td>Check "By Status" breakdown</td><td>Confirmed + Cancelled = Total</td><td></td><td></td></tr>
+        <tr><td>150</td><td>If outcomes recorded: outcome stats cards visible</td><td>Completion rate, no-show rate shown</td><td></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Section 14: Admin ── -->
+  <div id="s14" class="section">
+    <div class="section-title"><span class="num">14</span> Admin Dashboard</div>
+    <div class="note">Must be logged in as the admin account (email matching <code>ADMIN_EMAIL</code> env var).</div>
+
+    <div class="subsection">
+      <div class="subsection-title">14.1 Access control</div>
+      <table>
+        <thead><tr><th>#</th><th>Step</th><th>Expected Result</th><th>Result</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>151</td><td>Logged in as admin, go to <code>/admin</code></td><td>Admin layout loads</td><td></td><td></td></tr>
+          <tr><td>152</td><td>Log in as a non-admin user, go to <code>/admin</code></td><td>Redirected to <code>/dashboard</code></td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">14.2 Overview</div>
+      <table>
+        <thead><tr><th>#</th><th>Step</th><th>Expected Result</th><th>Result</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>153</td><td>Go to <code>/admin</code></td><td>Platform stats: Total Users, Total Bookings, 30-day signup chart</td><td></td><td></td></tr>
+          <tr><td>154</td><td>Verify counts match known data</td><td>Counts correct</td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">14.3 Users &amp; Impersonation</div>
+      <table>
+        <thead><tr><th>#</th><th>Step</th><th>Expected Result</th><th>Result</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>155</td><td>Go to <code>/admin/users</code></td><td>Paginated user table: username, email, booking count, joined date</td><td></td><td></td></tr>
+          <tr><td>156</td><td>Search by partial email</td><td>Table filters to matching users</td><td></td><td></td></tr>
+          <tr><td>157</td><td>Search for non-existent email</td><td>"No users found." empty state</td><td></td><td></td></tr>
+          <tr><td>158</td><td>Click "Next →"</td><td>Next page of users loads</td><td></td><td></td></tr>
+          <tr><td>159</td><td>Click "Impersonate →" on a user</td><td>Redirected to <code>/dashboard</code> as that user</td><td></td><td></td></tr>
+          <tr><td>160</td><td>Verify impersonation banner at top</td><td>Yellow banner: "Admin: Impersonating {email}"</td><td></td><td></td></tr>
+          <tr><td>161</td><td>Check booking/link page</td><td>That user's data shown</td><td></td><td></td></tr>
+          <tr><td>162</td><td>Click "Exit →" in banner</td><td>Redirected to <code>/admin/users</code>; banner gone</td><td></td><td></td></tr>
+          <tr><td>163</td><td>Verify admin again (<code>/admin</code> accessible)</td><td>Admin dashboard loads normally</td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">14.4 Waitlist</div>
+      <table>
+        <thead><tr><th>#</th><th>Step</th><th>Expected Result</th><th>Result</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>164</td><td>Go to <code>/admin/waitlist</code></td><td>Table of email + joined date</td><td></td><td></td></tr>
+          <tr><td>165</td><td>Click "Copy all emails"</td><td>Clipboard: newline-separated list of all emails</td><td></td><td></td></tr>
+          <tr><td>166</td><td>"✓ Copied!" shows briefly</td><td>Button reverts after 2 seconds</td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">14.5 Domains</div>
+      <table>
+        <thead><tr><th>#</th><th>Step</th><th>Expected Result</th><th>Result</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>167</td><td>Go to <code>/admin/domains</code></td><td>Table: domain, @owner, Verified/Pending badge, date</td><td></td><td></td></tr>
+          <tr><td>168</td><td>Verified domain shows green badge</td><td>Green "Verified" badge</td><td></td><td></td></tr>
+          <tr><td>169</td><td>Unverified domain shows yellow badge</td><td>Yellow "Pending DNS" badge</td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Section 15: Public Profile ── -->
+  <div id="s15" class="section">
+    <div class="section-title"><span class="num">15</span> Public Profile Page</div>
+    <table>
+      <thead><tr><th>#</th><th>Step</th><th>Expected Result</th><th>Result</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>170</td><td>Go to <code>draftmeet.com/u/{username}</code></td><td>Display name, bio, list of active permanent links</td><td></td><td></td></tr>
+        <tr><td>171</td><td>Check paused links are NOT shown</td><td>Only <code>is_active = true</code> links visible</td><td></td><td></td></tr>
+        <tr><td>172</td><td>Click a link card</td><td>Navigates to booking page</td><td></td><td></td></tr>
+        <tr><td>173</td><td>Visit a non-existent username</td><td>"Page Not Found" error</td><td></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Section 16: Custom Domain ── -->
+  <div id="s16" class="section">
+    <div class="section-title"><span class="num">16</span> Custom Domain Booking</div>
+    <div class="note">Requires a verified custom domain (Section 10.3 complete).</div>
+    <table>
+      <thead><tr><th>#</th><th>Step</th><th>Expected Result</th><th>Result</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>174</td><td>Visit <code>https://yourcustomdomain.com</code></td><td>Profile page for that user loads</td><td></td><td></td></tr>
+        <tr><td>175</td><td>Visit <code>https://yourcustomdomain.com/{slug}</code></td><td>Booking page for that link loads</td><td></td><td></td></tr>
+        <tr><td>176</td><td>Complete a full booking via custom domain</td><td>Booking created; Meet link works</td><td></td><td></td></tr>
+        <tr><td>177</td><td>Visit custom domain with unknown slug</td><td>"Link Unavailable" error</td><td></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Section 17: Embedding ── -->
+  <div id="s17" class="section">
+    <div class="section-title"><span class="num">17</span> Embedding</div>
+    <table>
+      <thead><tr><th>#</th><th>Step</th><th>Expected Result</th><th>Result</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>178</td><td>Copy embed code from ⋮ menu for an OTL</td><td>Code: <code>&lt;script data-token="lnk_..."&gt;</code></td><td></td><td></td></tr>
+        <tr><td>179</td><td>Paste into a plain HTML file and open in browser</td><td>Booking modal appears on the page</td><td></td><td></td></tr>
+        <tr><td>180</td><td>Complete booking in embedded modal</td><td>Booking confirmed; postMessage fires</td><td></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Section 18: UI/UX ── -->
+  <div id="s18" class="section">
+    <div class="section-title"><span class="num">18</span> UI / UX Checks</div>
+    <table>
+      <thead><tr><th>#</th><th>Step</th><th>Expected Result</th><th>Result</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>181</td><td>Toggle dark/light theme in sidebar</td><td>All pages render correctly in both modes</td><td></td><td></td></tr>
+        <tr><td>182</td><td>Resize browser to mobile width (375 px)</td><td>No broken layouts; all content accessible</td><td></td><td></td></tr>
+        <tr><td>183</td><td>Resize to tablet width (768 px)</td><td>Layout adapts cleanly</td><td></td><td></td></tr>
+        <tr><td>184</td><td>Open links page, check scroll depth</td><td>No excessive scroll before first list item</td><td></td><td></td></tr>
+        <tr><td>185</td><td>Open bookings page with 1 booking</td><td>Single card, no unnecessary scroll</td><td></td><td></td></tr>
+        <tr><td>186</td><td>Open webhooks page</td><td>Register form is collapsed by default</td><td></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Section 19: Edge Cases ── -->
+  <div id="s19" class="section">
+    <div class="section-title"><span class="num">19</span> Edge Cases</div>
+    <table>
+      <thead><tr><th>#</th><th>Step</th><th>Expected Result</th><th>Result</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>187</td><td>Open booking page for OTL that has been used</td><td>"Link Unavailable"</td><td></td><td></td></tr>
+        <tr><td>188</td><td>Book same permanent link from two browsers simultaneously</td><td>Both succeed (permanent links allow multiple)</td><td></td><td></td></tr>
+        <tr><td>189</td><td>Book same OTL from two browsers simultaneously</td><td>Only one succeeds; second sees "Link Unavailable"</td><td></td><td></td></tr>
+        <tr><td>190</td><td>Enter emoji in guest Name field</td><td>Booking created with emoji in name</td><td></td><td></td></tr>
+        <tr><td>191</td><td>Enter a 500-char bio in profile</td><td>Saved; truncated on display if needed</td><td></td><td></td></tr>
+        <tr><td>192</td><td>Leave dashboard idle for session timeout, then try an action</td><td>Redirected to login</td><td></td><td></td></tr>
+        <tr><td>193</td><td>Open <code>/dashboard</code> in two tabs; cancel booking in one, refresh the other</td><td>Shows as cancelled in the refreshed tab</td><td></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Test Run Log ── -->
+  <div id="log" class="section">
+    <div class="section-title">Test Run Log</div>
+    <table class="log-table">
+      <thead><tr><th>Date</th><th>Tester</th><th>Environment</th><th>Sections Covered</th><th>Issues Found</th></tr></thead>
+      <tbody>
+        <tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+        <tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+        <tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Issue Template ── -->
+  <div id="issue" class="section">
+    <div class="section-title">Issue Template</div>
+    <div class="issue-template">
+      <h3>When logging a failure, copy this block:</h3>
+      <pre><code>Test #: [number]
+Step: [what you did]
+Expected: [what should happen]
+Actual: [what actually happened]
+Browser: [Chrome / Firefox / Safari + version]
+Screenshot / Recording: [link if available]</code></pre>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Highlight active nav item on scroll
+  const sections = document.querySelectorAll('[id]');
+  const navLinks = document.querySelectorAll('.sidebar a');
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(s => { if (window.scrollY >= s.offsetTop - 80) current = s.id; });
+    navLinks.forEach(a => {
+      a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+    });
+  });
+</script>
+</body>
+</html>
