@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   api,
   OTLRow,
@@ -106,15 +107,46 @@ function FieldBuilder({
 }
 
 // ── Row action menu ───────────────────────────────────────────────────────────
+// Rendered via a portal at document.body so it escapes the card's stacking
+// context (card-glow-hover uses will-change:transform which creates one).
 function RowMenu({
+  anchorRef,
   items,
   onClose,
 }: {
+  anchorRef: React.RefObject<HTMLButtonElement | null>;
   items: { label: string; onClick: () => void; danger?: boolean }[];
   onClose: () => void;
 }) {
-  return (
-    <div className="absolute right-0 top-full mt-1 z-20 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-xl min-w-[150px] py-1">
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 160 });
+
+  useLayoutEffect(() => {
+    if (!anchorRef.current) return;
+    const r = anchorRef.current.getBoundingClientRect();
+    setPos({
+      top: r.bottom + window.scrollY + 4,
+      left: Math.max(8, r.right + window.scrollX - 160),
+      width: 160,
+    });
+  }, [anchorRef]);
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (anchorRef.current && !anchorRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [anchorRef, onClose]);
+
+  return createPortal(
+    <div
+      style={{ position: "absolute", top: pos.top, left: pos.left, width: pos.width, zIndex: 9999 }}
+      className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-xl py-1"
+      onMouseDown={(e) => e.stopPropagation()}
+    >
       {items.map((item) => (
         <button
           key={item.label}
@@ -125,7 +157,8 @@ function RowMenu({
           {item.label}
         </button>
       ))}
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -157,6 +190,7 @@ function OneTimeLinksTab() {
   const [createCustomize, setCreateCustomize] = useState<LinkCustomizationPayload>({});
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const menuBtnRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
 
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -513,13 +547,15 @@ function OneTimeLinksTab() {
                     {lk.event_type}{lk.expires_at ? ` · Expires ${new Date(lk.expires_at).toLocaleDateString()}` : ""}
                   </p>
                 </div>
-                <div className="relative flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                <div className="flex-shrink-0">
                   <button
-                    onClick={() => setMenuOpenId(menuOpenId === lk.id ? null : lk.id)}
+                    ref={(el) => { if (el) menuBtnRefs.current.set(lk.id, el); else menuBtnRefs.current.delete(lk.id); }}
+                    onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === lk.id ? null : lk.id); }}
                     className="px-2 py-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xl leading-none rounded-lg hover:bg-[var(--bg-card-hover)] transition-colors"
                   >⋮</button>
                   {menuOpenId === lk.id && (
                     <RowMenu
+                      anchorRef={{ current: menuBtnRefs.current.get(lk.id) ?? null }}
                       onClose={() => setMenuOpenId(null)}
                       items={[
                         ...(lk.booking_url ? [{ label: copied === lk.id ? "✓ Copied!" : "Copy URL", onClick: () => copyLink(lk.booking_url, lk.id) }] : []),
@@ -709,6 +745,7 @@ function PermanentLinksTab() {
   const [customizeSaving, setCustomizeSaving] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const menuBtnRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
 
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -1046,13 +1083,15 @@ function PermanentLinksTab() {
                     {lk.event_type} · Permanent
                   </p>
                 </div>
-                <div className="relative flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                <div className="flex-shrink-0">
                   <button
-                    onClick={() => setMenuOpenId(menuOpenId === lk.id ? null : lk.id)}
+                    ref={(el) => { if (el) menuBtnRefs.current.set(lk.id, el); else menuBtnRefs.current.delete(lk.id); }}
+                    onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === lk.id ? null : lk.id); }}
                     className="px-2 py-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xl leading-none rounded-lg hover:bg-[var(--bg-card-hover)] transition-colors"
                   >⋮</button>
                   {menuOpenId === lk.id && (
                     <RowMenu
+                      anchorRef={{ current: menuBtnRefs.current.get(lk.id) ?? null }}
                       onClose={() => setMenuOpenId(null)}
                       items={[
                         ...(lk.is_active ? [{ label: copied === lk.id ? "✓ Copied!" : "Copy Link", onClick: () => copyLink(lk.slug, lk.id) }] : []),
