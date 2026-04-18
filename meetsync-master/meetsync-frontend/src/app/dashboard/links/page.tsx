@@ -197,13 +197,27 @@ function OneTimeLinksTab() {
   const fetchPage = async (p: number, s: string, sf: string, append = false) => {
     if (!append) setLoading(true); else setLoadingMore(true);
     try {
-      const res = await api.links.list({ page: p, limit: 10, search: s, status: sf || undefined });
+      const res = await api.links.list({ page: p, limit: 5, search: s, status: sf || undefined });
       setItems((prev) => append ? [...prev, ...res.items] : res.items);
       setTotal(res.total);
       setHasMore(res.has_more);
       setPage(p);
     } catch (e: unknown) { setError(errMsg(e)); }
     finally { if (!append) setLoading(false); else setLoadingMore(false); }
+  };
+
+  const cleanupStaleLinks = async () => {
+    try {
+      const [usedRes, expiredRes] = await Promise.all([
+        api.links.list({ page: 1, limit: 100, status: "used" }),
+        api.links.list({ page: 1, limit: 100, status: "expired" }),
+      ]);
+      const ids = [
+        ...usedRes.items.map((l) => l.id),
+        ...expiredRes.items.map((l) => l.id),
+      ];
+      if (ids.length > 0) await api.links.bulkAction(ids, "delete");
+    } catch { /* silent — cleanup is best-effort */ }
   };
 
   useEffect(() => {
@@ -225,7 +239,7 @@ function OneTimeLinksTab() {
         if (hasAny) setShowCreateCustomize(true);
       }
     } catch { /* ignore */ }
-    fetchPage(1, "", "", false).catch((e: unknown) => setError(errMsg(e)));
+    cleanupStaleLinks().then(() => fetchPage(1, "", "", false)).catch((e: unknown) => setError(errMsg(e)));
   }, []);
 
   // Auto-save questions to localStorage whenever they change
@@ -670,13 +684,6 @@ function OneTimeLinksTab() {
             </Card>
           ))}
 
-          {hasMore && (
-            <div className="flex justify-center pt-2">
-              <Button variant="secondary" onClick={handleLoadMore} loading={loadingMore}>
-                Load More
-              </Button>
-            </div>
-          )}
         </div>
       )}
 
