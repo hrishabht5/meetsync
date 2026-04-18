@@ -204,7 +204,18 @@ async def get_available_slots(
     google_busy = []
     if not allow_double:
         from app.integrations.google_calendar import get_google_busy_times
-        google_busy = await get_google_busy_times(user_id, start_dt_utc, end_dt_utc)
+        # Check both "primary" and the user's preferred calendar so that events
+        # created by external apps on any connected calendar block the slot.
+        token_row = supabase.table("google_tokens") \
+            .select("preferred_calendar_id") \
+            .eq("user_id", user_id) \
+            .execute()
+        cal_ids = ["primary"]
+        if token_row.data and token_row.data[0].get("preferred_calendar_id"):
+            pref = token_row.data[0]["preferred_calendar_id"]
+            if pref and pref != "primary":
+                cal_ids.append(pref)
+        google_busy = await get_google_busy_times(user_id, start_dt_utc, end_dt_utc, cal_ids)
 
     # Remove conflicting slots
     from app.core.schemas import DURATION_MAP

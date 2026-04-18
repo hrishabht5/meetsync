@@ -272,6 +272,15 @@ export const api = {
       }),
   },
 
+  // ── Custom Domains ────────────────────────────────────
+  domains: {
+    get: () => request<CustomDomainRow | null>("/domains/me/"),
+    register: (domain: string) =>
+      request<CustomDomainRow>("/domains/me/", { method: "POST", body: JSON.stringify({ domain }) }),
+    verify: () => request<{ domain: string; verified: boolean }>("/domains/me/verify/", { method: "POST" }),
+    remove: () => request<{ status: string }>("/domains/me/", { method: "DELETE" }),
+  },
+
   // ── Waitlist ──────────────────────────────────────────
   waitlist: {
     join: (email: string) =>
@@ -522,6 +531,16 @@ export interface PermanentLinkCreate {
   cover_image_url?: string | null;
   bg_image_url?: string | null;
   accent_color?: string | null;
+}
+
+// Custom Domains
+export interface CustomDomainRow {
+  id: string;
+  user_id: string;
+  domain: string;
+  verified: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 // API Keys

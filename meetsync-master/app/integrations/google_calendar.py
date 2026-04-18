@@ -161,9 +161,17 @@ async def list_calendars(user_id: str) -> list[dict]:
     ]
 
 
-async def get_google_busy_times(user_id: str, start_dt: datetime, end_dt: datetime, calendar_id: str = "primary") -> list[dict]:
+async def get_google_busy_times(
+    user_id: str,
+    start_dt: datetime,
+    end_dt: datetime,
+    calendar_ids: "list[str] | str" = "primary",
+) -> list[dict]:
     """
     Fetch the user's Free/Busy schedule from Google Calendar.
+    Accepts a single calendar ID string or a list of IDs — deduplicates and
+    queries all of them in one freeBusy request so external-app events on
+    non-primary calendars are included in double-booking checks.
     Returns a list of dicts with 'start' and 'end' datetimes.
     If the user has no Google token, gracefully returns empty list.
     """
@@ -171,17 +179,26 @@ async def get_google_busy_times(user_id: str, start_dt: datetime, end_dt: dateti
     try:
         access_token = await get_valid_access_token(user_id)
     except ValueError:
-        # Google Calendar not connected — can only check internal bookings
         return []
     except Exception as e:
         logging.warning(f"[GCal] get_valid_access_token failed for user {user_id}: {e}")
         return []
 
+    if isinstance(calendar_ids, str):
+        calendar_ids = [calendar_ids]
+    # Deduplicate while preserving order
+    seen: set[str] = set()
+    unique_ids: list[str] = []
+    for cid in calendar_ids:
+        if cid and cid not in seen:
+            seen.add(cid)
+            unique_ids.append(cid)
+
     body = {
         "timeMin": start_dt.isoformat(),
         "timeMax": end_dt.isoformat(),
         "timeZone": "UTC",
-        "items": [{"id": calendar_id}]
+        "items": [{"id": cid} for cid in unique_ids],
     }
 
     async with httpx.AsyncClient(timeout=15.0) as client:
@@ -194,16 +211,18 @@ async def get_google_busy_times(user_id: str, start_dt: datetime, end_dt: dateti
         return []
 
     data = resp.json()
-    busy_list = data.get("calendars", {}).get(calendar_id, {}).get("busy", [])
+    calendars_data = data.get("calendars", {})
     result = []
-    for b in busy_list:
-        start = datetime.fromisoformat(b["start"].replace("Z", "+00:00"))
-        end = datetime.fromisoformat(b["end"].replace("Z", "+00:00"))
-        if start.tzinfo is None:
-            start = start.replace(tzinfo=timezone.utc)
-        if end.tzinfo is None:
-            end = end.replace(tzinfo=timezone.utc)
-        result.append({"start": start, "end": end})
+    for cid in unique_ids:
+        busy_list = calendars_data.get(cid, {}).get("busy", [])
+        for b in busy_list:
+            start = datetime.fromisoformat(b["start"].replace("Z", "+00:00"))
+            end = datetime.fromisoformat(b["end"].replace("Z", "+00:00"))
+            if start.tzinfo is None:
+                start = start.replace(tzinfo=timezone.utc)
+            if end.tzinfo is None:
+                end = end.replace(tzinfo=timezone.utc)
+            result.append({"start": start, "end": end})
     return result
 
 

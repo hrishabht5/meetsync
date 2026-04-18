@@ -36,3 +36,10 @@ if not SECRET_KEY:
 # ── Resend (email) ────────────────────────────────────────
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
 FROM_EMAIL     = os.getenv("FROM_EMAIL", "DraftMeet <notification@draftmeet.com>")
+
+# ── Vercel (custom domains) ───────────────────────────────
+# Required for programmatic domain management. VERCEL_TEAM_ID only needed
+# for team (non-personal) Vercel accounts.
+VERCEL_TOKEN      = os.getenv("VERCEL_TOKEN", "")
+VERCEL_PROJECT_ID = os.getenv("VERCEL_PROJECT_ID", "")
+VERCEL_TEAM_ID    = os.getenv("VERCEL_TEAM_ID", "")

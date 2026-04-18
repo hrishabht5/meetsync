@@ -29,14 +29,40 @@ const PUBLIC_ALLOWED_PREFIXES = [
   "/_vercel",
 ];
 
+// Hostnames that are part of our own infrastructure (not custom user domains)
+const MAIN_HOSTNAMES = new Set([
+  "draftmeet.com",
+  "www.draftmeet.com",
+  "localhost",
+]);
+
+function isOwnHost(hostname: string): boolean {
+  return (
+    MAIN_HOSTNAMES.has(hostname) ||
+    hostname.endsWith(".vercel.app") ||
+    hostname.endsWith(".localhost")
+  );
+}
+
 export function middleware(request: NextRequest) {
   const host = request.headers.get("host") ?? "";
+  const hostname = host.split(":")[0]; // strip port for comparison
   const { pathname } = request.nextUrl;
 
-  // In live mode, allow everything through
+  // ── Custom domain routing ──────────────────────────────────────────────────
+  // If the request arrives on a hostname that is not our own infrastructure,
+  // rewrite it to /cd/[domain]/[...rest] so the custom-domain booking pages
+  // handle the resolution. The browser URL stays as the user's custom domain.
+  if (!isOwnHost(hostname)) {
+    const rest = pathname === "/" ? "" : pathname;
+    const url = request.nextUrl.clone();
+    url.pathname = `/cd/${hostname}${rest}`;
+    return NextResponse.rewrite(url);
+  }
+
+  // ── Launch-mode gate (main domain only) ───────────────────────────────────
   if (LAUNCH_MODE === "live") return NextResponse.next();
 
-  // In waitlist mode, block product routes on the public domain
   const isPublicOnlyHost = PUBLIC_ONLY_HOSTS.some(
     (h) => host === h || host.startsWith(h)
   );

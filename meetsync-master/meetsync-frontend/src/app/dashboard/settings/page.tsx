@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { api, CalendarOption } from "@/lib/api-client";
+import { api, CalendarOption, CustomDomainRow } from "@/lib/api-client";
 import { errMsg } from "@/lib/errors";
 import { Button, Card, SectionHeader, Spinner } from "@/components/ui";
 
@@ -9,6 +9,14 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  // Custom domain state
+  const [domainRow, setDomainRow] = useState<CustomDomainRow | null>(null);
+  const [domainInput, setDomainInput] = useState("");
+  const [domainSaving, setDomainSaving] = useState(false);
+  const [domainVerifying, setDomainVerifying] = useState(false);
+  const [domainRemoving, setDomainRemoving] = useState(false);
+  const [domainMsg, setDomainMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
   // Calendar connection state
   const [calendarConnected, setCalendarConnected] = useState(false);
@@ -28,6 +36,10 @@ export default function SettingsPage() {
         window.history.replaceState({}, "", window.location.pathname);
       }
     }
+
+    api.domains.get()
+      .then((row) => { setDomainRow(row); if (row) setDomainInput(row.domain); })
+      .catch(() => { /* non-fatal */ });
 
     Promise.all([
       api.availability.getSettings(),
@@ -94,6 +106,55 @@ export default function SettingsPage() {
     finally { setCalPrefSaving(false); }
   };
 
+  const handleDomainSave = async () => {
+    if (!domainInput.trim()) return;
+    setDomainSaving(true);
+    setDomainMsg(null);
+    try {
+      const row = await api.domains.register(domainInput.trim());
+      setDomainRow(row);
+      setDomainMsg({ type: "ok", text: "Domain saved. Now point your CNAME and click Verify." });
+    } catch (e: unknown) {
+      setDomainMsg({ type: "err", text: errMsg(e) });
+    } finally {
+      setDomainSaving(false);
+    }
+  };
+
+  const handleDomainVerify = async () => {
+    setDomainVerifying(true);
+    setDomainMsg(null);
+    try {
+      const result = await api.domains.verify();
+      if (result.verified) {
+        setDomainRow((r) => r ? { ...r, verified: true } : r);
+        setDomainMsg({ type: "ok", text: "Domain verified! Your custom booking URL is live." });
+      } else {
+        setDomainMsg({ type: "err", text: "Not verified yet — check your DNS settings and try again." });
+      }
+    } catch (e: unknown) {
+      setDomainMsg({ type: "err", text: errMsg(e) });
+    } finally {
+      setDomainVerifying(false);
+    }
+  };
+
+  const handleDomainRemove = async () => {
+    if (!confirm("Remove custom domain? Guests will no longer be able to use it.")) return;
+    setDomainRemoving(true);
+    setDomainMsg(null);
+    try {
+      await api.domains.remove();
+      setDomainRow(null);
+      setDomainInput("");
+      setDomainMsg({ type: "ok", text: "Custom domain removed." });
+    } catch (e: unknown) {
+      setDomainMsg({ type: "err", text: errMsg(e) });
+    } finally {
+      setDomainRemoving(false);
+    }
+  };
+
   if (loading) return <div className="flex justify-center py-20"><Spinner /></div>;
 
   return (
@@ -101,6 +162,66 @@ export default function SettingsPage() {
       <SectionHeader title="Settings" subtitle="Application-wide preferences" />
 
       <div className="flex flex-col gap-5">
+        {/* Custom Domain */}
+        <Card className="p-6">
+          <p className="text-sm font-semibold text-[var(--text-primary)] mb-1">Custom Domain</p>
+          <p className="text-xs text-[var(--text-secondary)] mb-4">
+            Use your own domain (e.g. <span className="text-[var(--text-primary)]">meet.yourdomain.com</span>) for booking
+            links. Point a <span className="font-medium text-[var(--text-primary)]">CNAME</span> record at{" "}
+            <span className="font-mono text-xs bg-[var(--bg-card-hover)] px-1.5 py-0.5 rounded">cname.vercel-dns.com</span>{" "}
+            then save and verify below.
+          </p>
+
+          <div className="flex items-center gap-3 mb-3">
+            <input
+              type="text"
+              placeholder="meet.yourdomain.com"
+              value={domainInput}
+              onChange={(e) => setDomainInput(e.target.value)}
+              className="flex-1 px-3 py-2 rounded-xl bg-[var(--bg-input)] border border-[var(--border)] text-[var(--text-primary)] text-sm placeholder-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--border-accent)]"
+            />
+            <Button onClick={handleDomainSave} loading={domainSaving} disabled={!domainInput.trim()}>
+              Save
+            </Button>
+          </div>
+
+          {domainRow && (
+            <div className="flex items-center justify-between gap-3 pt-3 border-t border-[var(--border)]">
+              <div className="flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${domainRow.verified ? "bg-green-400" : "bg-yellow-400"}`} />
+                <span className="text-sm text-[var(--text-primary)] font-mono">{domainRow.domain}</span>
+                <span className={`text-xs px-2 py-0.5 rounded-full ${domainRow.verified ? "bg-green-500/15 text-green-400" : "bg-yellow-500/15 text-yellow-400"}`}>
+                  {domainRow.verified ? "Verified" : "Pending DNS"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                {!domainRow.verified && (
+                  <button
+                    onClick={handleDomainVerify}
+                    disabled={domainVerifying}
+                    className="text-xs px-3 py-1.5 rounded-lg ring-1 ring-[var(--border-accent)] text-[var(--accent)] hover:ring-[var(--accent)] transition-all disabled:opacity-50"
+                  >
+                    {domainVerifying ? "Checking…" : "Verify"}
+                  </button>
+                )}
+                <button
+                  onClick={handleDomainRemove}
+                  disabled={domainRemoving}
+                  className="text-xs px-3 py-1.5 rounded-lg ring-1 ring-red-500/40 text-red-400 hover:ring-red-500 hover:text-red-300 transition-all disabled:opacity-50"
+                >
+                  {domainRemoving ? "Removing…" : "Remove"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {domainMsg && (
+            <p className={`text-xs mt-3 ${domainMsg.type === "ok" ? "text-green-400" : "text-red-400"}`}>
+              {domainMsg.text}
+            </p>
+          )}
+        </Card>
+
         {/* Google Calendar */}
         <Card className="p-6">
           <p className="text-sm font-semibold text-[var(--text-primary)] mb-1">Google Calendar</p>
