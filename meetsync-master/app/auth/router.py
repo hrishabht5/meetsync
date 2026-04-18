@@ -28,56 +28,22 @@ import httpx
 from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse
 
-from app.core.config import supabase, FRONTEND_URL
+from app.core.config import supabase, FRONTEND_URL, ADMIN_EMAIL, ADMIN_RESTORE_COOKIE
 from app.core.rate_limit import strict_rate_limit
 from app.core.schemas import SignupRequest, LoginRequest, CalendarPreferenceRequest
 from app.integrations import google_calendar
 from app.auth.middleware import (
     get_current_user_id,
     make_user_session_cookie_value,
+    is_secure as _is_secure,
+    set_session_cookie as _set_session_cookie,
+    clear_session_cookie as _clear_session_cookie,
 )
 
 router = APIRouter()
 
 
-
 # ── Helpers ───────────────────────────────────────────────
-
-def _cookie_domain(secure: bool) -> str | None:
-    # Only set domain in production (HTTPS). On localhost the browser ignores
-    # the domain attribute for non-public suffixes anyway, and a wildcard
-    # domain on prod would allow any subdomain to read the session cookie.
-    return "draftmeet.com" if secure else None
-
-
-def _set_session_cookie(response, user_id: str, secure: bool):
-    samesite = "none" if secure else "lax"
-    response.set_cookie(
-        key="draftmeet_user",
-        value=make_user_session_cookie_value(user_id),
-        httponly=True,
-        secure=secure,
-        samesite=samesite,
-        path="/",
-        domain=_cookie_domain(secure),
-        max_age=60 * 60 * 24 * 30,  # 30 days
-    )
-
-
-def _clear_session_cookie(response, secure: bool):
-    samesite = "none" if secure else "lax"
-    response.delete_cookie(
-        key="draftmeet_user",
-        path="/",
-        secure=secure,
-        samesite=samesite,
-        domain=_cookie_domain(secure),
-    )
-
-
-def _is_secure(request: Request) -> bool:
-    forwarded_proto = request.headers.get("x-forwarded-proto", "").lower().strip()
-    return forwarded_proto == "https" or request.url.scheme == "https"
 
 
 def _upsert_user(user_id: str, email: str, password_hash: str = None):
@@ -268,12 +234,17 @@ def auth_status(request: Request):
     calendar_connected = bool(cal_row.data)
     preferred_calendar_id = cal_row.data[0].get("preferred_calendar_id", "primary") if cal_row.data else None
 
+    is_admin = bool(ADMIN_EMAIL) and bool(email) and email.lower() == ADMIN_EMAIL.lower()
+    is_impersonating = ADMIN_RESTORE_COOKIE in request.cookies
+
     return {
         "connected": True,
         "user_id": user_id,
         "email": email,
         "calendar_connected": calendar_connected,
         "preferred_calendar_id": preferred_calendar_id,
+        "is_admin": is_admin,
+        "is_impersonating": is_impersonating,
     }
 
 

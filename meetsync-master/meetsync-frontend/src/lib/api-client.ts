@@ -297,6 +297,25 @@ export const api = {
     breakdown: () => request<AnalyticsBreakdown>("/analytics/breakdown/"),
     outcomeSummary: () => request<OutcomeSummary>("/bookings/outcomes/summary/"),
   },
+
+  // ── Admin ─────────────────────────────────────────────
+  admin: {
+    stats: () => request<AdminStats>("/admin/stats/"),
+    listUsers: (params?: { search?: string; page?: number; limit?: number }) => {
+      const q = new URLSearchParams();
+      if (params?.search) q.set("search", params.search);
+      if (params?.page) q.set("page", String(params.page));
+      if (params?.limit) q.set("limit", String(params.limit));
+      const qs = q.toString();
+      return request<PaginatedResult<AdminUser>>(`/admin/users/${qs ? `?${qs}` : ""}`);
+    },
+    listWaitlist: () => request<WaitlistEntry[]>("/admin/waitlist/"),
+    listDomains: () => request<AdminDomain[]>("/admin/domains/"),
+    impersonate: (userId: string) =>
+      request<{ status: string }>(`/admin/impersonate/${userId}/`, { method: "POST" }),
+    exitImpersonation: () =>
+      request<{ status: string }>("/admin/impersonate/exit/", { method: "POST" }),
+  },
 };
 
 // ── Types ─────────────────────────────────────────────
@@ -314,6 +333,38 @@ export interface AuthStatus {
   email?: string | null;
   calendar_connected: boolean;
   preferred_calendar_id?: string | null;
+  is_admin?: boolean;
+  is_impersonating?: boolean;
+}
+
+// Admin types
+export interface AdminStats {
+  total_users: number;
+  total_bookings: number;
+  signup_trend: Array<{ date: string; count: number }>;
+}
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  created_at: string;
+  username?: string | null;
+  display_name?: string | null;
+  booking_count: number;
+}
+
+export interface WaitlistEntry {
+  email: string;
+  created_at: string;
+}
+
+export interface AdminDomain {
+  id: string;
+  domain: string;
+  verified: boolean;
+  created_at: string;
+  user_id: string;
+  username?: string | null;
 }
 
 export interface CalendarOption {

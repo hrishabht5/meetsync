@@ -1,10 +1,11 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
-import { api } from "@/lib/api-client";
+import { useEffect, useState } from "react";
+import { api, AuthStatus } from "@/lib/api-client";
 import { ThemeToggle } from "@/components/themeToggle";
 import { useTheme } from "@/components/themeProvider";
+import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 import { Calendar, BarChart2, Link2, User, Clock, Webhook, Settings, LogOut } from "lucide-react";
 
 const nav = [
@@ -20,12 +21,15 @@ const nav = [
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const { theme } = useTheme();
+  const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
 
   useEffect(() => {
     api.auth.status()
       .then((res) => {
         if (!res.connected) {
           window.location.href = "/";
+        } else {
+          setAuthStatus(res);
         }
       })
       .catch(() => {
@@ -91,8 +95,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto">
-        <div className="max-w-4xl mx-auto px-8 py-8">{children}</div>
+      <main className="flex-1 overflow-auto flex flex-col">
+        {authStatus?.is_impersonating && (
+          <ImpersonationBanner email={authStatus.email} />
+        )}
+        <div className="max-w-4xl mx-auto px-8 py-8 w-full">{children}</div>
       </main>
     </div>
   );

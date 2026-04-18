@@ -124,6 +124,7 @@ from app.api.v1.router import api_v1_router
 from app.profiles.router import router as profiles_router
 from app.analytics.router import router as analytics_router
 from app.domains.router import router as domains_router
+from app.admin.router import router as admin_router
 
 app.include_router(auth_router,         prefix="/auth",         tags=["Auth"])
 app.include_router(availability_router, prefix="/availability", tags=["Availability"])
@@ -133,6 +134,7 @@ app.include_router(links_router,        prefix="/links",        tags=["One-Time 
 app.include_router(webhooks_router,     prefix="/webhooks",     tags=["Webhooks"])
 app.include_router(profiles_router,     prefix="/profiles",     tags=["Profiles"])
 app.include_router(domains_router,      prefix="/domains",      tags=["Custom Domains"])
+app.include_router(admin_router,        prefix="/admin",        tags=["Admin"])
 
 # Public API Endpoints
 app.include_router(waitlist_router,     prefix="/waitlist",     tags=["Waitlist"])

@@ -43,3 +43,11 @@ FROM_EMAIL     = os.getenv("FROM_EMAIL", "DraftMeet <notification@draftmeet.com>
 VERCEL_TOKEN      = os.getenv("VERCEL_TOKEN", "")
 VERCEL_PROJECT_ID = os.getenv("VERCEL_PROJECT_ID", "")
 VERCEL_TEAM_ID    = os.getenv("VERCEL_TEAM_ID", "")
+
+# ── Admin ─────────────────────────────────────────────────
+# Email of the single platform admin. Set ADMIN_EMAIL in env to enable the
+# /admin/* routes and grant access to the admin dashboard.
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "")
+
+# Cookie name used to save the admin's original session during impersonation.
+ADMIN_RESTORE_COOKIE = "draftmeet_admin_restore"

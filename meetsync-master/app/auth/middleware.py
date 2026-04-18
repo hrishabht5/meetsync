@@ -75,3 +75,39 @@ def clear_user_session_cookie() -> dict:
         "key": COOKIE_NAME,
         "value": "",
     }
+
+
+# ── Cookie helpers (shared with admin router) ─────────────
+
+def is_secure(request: Request) -> bool:
+    forwarded_proto = request.headers.get("x-forwarded-proto", "").lower().strip()
+    return forwarded_proto == "https" or request.url.scheme == "https"
+
+
+def cookie_domain(secure: bool) -> str | None:
+    return "draftmeet.com" if secure else None
+
+
+def set_session_cookie(response, user_id: str, secure: bool) -> None:
+    samesite = "none" if secure else "lax"
+    response.set_cookie(
+        key=COOKIE_NAME,
+        value=make_user_session_cookie_value(user_id),
+        httponly=True,
+        secure=secure,
+        samesite=samesite,
+        path="/",
+        domain=cookie_domain(secure),
+        max_age=60 * 60 * 24 * 30,
+    )
+
+
+def clear_session_cookie(response, secure: bool) -> None:
+    samesite = "none" if secure else "lax"
+    response.delete_cookie(
+        key=COOKIE_NAME,
+        path="/",
+        secure=secure,
+        samesite=samesite,
+        domain=cookie_domain(secure),
+    )
