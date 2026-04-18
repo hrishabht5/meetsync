@@ -258,6 +258,8 @@ export const api = {
       request<PermanentLinkRow>("/profiles/me/links/", { method: "POST", body: JSON.stringify(data) }),
     toggleLink: (id: string) =>
       request<PermanentLinkRow>(`/profiles/me/links/${id}/toggle/`, { method: "PATCH" }),
+    toggleShowOnProfile: (id: string) =>
+      request<PermanentLinkRow>(`/profiles/me/links/${id}/show-on-profile/`, { method: "PATCH" }),
     deleteLink: (id: string) =>
       request<null>(`/profiles/me/links/${id}/`, { method: "DELETE" }),
     bulkDeleteLinks: (ids: string[]) =>
@@ -336,6 +338,8 @@ export interface AuthStatus {
   is_admin?: boolean;
   is_impersonating?: boolean;
 }
+
+
 
 // Admin types
 export interface AdminStats {
@@ -550,12 +554,26 @@ export interface ProfileResponse {
   username: string;
   display_name?: string | null;
   bio?: string | null;
+  avatar_url?: string | null;
+  headline?: string | null;
+  website?: string | null;
+  location?: string | null;
+  cover_image_url?: string | null;
+  bg_image_url?: string | null;
+  accent_color?: string | null;
 }
 
 export interface ProfileUpdate {
   username?: string;
   display_name?: string;
   bio?: string;
+  headline?: string;
+  website?: string;
+  location?: string;
+  avatar_url?: string | null;
+  cover_image_url?: string | null;
+  bg_image_url?: string | null;
+  accent_color?: string | null;
 }
 
 export interface PermanentLinkRow {
@@ -565,6 +583,7 @@ export interface PermanentLinkRow {
   event_type: string;
   custom_title?: string | null;
   is_active: boolean;
+  show_on_profile: boolean;
   custom_fields: CustomField[];
   created_at: string;
   description?: string | null;

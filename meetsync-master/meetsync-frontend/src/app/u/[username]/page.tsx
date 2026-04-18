@@ -5,7 +5,7 @@ import Link from "next/link";
 import { api, ProfileResponse, PermanentLinkRow } from "@/lib/api-client";
 import { useTheme } from "@/components/themeProvider";
 import { errMsg } from "@/lib/errors";
-import { Card, Spinner } from "@/components/ui";
+import { Spinner } from "@/components/ui";
 
 type PageData = ProfileResponse & { links: PermanentLinkRow[] };
 
@@ -26,18 +26,40 @@ export default function PublicProfilePage() {
       .finally(() => setLoading(false));
   }, [username]);
 
-  return (
-    <main className="min-h-screen flex items-center justify-center px-4 py-12 bg-page-gradient">
-      {/* Background glow */}
-      <div
-        className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[400px] rounded-full blur-[120px] opacity-20 pointer-events-none"
-        style={{ background: "radial-gradient(circle, rgba(59,106,232,0.6) 0%, rgba(56,191,255,0.2) 60%, transparent 100%)" }}
-      />
+  const accentStyle = data?.accent_color
+    ? ({ "--profile-accent": data.accent_color } as React.CSSProperties)
+    : {};
 
-      <div className="relative z-10 w-full max-w-lg">
-        {/* Logo */}
+  return (
+    <main
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "flex-start",
+        justifyContent: "center",
+        padding: "0 16px 80px",
+        ...(data?.bg_image_url
+          ? { backgroundImage: `url(${data.bg_image_url})`, backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "fixed" }
+          : {}),
+      }}
+      className={data?.bg_image_url ? "" : "bg-page-gradient"}
+    >
+      {/* Ambient glow */}
+      {!data?.bg_image_url && (
+        <div
+          className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[400px] rounded-full blur-[120px] opacity-20 pointer-events-none"
+          style={{ background: "radial-gradient(circle, rgba(59,106,232,0.6) 0%, rgba(56,191,255,0.2) 60%, transparent 100%)" }}
+        />
+      )}
+
+      <div className="relative z-10 w-full max-w-lg pt-12">
+        {/* DraftMeet logo */}
         <div className="flex items-center gap-2 mb-8 justify-center">
-          <img src={theme === "dark" ? "/logo-dark.png" : "/logo-light.png"} alt="DraftMeet" className="w-8 h-8 rounded-lg glow-brand-sm" />
+          <img
+            src={theme === "dark" ? "/logo-dark.png" : "/logo-light.png"}
+            alt="DraftMeet"
+            className="w-8 h-8 rounded-lg glow-brand-sm"
+          />
           <span className="text-lg font-bold text-[var(--text-primary)]">DraftMeet</span>
         </div>
 
@@ -54,41 +76,131 @@ export default function PublicProfilePage() {
         )}
 
         {!loading && data && (
-          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden glow-brand">
+          <div
+            className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden glow-brand"
+            style={accentStyle}
+          >
+            {/* Cover image */}
+            {data.cover_image_url && (
+              <div className="w-full h-36 overflow-hidden">
+                <img
+                  src={data.cover_image_url}
+                  alt="Profile cover"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+
             {/* Profile header */}
-            <div className="px-8 pt-8 pb-6 border-b border-[var(--border)]">
+            <div
+              className={`px-8 pb-6 border-b border-[var(--border)] ${data.cover_image_url ? "pt-5" : "pt-8"}`}
+            >
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-brand-gradient flex items-center justify-center text-2xl font-bold text-white glow-brand-sm">
-                  {(data.display_name ?? data.username)[0].toUpperCase()}
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold text-[var(--text-primary)]">{data.display_name ?? data.username}</h1>
+                {/* Avatar */}
+                {data.avatar_url ? (
+                  <img
+                    src={data.avatar_url}
+                    alt={data.display_name ?? data.username}
+                    referrerPolicy="no-referrer"
+                    className="w-16 h-16 rounded-2xl object-cover ring-2 ring-[var(--border-accent)] glow-brand-sm flex-shrink-0"
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                  />
+                ) : (
+                  <div
+                    className="w-16 h-16 rounded-2xl bg-brand-gradient flex items-center justify-center text-2xl font-bold text-white glow-brand-sm flex-shrink-0"
+                    style={data.accent_color ? { background: data.accent_color } : {}}
+                  >
+                    {(data.display_name ?? data.username)[0].toUpperCase()}
+                  </div>
+                )}
+
+                <div className="min-w-0">
+                  <h1 className="text-xl font-bold text-[var(--text-primary)] truncate">
+                    {data.display_name ?? data.username}
+                  </h1>
                   <p className="text-sm text-[var(--text-secondary)]">@{data.username}</p>
+                  {data.headline && (
+                    <p className="text-xs mt-1" style={{ color: data.accent_color || "var(--accent)" }}>
+                      {data.headline}
+                    </p>
+                  )}
                 </div>
               </div>
+
+              {/* Bio */}
               {data.bio && (
                 <p className="mt-4 text-sm text-[var(--text-secondary)] leading-relaxed">{data.bio}</p>
+              )}
+
+              {/* Social links */}
+              {(data.website || data.location) && (
+                <div className="mt-3 flex flex-wrap gap-4">
+                  {data.location && (
+                    <span className="text-xs text-[var(--text-secondary)] flex items-center gap-1">
+                      📍 {data.location}
+                    </span>
+                  )}
+                  {data.website && (
+                    <a
+                      href={data.website.startsWith("http") ? data.website : `https://${data.website}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs flex items-center gap-1 transition-colors hover:underline"
+                      style={{ color: data.accent_color || "var(--accent)" }}
+                    >
+                      🔗 {data.website.replace(/^https?:\/\//, "")}
+                    </a>
+                  )}
+                </div>
               )}
             </div>
 
             {/* Booking links */}
             <div className="p-6 flex flex-col gap-3">
               {data.links.length === 0 ? (
-                <p className="text-center text-[var(--text-secondary)] text-sm py-6">No active booking links.</p>
+                <p className="text-center text-[var(--text-secondary)] text-sm py-6">
+                  No active booking links.
+                </p>
               ) : (
                 <>
-                  <p className="text-xs text-[var(--text-secondary)] font-semibold uppercase tracking-wider mb-1">Book a meeting</p>
+                  <p className="text-xs text-[var(--text-secondary)] font-semibold uppercase tracking-wider mb-1">
+                    Book a meeting
+                  </p>
                   {data.links.map((lk) => (
                     <Link
                       key={lk.id}
                       href={`/u/${data.username}/${lk.slug}`}
-                      className="flex items-center justify-between gap-4 bg-[var(--bg-card-hover)] hover:bg-[var(--accent)]/10 border border-[var(--border)] hover:border-[var(--border-accent)] rounded-xl px-5 py-4 transition-all group"
+                      className="flex items-center justify-between gap-4 bg-[var(--bg-card-hover)] border border-[var(--border)] rounded-xl px-5 py-4 transition-all group"
+                      style={{}}
+                      onMouseEnter={(e) => {
+                        if (data.accent_color) {
+                          (e.currentTarget as HTMLAnchorElement).style.borderColor = data.accent_color;
+                          (e.currentTarget as HTMLAnchorElement).style.background = `${data.accent_color}18`;
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLAnchorElement).style.borderColor = "";
+                        (e.currentTarget as HTMLAnchorElement).style.background = "";
+                      }}
                     >
                       <div>
-                        <p className="text-sm font-semibold text-[var(--text-primary)] group-hover:text-[var(--accent-cyan)] transition-colors">{lk.event_type}</p>
-                        <p className="text-xs text-[var(--text-secondary)] mt-0.5">/{data.username}/{lk.slug}</p>
+                        <p
+                          className="text-sm font-semibold text-[var(--text-primary)] group-hover:text-[var(--accent-cyan)] transition-colors"
+                          style={data.accent_color ? {} : {}}
+                        >
+                          {lk.custom_title || lk.event_type}
+                        </p>
+                        {lk.description && (
+                          <p className="text-xs text-[var(--text-secondary)] mt-0.5 line-clamp-1">{lk.description}</p>
+                        )}
                       </div>
-                      <span className="text-[var(--accent)] group-hover:text-[var(--accent-cyan)] text-lg transition-colors">→</span>
+                      <span
+                        className="text-lg transition-colors flex-shrink-0"
+                        style={{ color: data.accent_color || "var(--accent)" }}
+                      >
+                        →
+                      </span>
                     </Link>
                   ))}
                 </>

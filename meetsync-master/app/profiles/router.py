@@ -46,9 +46,16 @@ def update_my_profile(request: Request, payload: ProfileUpdate):
     try:
         return service.upsert_profile(
             user_id=user_id,
+            username=payload.username,
             display_name=payload.display_name,
             bio=payload.bio,
-            username=payload.username,
+            headline=payload.headline,
+            website=payload.website,
+            location=payload.location,
+            avatar_url=payload.avatar_url,
+            cover_image_url=payload.cover_image_url,
+            bg_image_url=payload.bg_image_url,
+            accent_color=payload.accent_color,
         )
     except ValueError as e:
         status = 409 if "taken" in str(e) else 400
@@ -122,6 +129,16 @@ def toggle_link(request: Request, link_id: str):
         raise HTTPException(status_code=404, detail=str(e))
 
 
+@router.patch("/me/links/{link_id}/show-on-profile")
+def toggle_show_on_profile(request: Request, link_id: str):
+    """Toggle whether a permanent link is shown on the user's public profile page."""
+    user_id = get_current_user_id(request)
+    try:
+        return service.toggle_show_on_profile(user_id, link_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
 @router.delete("/me/links/{link_id}", status_code=204)
 def delete_link(request: Request, link_id: str):
     user_id = get_current_user_id(request)
@@ -139,7 +156,7 @@ def get_public_profile(username: str):
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
     result = service.list_permanent_links(profile["user_id"], page=1, limit=100)
-    active_links = [lk for lk in result["items"] if lk["is_active"]]
+    active_links = [lk for lk in result["items"] if lk["is_active"] and lk.get("show_on_profile", True)]
     return {**profile, "links": active_links}
 
 

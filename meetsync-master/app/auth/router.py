@@ -54,10 +54,10 @@ def _upsert_user(user_id: str, email: str, password_hash: str = None):
     supabase.table("users").upsert(row, on_conflict="id").execute()
 
 
-def _ensure_profile(user_id: str, email: str):
+def _ensure_profile(user_id: str, email: str, avatar_url: str | None = None, google_name: str | None = None):
     try:
         from app.profiles.service import ensure_profile_exists
-        ensure_profile_exists(user_id, email)
+        ensure_profile_exists(user_id, email, avatar_url=avatar_url, google_name=google_name)
     except Exception as e:
         _logging.warning("Could not create profile for %s: %s", user_id, e)
 
@@ -139,6 +139,8 @@ async def google_callback(request: Request, code: str = None, error: str = None,
 
         google_sub = user_info.get("sub") or user_info.get("id")
         email = user_info.get("email", "").lower().strip()
+        google_picture = user_info.get("picture") or None
+        google_name = user_info.get("name") or None
         if not google_sub or not email:
             return RedirectResponse(url=f"{FRONTEND_URL}?auth_error=missing_user_identity")
 
@@ -167,7 +169,7 @@ async def google_callback(request: Request, code: str = None, error: str = None,
                 actual_user_id = google_sub
                 _upsert_user(actual_user_id, email)
 
-            _ensure_profile(actual_user_id, email)
+            _ensure_profile(actual_user_id, email, avatar_url=google_picture, google_name=google_name)
 
             redirect = RedirectResponse(url=f"{FRONTEND_URL}/dashboard?auth=success")
             _set_session_cookie(redirect, actual_user_id, secure)

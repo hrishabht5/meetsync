@@ -35,7 +35,7 @@ def _unique_username(base: str) -> str:
 
 # ── Profile CRUD ──────────────────────────────────────────────────────────────
 
-def ensure_profile_exists(user_id: str, email: str) -> dict:
+def ensure_profile_exists(user_id: str, email: str, avatar_url: str | None = None, google_name: str | None = None) -> dict:
     """
     Called once per OAuth login or sign-up.  Creates the profile row if it does not exist.
     Also upserts into the users identity table.
@@ -48,6 +48,9 @@ def ensure_profile_exists(user_id: str, email: str) -> dict:
 
     result = supabase.table("user_profiles").select("*").eq("user_id", user_id).execute()
     if result.data:
+        # Refresh avatar from Google if we have one and none is stored yet
+        if avatar_url and not result.data[0].get("avatar_url"):
+            supabase.table("user_profiles").update({"avatar_url": avatar_url}).eq("user_id", user_id).execute()
         return result.data[0]
 
     base = email.split("@")[0] if "@" in email else email or "user"
@@ -56,8 +59,9 @@ def ensure_profile_exists(user_id: str, email: str) -> dict:
     row = {
         "user_id":      user_id,
         "username":     username,
-        "display_name": None,
+        "display_name": google_name or None,
         "bio":          None,
+        "avatar_url":   avatar_url or None,
     }
     insert = supabase.table("user_profiles").insert(row).execute()
     return insert.data[0]
@@ -73,15 +77,23 @@ def get_profile_by_username(username: str) -> dict | None:
     return result.data[0] if result.data else None
 
 
-def upsert_profile(user_id: str, display_name: str | None, bio: str | None, username: str | None) -> dict:
-    """Update mutable profile fields.  Raises ValueError on duplicate username."""
+_MUTABLE_PROFILE_FIELDS = frozenset({
+    "display_name", "bio", "headline", "website", "location",
+    "avatar_url", "cover_image_url", "bg_image_url", "accent_color",
+})
+
+
+def upsert_profile(user_id: str, **kwargs) -> dict:
+    """
+    Update mutable profile fields.
+    Pass any of: display_name, bio, username, headline, website, location,
+    avatar_url, cover_image_url, bg_image_url, accent_color.
+    Raises ValueError on duplicate username.
+    """
     updates: dict = {"updated_at": "now()"}
-    if display_name is not None:
-        updates["display_name"] = display_name
-    if bio is not None:
-        updates["bio"] = bio
+
+    username = kwargs.pop("username", None)
     if username is not None:
-        # Check uniqueness (excluding the current user)
         conflict = (
             supabase.table("user_profiles")
             .select("user_id")
@@ -92,6 +104,10 @@ def upsert_profile(user_id: str, display_name: str | None, bio: str | None, user
         if conflict.data:
             raise ValueError(f"Username '{username}' is already taken")
         updates["username"] = username
+
+    for field in _MUTABLE_PROFILE_FIELDS:
+        if field in kwargs and kwargs[field] is not None:
+            updates[field] = kwargs[field]
 
     result = supabase.table("user_profiles").update(updates).eq("user_id", user_id).execute()
     if not result.data:
@@ -244,3 +260,24 @@ def customize_permanent_link(user_id: str, link_id: str, updates: dict) -> dict:
 def get_permanent_link_by_id(link_id: str) -> dict | None:
     result = supabase.table("permanent_links").select("*").eq("id", link_id).execute()
     return result.data[0] if result.data else None
+
+
+def toggle_show_on_profile(user_id: str, link_id: str) -> dict:
+    """Toggle whether a permanent link appears on the user's public profile page."""
+    result = (
+        supabase.table("permanent_links")
+        .select("*")
+        .eq("id", link_id)
+        .eq("user_id", user_id)
+        .execute()
+    )
+    if not result.data:
+        raise ValueError("Link not found")
+    current = result.data[0]
+    updated = (
+        supabase.table("permanent_links")
+        .update({"show_on_profile": not current.get("show_on_profile", True)})
+        .eq("id", link_id)
+        .execute()
+    )
+    return updated.data[0]

@@ -298,16 +298,30 @@ class WebhookEvent(BaseModel):
 
 # ── Profiles ─────────────────────────────────────────────
 class ProfileResponse(BaseModel):
-    user_id:      str
-    username:     str
-    display_name: Optional[str]
-    bio:          Optional[str]
+    user_id:         str
+    username:        str
+    display_name:    Optional[str]
+    bio:             Optional[str]
+    avatar_url:      Optional[str] = None
+    headline:        Optional[str] = None
+    website:         Optional[str] = None
+    location:        Optional[str] = None
+    cover_image_url: Optional[str] = None
+    bg_image_url:    Optional[str] = None
+    accent_color:    Optional[str] = None
 
 
 class ProfileUpdate(BaseModel):
-    username:     Optional[str] = Field(default=None, max_length=50)
-    display_name: Optional[str] = Field(default=None, max_length=100)
-    bio:          Optional[str] = Field(default=None, max_length=500)
+    username:        Optional[str] = Field(default=None, max_length=50)
+    display_name:    Optional[str] = Field(default=None, max_length=100)
+    bio:             Optional[str] = Field(default=None, max_length=500)
+    headline:        Optional[str] = Field(default=None, max_length=120)
+    website:         Optional[str] = Field(default=None, max_length=200)
+    location:        Optional[str] = Field(default=None, max_length=100)
+    avatar_url:      Optional[str] = Field(default=None, max_length=500)
+    cover_image_url: Optional[str] = Field(default=None, max_length=500)
+    bg_image_url:    Optional[str] = Field(default=None, max_length=500)
+    accent_color:    Optional[str] = Field(default=None, max_length=20)
 
 
 class PermanentLinkCreate(LinkCustomization):
