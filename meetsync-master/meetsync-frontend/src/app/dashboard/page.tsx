@@ -17,9 +17,12 @@ export default function BookingsPage() {
   const [savingOutcome, setSavingOutcome] = useState<string | null>(null);
   const [outcomeSelections, setOutcomeSelections] = useState<Record<string, { outcome: string; notes: string }>>({});
   const [exporting, setExporting] = useState(false);
+  const [outcomeOpenIds, setOutcomeOpenIds] = useState<Set<string>>(new Set());
+  const [visibleCount, setVisibleCount] = useState(20);
 
   const load = React.useCallback(async () => {
     setLoading(true);
+    setVisibleCount(20);
     try {
       const data = await api.bookings.list(filter || undefined);
       setBookings(data);
@@ -115,7 +118,7 @@ export default function BookingsPage() {
         <div className="animate-fade-up"><EmptyState icon="📅" title="No bookings yet" subtitle="Share a one-time link to get your first booking" /></div>
       ) : (
         <div className="flex flex-col gap-3">
-          {bookings.map((bk, i) => (
+          {bookings.slice(0, visibleCount).map((bk, i) => (
             <div key={bk.id} className="animate-fade-up" style={{ animationDelay: `${i * 60}ms` }}>
             <Card className="p-5">
               <div className="flex items-start justify-between gap-4">
@@ -147,9 +150,22 @@ export default function BookingsPage() {
                           </Badge>
                           {bk.outcome_notes && <span className="text-xs text-[var(--text-secondary)] italic">&quot;{bk.outcome_notes}&quot;</span>}
                         </div>
+                      ) : !outcomeOpenIds.has(bk.id) ? (
+                        <button
+                          onClick={() => setOutcomeOpenIds((s) => new Set(s).add(bk.id))}
+                          className="text-xs text-[var(--accent)] hover:text-[var(--accent-cyan)] font-medium transition-colors"
+                        >
+                          Record outcome →
+                        </button>
                       ) : (
                         <div className="flex flex-col gap-2">
-                          <span className="text-xs text-[var(--text-secondary)] font-semibold uppercase tracking-wide">Record Outcome</span>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-[var(--text-secondary)] font-semibold uppercase tracking-wide">Record Outcome</span>
+                            <button
+                              onClick={() => setOutcomeOpenIds((s) => { const n = new Set(s); n.delete(bk.id); return n; })}
+                              className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                            >✕</button>
+                          </div>
                           <div className="flex gap-2 flex-wrap">
                             {(["completed", "no_show", "cancelled_by_guest"] as const).map((val) => (
                               <button
@@ -216,6 +232,13 @@ export default function BookingsPage() {
             </Card>
             </div>
           ))}
+          {bookings.length > visibleCount && (
+            <div className="flex justify-center pt-2">
+              <Button variant="secondary" onClick={() => setVisibleCount((n) => n + 20)}>
+                Load More ({bookings.length - visibleCount} remaining)
+              </Button>
+            </div>
+          )}
         </div>
       )}
 

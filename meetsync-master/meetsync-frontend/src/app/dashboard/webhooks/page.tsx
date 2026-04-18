@@ -159,6 +159,7 @@ export default function WebhooksPage() {
   const [registering, setRegistering] = useState(false);
   const [testing, setTesting] = useState(false);
   const [showLogs, setShowLogs] = useState(false);
+  const [showRegisterForm, setShowRegisterForm] = useState(false);
 
   const [newKeyName, setNewKeyName] = useState("");
   const [generatingKey, setGeneratingKey] = useState(false);
@@ -288,32 +289,41 @@ export default function WebhooksPage() {
 
           {!showLogs ? (
             <>
-              {/* Register Webhook */}
-              <Card className="p-5">
-                <p className="text-sm font-semibold text-[var(--text-primary)] mb-4">Register Endpoint</p>
-                <div className="flex flex-col gap-3">
-                  <Input label="Endpoint URL" placeholder="https://your-server.com/webhook" value={url} onChange={(e) => setUrl(e.target.value)} />
-                  <Input label="Secret (optional)" placeholder="Used for HMAC signature" value={secret} onChange={(e) => setSecret(e.target.value)} />
-                  <div>
-                    <p className="text-sm font-medium text-[var(--text-primary)] mb-2">Subscribe to Events</p>
-                    <div className="flex flex-wrap gap-2">
-                      {VALID_EVENTS.map((ev) => (
-                        <button key={ev} onClick={() => toggleEvent(ev)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all
-                            ${selectedEvents.includes(ev)
-                              ? "bg-brand-gradient text-white"
-                              : "bg-[var(--bg-card-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] ring-1 ring-[var(--border)]"
-                            }`}>
-                          {ev}
-                        </button>
-                      ))}
+              {/* Register Webhook — collapsed by default */}
+              <div>
+                <button
+                  onClick={() => setShowRegisterForm((x) => !x)}
+                  className="text-sm font-semibold text-[var(--accent)] hover:text-[var(--accent-cyan)] transition-colors mb-3 flex items-center gap-1"
+                >
+                  {showRegisterForm ? "▾ Hide" : "▸ Register"} Endpoint
+                </button>
+                {showRegisterForm && (
+                  <Card className="p-5">
+                    <div className="flex flex-col gap-3">
+                      <Input label="Endpoint URL" placeholder="https://your-server.com/webhook" value={url} onChange={(e) => setUrl(e.target.value)} />
+                      <Input label="Secret (optional)" placeholder="Used for HMAC signature" value={secret} onChange={(e) => setSecret(e.target.value)} />
+                      <div>
+                        <p className="text-sm font-medium text-[var(--text-primary)] mb-2">Subscribe to Events</p>
+                        <div className="flex flex-wrap gap-2">
+                          {VALID_EVENTS.map((ev) => (
+                            <button key={ev} onClick={() => toggleEvent(ev)}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all
+                                ${selectedEvents.includes(ev)
+                                  ? "bg-brand-gradient text-white"
+                                  : "bg-[var(--bg-card-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] ring-1 ring-[var(--border)]"
+                                }`}>
+                              {ev}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex justify-end">
+                        <Button onClick={handleRegister} loading={registering} disabled={!url}>Register</Button>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex justify-end">
-                    <Button onClick={handleRegister} loading={registering} disabled={!url}>Register</Button>
-                  </div>
-                </div>
-              </Card>
+                  </Card>
+                )}
+              </div>
 
               {/* List Webhooks */}
               {webhooks.length === 0 ? (
@@ -329,9 +339,12 @@ export default function WebhooksPage() {
                             <span className="text-sm text-[var(--text-primary)] font-mono truncate max-w-xs">{wh.url}</span>
                           </div>
                           <div className="flex flex-wrap gap-1.5">
-                            {wh.events.map((ev) => (
+                            {wh.events.slice(0, 3).map((ev) => (
                               <span key={ev} className="text-xs bg-[var(--bg-card-hover)] text-[var(--text-secondary)] px-2 py-0.5 rounded-md ring-1 ring-[var(--border)]">{ev}</span>
                             ))}
+                            {wh.events.length > 3 && (
+                              <span className="text-xs bg-[var(--bg-card-hover)] text-[var(--text-secondary)] px-2 py-0.5 rounded-md ring-1 ring-[var(--border)]">+{wh.events.length - 3} more</span>
+                            )}
                           </div>
                         </div>
                         <div className="flex gap-2">

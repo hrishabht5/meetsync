@@ -105,6 +105,30 @@ function FieldBuilder({
   );
 }
 
+// ── Row action menu ───────────────────────────────────────────────────────────
+function RowMenu({
+  items,
+  onClose,
+}: {
+  items: { label: string; onClick: () => void; danger?: boolean }[];
+  onClose: () => void;
+}) {
+  return (
+    <div className="absolute right-0 top-full mt-1 z-20 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-xl min-w-[150px] py-1">
+      {items.map((item) => (
+        <button
+          key={item.label}
+          onClick={() => { item.onClick(); onClose(); }}
+          className={`w-full text-left px-3 py-2 text-sm transition-colors hover:bg-[var(--bg-card-hover)]
+            ${item.danger ? "text-red-400" : "text-[var(--text-primary)]"}`}
+        >
+          {item.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // ── One-Time Links Tab ────────────────────────────────────────────────────────
 function OneTimeLinksTab() {
   const [items, setItems] = useState<OTLRow[]>([]);
@@ -131,6 +155,8 @@ function OneTimeLinksTab() {
   const [showFieldBuilder, setShowFieldBuilder] = useState(false);
   const [showCreateCustomize, setShowCreateCustomize] = useState(false);
   const [createCustomize, setCreateCustomize] = useState<LinkCustomizationPayload>({});
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
 
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -287,116 +313,96 @@ function OneTimeLinksTab() {
   if (loading) return <div className="flex justify-center py-20"><Spinner /></div>;
   if (error) return <Card className="p-6 text-center text-red-400">⚠️ {error}</Card>;
 
-  return (
-    <div className="flex flex-col gap-5">
-      {/* Create form */}
-      <Card className="p-5">
-        <p className="text-sm font-semibold text-[var(--text-primary)] mb-4">Create One-Time Link</p>
-        <div className="mb-4">
-          <label className="text-xs text-[var(--text-secondary)] font-medium block mb-1.5">Meeting Title <span className="opacity-60">(optional)</span></label>
-          <input
-            placeholder="e.g. Discovery Call — Acme Corp"
-            value={meetingTitle}
-            onChange={(e) => setMeetingTitle(e.target.value)}
-            className="w-full bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
-          />
+  const createFormJSX = (
+    <div className="flex flex-col gap-4">
+      <div>
+        <label className="text-xs text-[var(--text-secondary)] font-medium block mb-1.5">Meeting Title <span className="opacity-60">(optional)</span></label>
+        <input
+          placeholder="e.g. Discovery Call — Acme Corp"
+          value={meetingTitle}
+          onChange={(e) => setMeetingTitle(e.target.value)}
+          className="w-full bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
+        />
+      </div>
+      <div className="flex flex-wrap gap-3 items-end">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs text-[var(--text-secondary)] font-medium">Meeting Type</label>
+          <select value={eventType} onChange={(e) => setEventType(e.target.value)}
+            className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50">
+            {EVENT_TYPES.map((t) => <option key={t}>{t}</option>)}
+          </select>
         </div>
-        <div className="flex flex-wrap gap-3 items-end mb-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-[var(--text-secondary)] font-medium">Meeting Type</label>
-            <select
-              value={eventType} onChange={(e) => setEventType(e.target.value)}
-              className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50">
-              {EVENT_TYPES.map((t) => <option key={t}>{t}</option>)}
-            </select>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-[var(--text-secondary)] font-medium">Expires In</label>
-            <select
-              value={expires} onChange={(e) => setExpires(e.target.value)}
-              className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50">
-              <option value="24h">24 hours</option>
-              <option value="7d">7 days</option>
-              <option value="never">Never</option>
-            </select>
-          </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs text-[var(--text-secondary)] font-medium">Expires In</label>
+          <select value={expires} onChange={(e) => setExpires(e.target.value)}
+            className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50">
+            <option value="24h">24 hours</option>
+            <option value="7d">7 days</option>
+            <option value="never">Never</option>
+          </select>
         </div>
-
-        <div className="border-t border-[var(--border)] pt-4">
-          <div className="flex items-center justify-between mb-3">
-            <button
-              onClick={() => setShowFieldBuilder(!showFieldBuilder)}
-              className="text-sm text-[var(--accent)] hover:text-[var(--accent-cyan)] font-semibold flex items-center gap-1 transition-colors"
-            >
-              {showFieldBuilder ? "▾ Hide" : "▸ Add"} Custom Questions
-              {customFields.length > 0 && (
-                <span className="ml-1 text-xs bg-purple-500/15 text-purple-400 ring-1 ring-purple-500/30 px-2 py-0.5 rounded-full">
-                  {customFields.length} saved
-                </span>
-              )}
-            </button>
+      </div>
+      <div className="border-t border-[var(--border)] pt-3">
+        <div className="flex items-center justify-between mb-3">
+          <button onClick={() => setShowFieldBuilder(!showFieldBuilder)}
+            className="text-sm text-[var(--accent)] hover:text-[var(--accent-cyan)] font-semibold flex items-center gap-1 transition-colors">
+            {showFieldBuilder ? "▾ Hide" : "▸ Add"} Custom Questions
             {customFields.length > 0 && (
-              <button
-                onClick={() => { setCustomFields([]); setShowFieldBuilder(false); }}
-                className="text-xs text-[var(--text-secondary)] hover:text-red-400 transition-colors"
-              >
-                Clear all
-              </button>
+              <span className="ml-1 text-xs bg-purple-500/15 text-purple-400 ring-1 ring-purple-500/30 px-2 py-0.5 rounded-full">{customFields.length} saved</span>
             )}
-          </div>
-          {showFieldBuilder && (
-            <FieldBuilder
-              fields={customFields}
-              onAdd={() => setCustomFields((f) => [...f, { label: "", type: "text", required: true }])}
-              onUpdate={(idx, u) => setCustomFields((f) => f.map((x, i) => i === idx ? { ...x, ...u } : x))}
-              onRemove={(idx) => setCustomFields((f) => f.filter((_, i) => i !== idx))}
-            />
+          </button>
+          {customFields.length > 0 && (
+            <button onClick={() => { setCustomFields([]); setShowFieldBuilder(false); }}
+              className="text-xs text-[var(--text-secondary)] hover:text-red-400 transition-colors">Clear all</button>
           )}
         </div>
-
-        {/* Customize Page section */}
-        <div className="border-t border-[var(--border)] pt-4">
-          <div className="flex items-center justify-between mb-3">
-            <button
-              onClick={() => setShowCreateCustomize(!showCreateCustomize)}
-              className="text-sm text-[var(--accent)] hover:text-[var(--accent-cyan)] font-semibold flex items-center gap-1 transition-colors"
-            >
-              {showCreateCustomize ? "▾ Hide" : "▸ Set"} Page Customization
-              {(createCustomize.description || createCustomize.cover_image_url || createCustomize.bg_image_url || createCustomize.accent_color) && (
-                <span className="ml-1 text-xs bg-blue-500/15 text-blue-400 ring-1 ring-blue-500/30 px-2 py-0.5 rounded-full">saved</span>
-              )}
-            </button>
+        {showFieldBuilder && (
+          <FieldBuilder
+            fields={customFields}
+            onAdd={() => setCustomFields((f) => [...f, { label: "", type: "text", required: true }])}
+            onUpdate={(idx, u) => setCustomFields((f) => f.map((x, i) => i === idx ? { ...x, ...u } : x))}
+            onRemove={(idx) => setCustomFields((f) => f.filter((_, i) => i !== idx))}
+          />
+        )}
+      </div>
+      <div className="border-t border-[var(--border)] pt-3">
+        <div className="flex items-center justify-between mb-3">
+          <button onClick={() => setShowCreateCustomize(!showCreateCustomize)}
+            className="text-sm text-[var(--accent)] hover:text-[var(--accent-cyan)] font-semibold flex items-center gap-1 transition-colors">
+            {showCreateCustomize ? "▾ Hide" : "▸ Set"} Page Customization
             {(createCustomize.description || createCustomize.cover_image_url || createCustomize.bg_image_url || createCustomize.accent_color) && (
-              <button
-                onClick={() => { setCreateCustomize({}); setShowCreateCustomize(false); }}
-                className="text-xs text-[var(--text-secondary)] hover:text-red-400 transition-colors"
-              >Clear</button>
+              <span className="ml-1 text-xs bg-blue-500/15 text-blue-400 ring-1 ring-blue-500/30 px-2 py-0.5 rounded-full">saved</span>
             )}
-          </div>
-          {showCreateCustomize && (
-            <div className="flex flex-col gap-3 mb-4">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-[var(--text-secondary)]">Description <span className="opacity-60">(shown on booking page)</span></label>
-                <textarea rows={2} maxLength={1000} placeholder="e.g. Book a 30-minute intro call…"
-                  value={createCustomize.description ?? ""}
-                  onChange={(e) => setCreateCustomize((f) => ({ ...f, description: e.target.value || null }))}
-                  className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 resize-none"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-[var(--text-secondary)]">Cover Image URL <span className="opacity-60">(HTTPS)</span></label>
-                <input type="url" placeholder="https://example.com/cover.jpg"
-                  value={createCustomize.cover_image_url ?? ""}
-                  onChange={(e) => setCreateCustomize((f) => ({ ...f, cover_image_url: e.target.value || null }))}
-                  className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
-                />
-                {createCustomize.cover_image_url && (
-                  <img src={createCustomize.cover_image_url} alt="Cover preview"
-                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                    className="mt-1 rounded-lg h-24 object-cover w-full" />
-                )}
-              </div>
-              <div className="flex flex-col gap-1.5">
+          </button>
+          {(createCustomize.description || createCustomize.cover_image_url || createCustomize.bg_image_url || createCustomize.accent_color) && (
+            <button onClick={() => { setCreateCustomize({}); setShowCreateCustomize(false); }}
+              className="text-xs text-[var(--text-secondary)] hover:text-red-400 transition-colors">Clear</button>
+          )}
+        </div>
+        {showCreateCustomize && (
+          <div className="flex flex-col gap-3 mb-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-[var(--text-secondary)]">Description <span className="opacity-60">(shown on booking page)</span></label>
+              <textarea rows={2} maxLength={1000} placeholder="e.g. Book a 30-minute intro call…"
+                value={createCustomize.description ?? ""}
+                onChange={(e) => setCreateCustomize((f) => ({ ...f, description: e.target.value || null }))}
+                className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 resize-none"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-[var(--text-secondary)]">Cover Image URL <span className="opacity-60">(HTTPS)</span></label>
+              <input type="url" placeholder="https://example.com/cover.jpg"
+                value={createCustomize.cover_image_url ?? ""}
+                onChange={(e) => setCreateCustomize((f) => ({ ...f, cover_image_url: e.target.value || null }))}
+                className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
+              />
+              {createCustomize.cover_image_url && (
+                <img src={createCustomize.cover_image_url} alt="Cover preview"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                  className="mt-1 rounded-lg h-24 object-cover w-full" />
+              )}
+            </div>
+            <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-medium text-[var(--text-secondary)]">Background Image URL <span className="opacity-60">(HTTPS, fills page behind card)</span></label>
                 <input type="url" placeholder="https://example.com/bg.jpg"
                   value={createCustomize.bg_image_url ?? ""}
@@ -425,10 +431,18 @@ function OneTimeLinksTab() {
           )}
         </div>
 
-        <div className="flex justify-end">
-          <Button onClick={handleCreate} loading={creating}>Generate Link</Button>
-        </div>
-      </Card>
+      <div className="flex justify-end">
+        <Button onClick={handleCreate} loading={creating}>Generate Link</Button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col gap-5" onClick={() => setMenuOpenId(null)}>
+      {/* Header row with "+ New Link" button */}
+      <div className="flex justify-end">
+        <Button onClick={(e) => { e.stopPropagation(); setShowCreateModal(true); }}>+ New Link</Button>
+      </div>
 
       {/* Search + filter bar */}
       <div className="flex flex-wrap gap-3 items-center">
@@ -492,32 +506,26 @@ function OneTimeLinksTab() {
                     {lk.event_type}{lk.expires_at ? ` · Expires ${new Date(lk.expires_at).toLocaleDateString()}` : ""}
                   </p>
                 </div>
-                <div className="flex gap-2 items-center flex-shrink-0">
-                  {lk.booking_url && (
-                    <Button variant="secondary" size="sm" onClick={() => copyLink(lk.booking_url, lk.id)}>
-                      {copied === lk.id ? "✓ Copied!" : "Copy"}
-                    </Button>
-                  )}
-                  <Button variant="secondary" size="sm" onClick={() => setEmbedId(embedId === lk.id ? null : lk.id)}>
-                    {embedId === lk.id ? "Hide" : "📎 Embed"}
-                  </Button>
-                  <Button variant="secondary" size="sm" onClick={() => {
-                    if (customizeId === lk.id) { setCustomizeId(null); return; }
-                    setCustomizeId(lk.id);
-                    setCustomizeForm({
-                      description:     lk.description     ?? "",
-                      cover_image_url: lk.cover_image_url ?? "",
-                      bg_image_url:    lk.bg_image_url    ?? "",
-                      accent_color:    lk.accent_color    ?? "",
-                    });
-                  }}>
-                    {customizeId === lk.id ? "Hide" : "✏️ Customize"}
-                  </Button>
-                  {lk.status === "active" && (
-                    <Button variant="danger" size="sm" onClick={() => handleRevoke(lk.id)}>Revoke</Button>
-                  )}
-                  {lk.status !== "active" && (
-                    <Button variant="danger" size="sm" onClick={() => handleDelete(lk.id)}>Delete</Button>
+                <div className="relative flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={() => setMenuOpenId(menuOpenId === lk.id ? null : lk.id)}
+                    className="px-2 py-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xl leading-none rounded-lg hover:bg-[var(--bg-card-hover)] transition-colors"
+                  >⋮</button>
+                  {menuOpenId === lk.id && (
+                    <RowMenu
+                      onClose={() => setMenuOpenId(null)}
+                      items={[
+                        ...(lk.booking_url ? [{ label: copied === lk.id ? "✓ Copied!" : "Copy URL", onClick: () => copyLink(lk.booking_url, lk.id) }] : []),
+                        { label: embedId === lk.id ? "Hide Embed" : "Embed Code", onClick: () => setEmbedId(embedId === lk.id ? null : lk.id) },
+                        { label: customizeId === lk.id ? "Hide Customize" : "Customize", onClick: () => {
+                          if (customizeId === lk.id) { setCustomizeId(null); return; }
+                          setCustomizeId(lk.id);
+                          setCustomizeForm({ description: lk.description ?? "", cover_image_url: lk.cover_image_url ?? "", bg_image_url: lk.bg_image_url ?? "", accent_color: lk.accent_color ?? "" });
+                        }},
+                        ...(lk.status === "active" ? [{ label: "Revoke", onClick: () => handleRevoke(lk.id), danger: true }] : []),
+                        ...(lk.status !== "active" ? [{ label: "Delete", onClick: () => handleDelete(lk.id), danger: true }] : []),
+                      ]}
+                    />
                   )}
                 </div>
               </div>
@@ -629,6 +637,28 @@ function OneTimeLinksTab() {
         </div>
       )}
 
+      {/* Create link modal */}
+      {showCreateModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center pt-16 px-4 bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowCreateModal(false)}
+        >
+          <div
+            className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl w-full max-w-lg max-h-[80vh] overflow-y-auto p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm font-semibold text-[var(--text-primary)]">Create One-Time Link</p>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-lg leading-none transition-colors"
+              >✕</button>
+            </div>
+            {createFormJSX}
+          </div>
+        </div>
+      )}
+
       {/* Bulk action bar */}
       {selected.size > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 bg-[var(--bg-card)] border border-[var(--border-accent)] rounded-2xl px-5 py-3 shadow-2xl shadow-black/30">
@@ -670,6 +700,8 @@ function PermanentLinksTab() {
   const [customizeId, setCustomizeId] = useState<string | null>(null);
   const [customizeForm, setCustomizeForm] = useState<LinkCustomizationPayload>({});
   const [customizeSaving, setCustomizeSaving] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
 
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -812,20 +844,17 @@ function PermanentLinksTab() {
 
   if (loading) return <div className="flex justify-center py-20"><Spinner /></div>;
 
-  return (
-    <div className="flex flex-col gap-5">
-      {/* Create form */}
-      <Card className="p-5">
-        <p className="text-sm font-semibold text-[var(--text-primary)] mb-4">Create Permanent Link</p>
-        <div className="mb-4">
-          <label className="text-xs text-[var(--text-secondary)] font-medium block mb-1.5">Meeting Title <span className="opacity-60">(optional)</span></label>
-          <input
-            placeholder="e.g. Discovery Call — Acme Corp"
-            value={meetingTitle}
-            onChange={(e) => setMeetingTitle(e.target.value)}
-            className="w-full bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
-          />
-        </div>
+  const createFormJSX = (
+    <div className="flex flex-col gap-4">
+      <div>
+        <label className="text-xs text-[var(--text-secondary)] font-medium block mb-1.5">Meeting Title <span className="opacity-60">(optional)</span></label>
+        <input
+          placeholder="e.g. Discovery Call — Acme Corp"
+          value={meetingTitle}
+          onChange={(e) => setMeetingTitle(e.target.value)}
+          className="w-full bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
+        />
+      </div>
         <div className="flex flex-wrap gap-3 items-end mb-4">
           <Input
             label="Slug"
@@ -946,10 +975,17 @@ function PermanentLinksTab() {
           )}
         </div>
 
-        <div className="flex justify-end">
-          <Button onClick={handleCreate} loading={creating} disabled={!slug}>Create Link</Button>
-        </div>
-      </Card>
+      <div className="flex justify-end">
+        <Button onClick={handleCreate} loading={creating} disabled={!slug}>Create Link</Button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col gap-5" onClick={() => setMenuOpenId(null)}>
+      <div className="flex justify-end">
+        <Button onClick={(e) => { e.stopPropagation(); setShowCreateModal(true); }}>+ New Permanent Link</Button>
+      </div>
 
       {/* Search bar */}
       <div className="flex flex-wrap gap-3 items-center">
@@ -1003,31 +1039,27 @@ function PermanentLinksTab() {
                     {lk.event_type} · Permanent
                   </p>
                 </div>
-                <div className="flex gap-2 flex-shrink-0">
-                  {lk.is_active && (
-                    <Button variant="secondary" size="sm" onClick={() => copyLink(lk.slug, lk.id)}>
-                      {copied === lk.id ? "✓ Copied!" : "Copy Link"}
-                    </Button>
+                <div className="relative flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={() => setMenuOpenId(menuOpenId === lk.id ? null : lk.id)}
+                    className="px-2 py-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xl leading-none rounded-lg hover:bg-[var(--bg-card-hover)] transition-colors"
+                  >⋮</button>
+                  {menuOpenId === lk.id && (
+                    <RowMenu
+                      onClose={() => setMenuOpenId(null)}
+                      items={[
+                        ...(lk.is_active ? [{ label: copied === lk.id ? "✓ Copied!" : "Copy Link", onClick: () => copyLink(lk.slug, lk.id) }] : []),
+                        { label: embedId === lk.id ? "Hide Embed" : "Embed Code", onClick: () => setEmbedId(embedId === lk.id ? null : lk.id) },
+                        { label: customizeId === lk.id ? "Hide Customize" : "Customize", onClick: () => {
+                          if (customizeId === lk.id) { setCustomizeId(null); return; }
+                          setCustomizeId(lk.id);
+                          setCustomizeForm({ description: lk.description ?? "", cover_image_url: lk.cover_image_url ?? "", bg_image_url: lk.bg_image_url ?? "", accent_color: lk.accent_color ?? "" });
+                        }},
+                        { label: lk.is_active ? "Pause" : "Resume", onClick: () => handleToggle(lk.id) },
+                        { label: "Delete", onClick: () => handleDelete(lk.id), danger: true },
+                      ]}
+                    />
                   )}
-                  <Button variant="secondary" size="sm" onClick={() => setEmbedId(embedId === lk.id ? null : lk.id)}>
-                    {embedId === lk.id ? "Hide" : "📎 Embed"}
-                  </Button>
-                  <Button variant="secondary" size="sm" onClick={() => {
-                    if (customizeId === lk.id) { setCustomizeId(null); return; }
-                    setCustomizeId(lk.id);
-                    setCustomizeForm({
-                      description:     lk.description     ?? "",
-                      cover_image_url: lk.cover_image_url ?? "",
-                      bg_image_url:    lk.bg_image_url    ?? "",
-                      accent_color:    lk.accent_color    ?? "",
-                    });
-                  }}>
-                    {customizeId === lk.id ? "Hide" : "✏️ Customize"}
-                  </Button>
-                  <Button variant="secondary" size="sm" onClick={() => handleToggle(lk.id)}>
-                    {lk.is_active ? "Pause" : "Resume"}
-                  </Button>
-                  <Button variant="danger" size="sm" onClick={() => handleDelete(lk.id)}>Delete</Button>
                 </div>
               </div>
               {embedId === lk.id && profile && (
@@ -1135,6 +1167,28 @@ function PermanentLinksTab() {
               </Button>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Create permanent link modal */}
+      {showCreateModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center pt-16 px-4 bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowCreateModal(false)}
+        >
+          <div
+            className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl w-full max-w-lg max-h-[80vh] overflow-y-auto p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm font-semibold text-[var(--text-primary)]">Create Permanent Link</p>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-lg leading-none transition-colors"
+              >✕</button>
+            </div>
+            {createFormJSX}
+          </div>
         </div>
       )}
 
