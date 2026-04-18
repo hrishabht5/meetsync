@@ -3,41 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { api, ProfileResponse, PermanentLinkRow } from "@/lib/api-client";
 import { errMsg } from "@/lib/errors";
 import { Button, Card, Input, SectionHeader, Spinner } from "@/components/ui";
-
-// ── Avatar ────────────────────────────────────────────────────────────────────
-function Avatar({
-  src,
-  name,
-  size = 80,
-}: {
-  src?: string | null;
-  name?: string | null;
-  size?: number;
-}) {
-  const letter = (name || "?")[0].toUpperCase();
-  if (src) {
-    return (
-      <img
-        src={src}
-        alt={name ?? "Avatar"}
-        width={size}
-        height={size}
-        referrerPolicy="no-referrer"
-        className="rounded-full object-cover ring-2 ring-[var(--border-accent)]"
-        style={{ width: size, height: size, flexShrink: 0 }}
-        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-      />
-    );
-  }
-  return (
-    <div
-      className="rounded-full flex items-center justify-center bg-brand-gradient ring-2 ring-[var(--border-accent)] text-white font-bold flex-shrink-0"
-      style={{ width: size, height: size, fontSize: size * 0.4 }}
-    >
-      {letter}
-    </div>
-  );
-}
+import { Avatar } from "@/components/Avatar";
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
@@ -72,8 +38,11 @@ export default function ProfilePage() {
   const [deleting, setDeleting]     = useState(false);
 
   useEffect(() => {
-    api.profiles.getMe()
-      .then((p) => {
+    Promise.all([
+      api.profiles.getMe(),
+      api.profiles.listLinks({ limit: 50 }),
+    ])
+      .then(([p, res]) => {
         setProfile(p);
         setUsername(p.username);
         setDisplayName(p.display_name ?? "");
@@ -85,14 +54,10 @@ export default function ProfilePage() {
         setCoverImageUrl(p.cover_image_url ?? "");
         setBgImageUrl(p.bg_image_url ?? "");
         setAccentColor(p.accent_color ?? "");
+        setLinks(res.items);
       })
       .catch((e: unknown) => alert(errMsg(e)))
-      .finally(() => setLoading(false));
-
-    api.profiles.listLinks({ limit: 50 })
-      .then((res) => setLinks(res.items))
-      .catch(() => {})
-      .finally(() => setLinksLoading(false));
+      .finally(() => { setLoading(false); setLinksLoading(false); });
   }, []);
 
   const publicUrl = profile

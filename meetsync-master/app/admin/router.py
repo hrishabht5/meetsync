@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 from app.auth.middleware import (
@@ -14,8 +14,8 @@ from app.admin import service
 router = APIRouter()
 
 
-def verify_admin(request: Request) -> str:
-    """Returns the admin user_id, or raises 403 if the caller is not the admin."""
+def verified_admin(request: Request) -> str:
+    """FastAPI dependency: verify admin once per request, raises 403 if not admin."""
     user_id = get_current_user_id(request)
     row = supabase.table("users").select("email").eq("id", user_id).execute()
     email = row.data[0]["email"] if row.data else ""
@@ -27,16 +27,14 @@ def verify_admin(request: Request) -> str:
 # ── Stats ─────────────────────────────────────────────────
 
 @router.get("/stats")
-def admin_stats(request: Request):
-    verify_admin(request)
+def admin_stats(_: str = Depends(verified_admin)):
     return service.get_platform_stats()
 
 
 # ── Users ─────────────────────────────────────────────────
 
 @router.get("/users")
-def admin_users(request: Request, search: str = "", page: int = 1, limit: int = 50):
-    verify_admin(request)
+def admin_users(search: str = "", page: int = 1, limit: int = 50, _: str = Depends(verified_admin)):
     limit = min(limit, 100)
     return service.list_users(search=search, page=page, limit=limit)
 
@@ -44,28 +42,25 @@ def admin_users(request: Request, search: str = "", page: int = 1, limit: int = 
 # ── Waitlist ──────────────────────────────────────────────
 
 @router.get("/waitlist")
-def admin_waitlist(request: Request):
-    verify_admin(request)
+def admin_waitlist(_: str = Depends(verified_admin)):
     return service.list_waitlist()
 
 
 # ── Custom Domains ────────────────────────────────────────
 
 @router.get("/domains")
-def admin_domains(request: Request):
-    verify_admin(request)
+def admin_domains(_: str = Depends(verified_admin)):
     return service.list_domains()
 
 
 # ── Impersonation ─────────────────────────────────────────
 
 @router.post("/impersonate/{user_id}")
-def impersonate_user(request: Request, user_id: str):
+def impersonate_user(request: Request, user_id: str, admin_id: str = Depends(verified_admin)):
     """
     Set session to target user while saving the admin's original session in a
     restore cookie so they can return to the admin panel.
     """
-    admin_id = verify_admin(request)
     secure = is_secure(request)
     samesite = "none" if secure else "lax"
     domain = cookie_domain(secure)

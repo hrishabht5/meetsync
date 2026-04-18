@@ -6,33 +6,9 @@ import { errMsg } from "@/lib/errors";
 import { Button, Input, Spinner } from "@/components/ui";
 import { BookingCalendar } from "@/components/BookingCalendar";
 import { CustomField } from "@/lib/api-client";
+import { publicGet, publicPost } from "@/lib/public-api";
 
 type Step = "loading" | "error" | "pick-date" | "pick-slot" | "form" | "success";
-
-// Server-side proxy calls — avoids CORS from custom domain origins
-async function publicGet<T>(path: string, qs = ""): Promise<T> {
-  const res = await fetch(`/api/public/${path}${qs ? `?${qs}` : ""}`, {
-    cache: "no-store",
-  });
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error((data as { message?: string }).message ?? `Request failed (${res.status})`);
-  }
-  return res.json() as Promise<T>;
-}
-
-async function publicPost<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`/api/public/${path}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error((data as { message?: string }).message ?? `Request failed (${res.status})`);
-  }
-  return res.json() as Promise<T>;
-}
 
 function CustomDomainBookingInner({
   domain,

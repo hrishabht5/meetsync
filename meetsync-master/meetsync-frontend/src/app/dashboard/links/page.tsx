@@ -121,13 +121,22 @@ function RowMenu({
   const [pos, setPos] = useState({ top: 0, left: 0, width: 160 });
 
   useLayoutEffect(() => {
-    if (!anchorRef.current) return;
-    const r = anchorRef.current.getBoundingClientRect();
-    setPos({
-      top: r.bottom + window.scrollY + 4,
-      left: Math.max(8, r.right + window.scrollX - 160),
-      width: 160,
-    });
+    function reposition() {
+      if (!anchorRef.current) return;
+      const r = anchorRef.current.getBoundingClientRect();
+      setPos({
+        top: r.bottom + window.scrollY + 4,
+        left: Math.max(8, r.right + window.scrollX - 160),
+        width: 160,
+      });
+    }
+    reposition();
+    window.addEventListener("resize", reposition);
+    window.addEventListener("scroll", reposition, true);
+    return () => {
+      window.removeEventListener("resize", reposition);
+      window.removeEventListener("scroll", reposition, true);
+    };
   }, [anchorRef]);
 
   // Close on outside click

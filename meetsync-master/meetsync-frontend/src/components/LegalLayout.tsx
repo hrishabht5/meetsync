@@ -74,36 +74,15 @@ export function LegalLayout({
           <nav style={{ display: "flex", alignItems: "center", gap: 4 }}>
             <Link
               href={otherPage.href}
-              style={{
-                fontSize: 13,
-                color: "var(--text-secondary)",
-                padding: "6px 12px",
-                borderRadius: 8,
-                textDecoration: "none",
-                transition: "background .15s, color .15s",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLAnchorElement).style.background = "var(--bg-card-hover)";
-                (e.currentTarget as HTMLAnchorElement).style.color = "var(--text-primary)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLAnchorElement).style.background = "transparent";
-                (e.currentTarget as HTMLAnchorElement).style.color = "var(--text-secondary)";
-              }}
+              className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-all px-3 py-1.5 rounded-lg text-[13px]"
+              style={{ textDecoration: "none" }}
             >
               {otherPage.label}
             </Link>
             <Link
               href="/"
-              style={{
-                fontSize: 13,
-                fontWeight: 600,
-                color: "var(--text-secondary)",
-                padding: "6px 12px",
-                borderRadius: 8,
-                textDecoration: "none",
-                transition: "color .15s",
-              }}
+              className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors px-3 py-1.5 rounded-lg text-[13px] font-semibold"
+              style={{ textDecoration: "none" }}
             >
               ← Home
             </Link>
@@ -231,28 +210,11 @@ export function LegalLayout({
             <a
               key={s.id}
               href={`#${s.id}`}
+              className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-[var(--accent)] hover:bg-[var(--bg-card-hover)] border-l-2 border-transparent hover:border-[var(--accent)] transition-all"
               style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
                 padding: "6px 16px",
                 fontSize: 12.5,
-                color: "var(--text-secondary)",
                 textDecoration: "none",
-                transition: "color .15s, background .15s",
-                borderLeft: "2px solid transparent",
-              }}
-              onMouseEnter={(e) => {
-                const el = e.currentTarget as HTMLAnchorElement;
-                el.style.color = "var(--accent)";
-                el.style.borderLeftColor = "var(--accent)";
-                el.style.background = "var(--bg-card-hover)";
-              }}
-              onMouseLeave={(e) => {
-                const el = e.currentTarget as HTMLAnchorElement;
-                el.style.color = "var(--text-secondary)";
-                el.style.borderLeftColor = "transparent";
-                el.style.background = "transparent";
               }}
             >
               <span

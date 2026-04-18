@@ -6,6 +6,7 @@ import { api, ProfileResponse, PermanentLinkRow } from "@/lib/api-client";
 import { useTheme } from "@/components/themeProvider";
 import { errMsg } from "@/lib/errors";
 import { Spinner } from "@/components/ui";
+import { Avatar } from "@/components/Avatar";
 
 type PageData = ProfileResponse & { links: PermanentLinkRow[] };
 
@@ -98,22 +99,13 @@ export default function PublicProfilePage() {
             >
               <div className="flex items-center gap-4">
                 {/* Avatar */}
-                {data.avatar_url ? (
-                  <img
-                    src={data.avatar_url}
-                    alt={data.display_name ?? data.username}
-                    referrerPolicy="no-referrer"
-                    className="w-16 h-16 rounded-2xl object-cover ring-2 ring-[var(--border-accent)] glow-brand-sm flex-shrink-0"
-                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                  />
-                ) : (
-                  <div
-                    className="w-16 h-16 rounded-2xl bg-brand-gradient flex items-center justify-center text-2xl font-bold text-white glow-brand-sm flex-shrink-0"
-                    style={data.accent_color ? { background: data.accent_color } : {}}
-                  >
-                    {(data.display_name ?? data.username)[0].toUpperCase()}
-                  </div>
-                )}
+                <Avatar
+                  src={data.avatar_url}
+                  name={data.display_name ?? data.username}
+                  size={64}
+                  accentColor={data.accent_color}
+                  className="glow-brand-sm"
+                />
 
                 <div className="min-w-0">
                   <h1 className="text-xl font-bold text-[var(--text-primary)] truncate">
@@ -171,18 +163,7 @@ export default function PublicProfilePage() {
                     <Link
                       key={lk.id}
                       href={`/u/${data.username}/${lk.slug}`}
-                      className="flex items-center justify-between gap-4 bg-[var(--bg-card-hover)] border border-[var(--border)] rounded-xl px-5 py-4 transition-all group"
-                      style={{}}
-                      onMouseEnter={(e) => {
-                        if (data.accent_color) {
-                          (e.currentTarget as HTMLAnchorElement).style.borderColor = data.accent_color;
-                          (e.currentTarget as HTMLAnchorElement).style.background = `${data.accent_color}18`;
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.currentTarget as HTMLAnchorElement).style.borderColor = "";
-                        (e.currentTarget as HTMLAnchorElement).style.background = "";
-                      }}
+                      className="flex items-center justify-between gap-4 bg-[var(--bg-card-hover)] border border-[var(--border)] hover:border-[var(--border-accent)] hover:bg-[var(--accent)]/8 rounded-xl px-5 py-4 transition-all group"
                     >
                       <div>
                         <p

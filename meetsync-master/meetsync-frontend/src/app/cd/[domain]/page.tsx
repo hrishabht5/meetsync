@@ -5,21 +5,9 @@ import { useTheme } from "@/components/themeProvider";
 import { errMsg } from "@/lib/errors";
 import { Card, Spinner } from "@/components/ui";
 import { ProfileResponse, PermanentLinkRow } from "@/lib/api-client";
+import { publicGet } from "@/lib/public-api";
 
 type PageData = ProfileResponse & { links: PermanentLinkRow[] };
-
-// Calls the server-side proxy so the browser never hits api.draftmeet.com
-// directly (which would fail CORS from a custom domain origin).
-async function publicGet<T>(path: string, qs = ""): Promise<T> {
-  const res = await fetch(`/api/public/${path}${qs ? `?${qs}` : ""}`, {
-    cache: "no-store",
-  });
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error((data as { message?: string }).message ?? `Request failed (${res.status})`);
-  }
-  return res.json() as Promise<T>;
-}
 
 export default function CustomDomainProfilePage({
   params,
