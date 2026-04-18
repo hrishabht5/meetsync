@@ -1,56 +1,109 @@
-export const metadata = { title: "Terms of Service" };
+import { LegalLayout, LegalSection, LegalList, Callout } from "@/components/LegalLayout";
+
+export const metadata = { title: "Terms of Service — DraftMeet" };
+
+const SECTIONS = [
+  { id: "acceptance",    num: 1, title: "Acceptance of Terms" },
+  { id: "service",       num: 2, title: "Description of Service" },
+  { id: "third-party",   num: 3, title: "Third-Party Services" },
+  { id: "acceptable",    num: 4, title: "Acceptable Use" },
+  { id: "liability",     num: 5, title: "Limitation of Liability" },
+  { id: "termination",   num: 6, title: "Account Termination" },
+];
 
 export default function TermsOfService() {
   return (
-    <main className="min-h-screen bg-[var(--bg)] text-[var(--text-secondary)] py-16 px-6 sm:px-12 lg:px-24">
-      <div className="max-w-4xl mx-auto space-y-8">
-        <h1 className="text-4xl font-bold text-[var(--text-primary)] mb-2">Terms of Service</h1>
-        <p className="text-sm text-[var(--text-secondary)] pb-8 border-b border-[var(--border)]">Last Updated: {new Date().toLocaleDateString()}</p>
+    <LegalLayout
+      title="Terms of Service"
+      badge="Legal"
+      lastUpdated="April 18, 2026"
+      sections={SECTIONS}
+      otherPage={{ href: "/privacy", label: "Privacy Policy" }}
+    >
 
-        <section className="space-y-4">
-          <h2 className="text-2xl font-semibold text-[var(--text-primary)]">1. Acceptance of Terms</h2>
-          <p>
-            By accessing or using DraftMeet (&quot;Service&quot;), you agree to be bound by these Terms of Service. If you disagree with any part of these terms, you may not access the service.
-          </p>
-        </section>
+      <LegalSection id="acceptance" num={1} title="Acceptance of Terms">
+        <p>
+          By accessing or using DraftMeet (&quot;Service&quot;), you agree to be bound by these
+          Terms of Service. If you disagree with any part of these terms, you may not access
+          the service.
+        </p>
+        <Callout variant="info">
+          These terms form a binding agreement between you and DraftMeet. Please read them
+          carefully before using the Service.
+        </Callout>
+      </LegalSection>
 
-        <section className="space-y-4">
-          <h2 className="text-2xl font-semibold text-[var(--text-primary)]">2. Description of Service</h2>
-          <p>
-            DraftMeet is a scheduling infrastructure tool that allows hosts to generate booking links and automatically sync meetings with Google Calendar and Google Meet. The Service reads your availability (Free/Busy status) to prevent scheduling conflicts and writes confirmed bookings to your chosen calendar. We act as a data processor for the host.
-          </p>
-        </section>
+      <LegalSection id="service" num={2} title="Description of Service">
+        <p>
+          DraftMeet is a scheduling infrastructure tool that allows hosts to generate booking
+          links and automatically sync meetings with Google Calendar and Google Meet. The
+          Service reads your availability (Free/Busy status) to prevent scheduling conflicts
+          and writes confirmed bookings to your chosen calendar.
+        </p>
+        <p style={{ marginTop: 12 }}>
+          We act as a <strong style={{ color: "var(--text-primary)" }}>data processor</strong>{" "}
+          on behalf of the host — not an independent data controller for guest information.
+        </p>
+      </LegalSection>
 
-        <section className="space-y-4">
-          <h2 className="text-2xl font-semibold text-[var(--text-primary)]">3. Third-Party Services</h2>
-          <p>
-            Our Service integrates directly with Google Workspace (Google Calendar, Google Meet). By using DraftMeet, you also agree to be bound by Google&apos;s Terms of Service and Privacy Policy. We are not responsible for the availability, security, or uptime of third-party platforms.
-          </p>
-        </section>
+      <LegalSection id="third-party" num={3} title="Third-Party Services">
+        <p>
+          Our Service integrates directly with Google Workspace (Google Calendar, Google Meet).
+          By using DraftMeet, you also agree to be bound by Google&apos;s Terms of Service and
+          Privacy Policy.
+        </p>
+        <Callout variant="warning">
+          We are not responsible for the availability, security, or uptime of third-party
+          platforms including Google Workspace.
+        </Callout>
+      </LegalSection>
 
-        <section className="space-y-4">
-          <h2 className="text-2xl font-semibold text-[var(--text-primary)]">4. User Responsibilities &amp; Acceptable Use</h2>
-          <ul className="list-disc pl-6 space-y-2">
-            <li>You must not use the Service for any illegal, harmful, or abusive activities (e.g., spamming meeting invites).</li>
-            <li>Hosts are responsible for handling their guests&apos; data legally and complying with their own local privacy regulations.</li>
-            <li>You must not attempt to circumvent API rate limits or security mechanisms.</li>
-          </ul>
-        </section>
+      <LegalSection id="acceptable" num={4} title="Acceptable Use">
+        <p>You agree not to misuse the Service. Specifically:</p>
+        <LegalList
+          items={[
+            "You must not use the Service for any illegal, harmful, or abusive activities (e.g. spamming meeting invites).",
+            "Hosts are responsible for handling their guests' data legally and complying with their own local privacy regulations.",
+            "You must not attempt to circumvent API rate limits or security mechanisms.",
+            "You must not reverse-engineer, decompile, or attempt to extract the source code of the Service.",
+          ]}
+        />
+      </LegalSection>
 
-        <section className="space-y-4">
-          <h2 className="text-2xl font-semibold text-[var(--text-primary)]">5. Limitation of Liability</h2>
-          <p>
-            To the maximum extent permitted by law, DraftMeet shall not be liable for any indirect, incidental, special, consequential or punitive damages, including without limitation, loss of profits, data, or goodwill, resulting from your access to or use of the Service.
-          </p>
-        </section>
+      <LegalSection id="liability" num={5} title="Limitation of Liability">
+        <p>
+          To the maximum extent permitted by law, DraftMeet shall not be liable for any
+          indirect, incidental, special, consequential, or punitive damages, including without
+          limitation:
+        </p>
+        <LegalList
+          items={[
+            "Loss of profits, revenue, or anticipated savings.",
+            "Loss of data or goodwill.",
+            "Business interruption or loss of business opportunity.",
+            "Any damages resulting from your access to or use of — or inability to access or use — the Service.",
+          ]}
+        />
+      </LegalSection>
 
-        <section className="space-y-4">
-          <h2 className="text-2xl font-semibold text-[var(--text-primary)]">6. Account Termination</h2>
-          <p>
-            We strongly believe in data autonomy. You may terminate your account at any time via your Dashboard, which will instantly revoke our OAuth access to your Google account and wipe your settings. We may also terminate or suspend access to our Service immediately, without prior notice, for conduct that violates these Terms.
-          </p>
-        </section>
-      </div>
-    </main>
+      <LegalSection id="termination" num={6} title="Account Termination">
+        <p>
+          We strongly believe in data autonomy. You may terminate your account at any time via
+          your Dashboard, which will:
+        </p>
+        <LegalList
+          items={[
+            "Instantly revoke our OAuth access to your Google account.",
+            "Permanently delete your availability settings and booking links.",
+            "Wipe all associated guest booking records.",
+          ]}
+        />
+        <Callout variant="important">
+          We may also terminate or suspend access to the Service immediately, without prior
+          notice, for conduct that violates these Terms or poses a risk to other users.
+        </Callout>
+      </LegalSection>
+
+    </LegalLayout>
   );
 }

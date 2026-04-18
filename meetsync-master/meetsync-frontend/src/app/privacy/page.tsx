@@ -1,75 +1,171 @@
-export const metadata = { title: "Privacy Policy" };
+import Link from "next/link";
+import { LegalLayout, LegalSection, LegalList, SubHeading, Callout } from "@/components/LegalLayout";
+
+export const metadata = { title: "Privacy Policy — DraftMeet" };
+
+const SECTIONS = [
+  { id: "intro",       num: 1, title: "Introduction" },
+  { id: "data",        num: 2, title: "Data We Collect" },
+  { id: "use",         num: 3, title: "How We Use Your Data" },
+  { id: "rights",      num: 4, title: "Your Rights" },
+  { id: "security",    num: 5, title: "Security" },
+  { id: "google",      num: 6, title: "Google API Disclosure" },
+];
 
 export default function PrivacyPolicy() {
   return (
-    <main className="min-h-screen bg-[var(--bg)] text-[var(--text-secondary)] py-16 px-6 sm:px-12 lg:px-24">
-      <div className="max-w-4xl mx-auto space-y-8">
-        <h1 className="text-4xl font-bold text-[var(--text-primary)] mb-2">Privacy Policy</h1>
-        <p className="text-sm text-[var(--text-secondary)] pb-8 border-b border-[var(--border)]">Last Updated: {new Date().toLocaleDateString()}</p>
+    <LegalLayout
+      title="Privacy Policy"
+      badge="Privacy"
+      lastUpdated="April 18, 2026"
+      sections={SECTIONS}
+      otherPage={{ href: "/terms", label: "Terms of Service" }}
+    >
 
-        <section className="space-y-4">
-          <h2 className="text-2xl font-semibold text-[var(--text-primary)]">1. Introduction</h2>
-          <p>
-            Welcome to DraftMeet. We are committed to protecting your personal data and ensuring transparency about how we collect, use, and share information. This policy complies with global privacy standards, including the GDPR and CCPA.
-          </p>
-        </section>
+      <LegalSection id="intro" num={1} title="Introduction">
+        <p>
+          Welcome to DraftMeet. We are committed to protecting your personal data and ensuring
+          full transparency about how we collect, use, and share information.
+        </p>
+        <Callout variant="info">
+          This policy complies with global privacy standards including the{" "}
+          <strong style={{ color: "var(--text-primary)" }}>GDPR</strong> and{" "}
+          <strong style={{ color: "var(--text-primary)" }}>CCPA</strong>.
+        </Callout>
+      </LegalSection>
 
-        <section className="space-y-4">
-          <h2 className="text-2xl font-semibold text-[var(--text-primary)]">2. Data We Collect</h2>
-          <h3 className="text-xl font-medium text-[var(--text-primary)] mt-4">For Hosts (Account Holders):</h3>
-          <ul className="list-disc pl-6 space-y-2">
-            <li><strong>OAuth Data:</strong> We access your Google Calendar to manage bookings and check availability. We store your basic profile info (email, name) and OAuth access tokens securely via Supabase.</li>
-            <li><strong>Calendar Scopes:</strong> We request access to <code>auth/calendar.events</code> (to create/edit bookings) and <code>auth/calendar.freebusy</code> (to prevent scheduling conflicts).</li>
-            <li><strong>Availability Settings:</strong> Your working hours and timezone configurations.</li>
-          </ul>
+      <LegalSection id="data" num={2} title="Data We Collect">
+        <SubHeading>For Hosts (Account Holders)</SubHeading>
+        <LegalList
+          items={[
+            <>
+              <strong style={{ color: "var(--text-primary)" }}>OAuth Data:</strong> We access
+              your Google Calendar to manage bookings and check availability. We store your
+              basic profile info (email, name) and OAuth access tokens securely via Supabase.
+            </>,
+            <>
+              <strong style={{ color: "var(--text-primary)" }}>Calendar Scopes:</strong> We
+              request access to{" "}
+              <code
+                style={{
+                  fontFamily: "monospace",
+                  fontSize: 12,
+                  background: "var(--bg-card-hover)",
+                  padding: "1px 5px",
+                  borderRadius: 4,
+                  color: "var(--accent-cyan)",
+                }}
+              >
+                auth/calendar.events
+              </code>{" "}
+              (to create/edit bookings) and{" "}
+              <code
+                style={{
+                  fontFamily: "monospace",
+                  fontSize: 12,
+                  background: "var(--bg-card-hover)",
+                  padding: "1px 5px",
+                  borderRadius: 4,
+                  color: "var(--accent-cyan)",
+                }}
+              >
+                auth/calendar.freebusy
+              </code>{" "}
+              (to prevent scheduling conflicts).
+            </>,
+            <>
+              <strong style={{ color: "var(--text-primary)" }}>Availability Settings:</strong>{" "}
+              Your working hours, slot configuration, and timezone.
+            </>,
+          ]}
+        />
 
-          <h3 className="text-xl font-medium text-[var(--text-primary)] mt-4">For Guests (Attendees):</h3>
-          <ul className="list-disc pl-6 space-y-2">
-            <li><strong>Booking Information:</strong> Your name, email, and meeting notes.</li>
-            <li><strong>Custom Answers:</strong> Any explicit answers provided during the booking flow.</li>
-          </ul>
-        </section>
+        <SubHeading>For Guests (Attendees)</SubHeading>
+        <LegalList
+          items={[
+            <>
+              <strong style={{ color: "var(--text-primary)" }}>Booking Information:</strong>{" "}
+              Your name, email, and any meeting notes you provide.
+            </>,
+            <>
+              <strong style={{ color: "var(--text-primary)" }}>Custom Answers:</strong> Any
+              explicit answers provided during the booking flow (e.g. custom intake questions
+              set by the host).
+            </>,
+          ]}
+        />
+      </LegalSection>
 
-        <section className="space-y-4">
-          <h2 className="text-2xl font-semibold text-[var(--text-primary)]">3. How We Use Your Data</h2>
-          <ul className="list-disc pl-6 space-y-2">
-            <li>To generate and manage Google Meet events for confirmed bookings.</li>
-            <li>To check your availability (Free/Busy status) to prevent double-bookings.</li>
-            <li>To send automated notifications and webhook payloads on behalf of the host.</li>
-            <li>To prevent fraud, abuse, and secure our API endpoints.</li>
-          </ul>
-        </section>
+      <LegalSection id="use" num={3} title="How We Use Your Data">
+        <LegalList
+          items={[
+            "To generate and manage Google Meet events for confirmed bookings.",
+            "To check your availability (Free/Busy status) to prevent double-bookings.",
+            "To send automated notifications and webhook payloads on behalf of the host.",
+            "To prevent fraud, abuse, and to secure our API endpoints.",
+            "We do not sell, rent, or share your personal data with third parties for marketing.",
+          ]}
+        />
+      </LegalSection>
 
-        <section className="space-y-4">
-          <h2 className="text-2xl font-semibold text-[var(--text-primary)]">4. Your Rights (GDPR &amp; CCPA)</h2>
-          <p>Depending on your location, you hold specific rights regarding your data:</p>
-          <ul className="list-disc pl-6 space-y-2">
-            <li><strong>Right to Erasure (Right to be Forgotten):</strong> Hosts can permanently delete their accounts and revoke all Google OAuth access directly from their Dashboard.</li>
-            <li><strong>Right to Access &amp; Rectification:</strong> You may request a copy of your stored data or update inaccurate details.</li>
-          </ul>
-          <p>To exercise these rights securely, please contact the host of the meeting or reach out to DraftMeet Support.</p>
-        </section>
+      <LegalSection id="rights" num={4} title="Your Rights (GDPR & CCPA)">
+        <p>Depending on your location, you hold specific rights regarding your data:</p>
 
-        <section className="space-y-4">
-          <h2 className="text-2xl font-semibold text-[var(--text-primary)]">5. Security</h2>
-          <p>We leverage industry-standard security measures (HTTPS, Supabase RLS, encryption at rest for tokens) to ensure your data stays private and protected from unauthorized access.</p>
-        </section>
+        <SubHeading>Right to Erasure (Right to be Forgotten)</SubHeading>
+        <p>
+          Hosts can permanently delete their account and revoke all Google OAuth access
+          directly from their Dashboard. This action is immediate and irreversible.
+        </p>
 
-        <section className="space-y-4 border-t border-[var(--border)] pt-8">
-          <h2 className="text-2xl font-semibold text-[var(--text-primary)]">6. Google API Disclosure</h2>
-          <p>
-            DraftMeet&apos;s use and transfer to any other app of information received from Google APIs will adhere to{" "}
-            <a
-              href="https://developers.google.com/terms/api-services-user-data-policy"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-400 hover:underline"
-            >
-              Google API Services User Data Policy
-            </a>, including the Limited Use requirements.
-          </p>
-        </section>
-      </div>
-    </main>
+        <SubHeading>Right to Access & Rectification</SubHeading>
+        <p>
+          You may request a copy of your stored data or ask us to update inaccurate details.
+        </p>
+
+        <Callout variant="info">
+          To exercise your rights, please contact the host of the meeting, or reach out to{" "}
+          <strong style={{ color: "var(--text-primary)" }}>DraftMeet Support</strong> directly
+          via your dashboard.
+        </Callout>
+      </LegalSection>
+
+      <LegalSection id="security" num={5} title="Security">
+        <p>
+          We leverage industry-standard security measures to ensure your data stays private
+          and protected:
+        </p>
+        <LegalList
+          items={[
+            "All data in transit is encrypted via HTTPS / TLS.",
+            "OAuth tokens are stored encrypted at rest via Supabase.",
+            "Row-level security (RLS) ensures users can only access their own data.",
+            "Session cookies are HMAC-signed and HttpOnly.",
+          ]}
+        />
+      </LegalSection>
+
+      <LegalSection id="google" num={6} title="Google API Disclosure">
+        <Callout variant="important">
+          DraftMeet&apos;s use and transfer to any other app of information received from Google
+          APIs will adhere to the{" "}
+          <Link
+            href="https://developers.google.com/terms/api-services-user-data-policy"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: "var(--accent-cyan)", fontWeight: 600, textDecoration: "underline" }}
+          >
+            Google API Services User Data Policy
+          </Link>
+          , including the{" "}
+          <strong style={{ color: "var(--text-primary)" }}>Limited Use requirements</strong>.
+        </Callout>
+        <p style={{ marginTop: 12 }}>
+          This means we only use Google user data to provide or improve the core scheduling
+          functionality of DraftMeet. We do not use Google data for advertising or to
+          train AI/ML models.
+        </p>
+      </LegalSection>
+
+    </LegalLayout>
   );
 }
