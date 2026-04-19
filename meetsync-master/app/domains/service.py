@@ -71,6 +71,16 @@ def get_domain_for_user(user_id: str) -> dict | None:
     return result.data[0] if result.data else None
 
 
+def get_verified_custom_domain(user_id: str) -> str | None:
+    """Get the verified custom domain for a user, if any."""
+    row = supabase.table("custom_domains") \
+        .select("domain") \
+        .eq("user_id", user_id) \
+        .eq("verified", True) \
+        .execute()
+    return row.data[0]["domain"] if row.data else None
+
+
 def resolve_domain_to_user(domain: str) -> dict | None:
     """
     Map a verified custom domain to its owner's user_id and username.

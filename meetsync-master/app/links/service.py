@@ -14,6 +14,7 @@ from urllib.parse import urlparse
 
 from app.core.config import supabase, FRONTEND_URL
 from app.core.schemas import OTLStatus
+from app.domains.service import get_verified_custom_domain
 
 
 def _validate_image_url(url: Optional[str], field: str) -> None:
@@ -39,6 +40,12 @@ def _parse_expiry(expires_in: Optional[str]) -> Optional[datetime]:
     if expires_in.endswith("d"):
         return datetime.now(timezone.utc) + timedelta(days=int(expires_in[:-1]))
     return None
+
+
+def _base_url_for_user(user_id: str) -> str:
+    """Get the base booking URL for a user, using custom domain if verified."""
+    domain = get_verified_custom_domain(user_id)
+    return f"https://{domain}" if domain else FRONTEND_URL
 
 
 # ── Public API ────────────────────────────────────────────
@@ -79,7 +86,7 @@ def create_otl(
     }
     result = supabase.table("one_time_links").insert(row).execute()
     data   = result.data[0]
-    data["booking_url"] = f"{FRONTEND_URL}/book/{token}"
+    data["booking_url"] = f"{_base_url_for_user(user_id)}/book/{token}"
     return data
 
 
@@ -166,8 +173,9 @@ def list_otls(
         query = query.or_(f"id.ilike.%{search}%,event_type.ilike.%{search}%,custom_title.ilike.%{search}%")
     result = query.order("created_at", desc=True).range(offset, offset + limit - 1).execute()
     total = result.count or 0
+    base_url = _base_url_for_user(user_id)
     for row in result.data:
-        row["booking_url"] = f"{FRONTEND_URL}/book/{row['id']}"
+        row["booking_url"] = f"{base_url}/book/{row['id']}"
     return {"items": result.data, "total": total, "page": page, "has_more": offset + limit < total}
 
 
@@ -188,7 +196,7 @@ def customize_otl(token: str, user_id: str, updates: dict) -> dict:
     safe_updates = {k: v for k, v in updates.items() if k in _ALLOWED_OTL_CUSTOMIZE}
     updated = supabase.table("one_time_links").update(safe_updates).eq("id", token).execute()
     data = updated.data[0]
-    data["booking_url"] = f"{FRONTEND_URL}/book/{token}"
+    data["booking_url"] = f"{_base_url_for_user(user_id)}/book/{token}"
     return data
 
 
