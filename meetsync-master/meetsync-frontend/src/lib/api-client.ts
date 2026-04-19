@@ -335,6 +335,11 @@ export const api = {
       request<{ status: string }>(`/admin/impersonate/${userId}/`, { method: "POST" }),
     exitImpersonation: () =>
       request<{ status: string }>("/admin/impersonate/exit/", { method: "POST" }),
+    setRemoveBranding: (userId: string, removeBranding: boolean) =>
+      request<{ user_id: string; remove_branding: boolean }>(`/admin/users/${userId}/branding/`, {
+        method: "PATCH",
+        body: JSON.stringify({ remove_branding: removeBranding }),
+      }),
   },
 };
 
@@ -373,6 +378,7 @@ export interface AdminUser {
   username?: string | null;
   display_name?: string | null;
   booking_count: number;
+  remove_branding: boolean;
 }
 
 export interface WaitlistEntry {
@@ -518,6 +524,7 @@ export interface OTLRow {
   cover_image_url?: string | null;
   bg_image_url?: string | null;
   accent_color?: string | null;
+  remove_branding?: boolean;
 }
 
 export interface OTLCreatePayload {
@@ -579,6 +586,7 @@ export interface ProfileResponse {
   cover_image_url?: string | null;
   bg_image_url?: string | null;
   accent_color?: string | null;
+  remove_branding?: boolean;
 }
 
 export interface ProfileUpdate {
@@ -608,6 +616,8 @@ export interface PermanentLinkRow {
   cover_image_url?: string | null;
   bg_image_url?: string | null;
   accent_color?: string | null;
+  host_user_id?: string;
+  remove_branding?: boolean;
 }
 
 export interface PermanentLinkCreate {

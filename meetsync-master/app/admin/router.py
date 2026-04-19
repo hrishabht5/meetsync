@@ -1,5 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+
+
+class BrandingPayload(BaseModel):
+    remove_branding: bool
 
 from app.auth.middleware import (
     get_current_user_id,
@@ -51,6 +56,18 @@ def admin_waitlist(_: str = Depends(verified_admin)):
 @router.get("/domains")
 def admin_domains(_: str = Depends(verified_admin)):
     return service.list_domains()
+
+
+# ── Branding ──────────────────────────────────────────────
+
+@router.patch("/users/{user_id}/branding")
+def set_user_branding(user_id: str, payload: BrandingPayload, _: str = Depends(verified_admin)):
+    """Toggle remove_branding for a premium user."""
+    remove = payload.remove_branding
+    try:
+        return service.set_remove_branding(user_id, remove)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 # ── Impersonation ─────────────────────────────────────────

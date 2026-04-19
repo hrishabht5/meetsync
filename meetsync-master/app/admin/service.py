@@ -34,7 +34,7 @@ def list_users(search: str = "", page: int = 1, limit: int = 50) -> dict:
     offset = (page - 1) * limit
 
     query = supabase.table("users").select(
-        "id, email, created_at, user_profiles(username, display_name)",
+        "id, email, created_at, user_profiles(username, display_name, remove_branding)",
         count="exact",
     )
     if search:
@@ -69,9 +69,20 @@ def list_users(search: str = "", page: int = 1, limit: int = 50) -> dict:
             "username": profile.get("username"),
             "display_name": profile.get("display_name"),
             "booking_count": booking_counts.get(r["id"], 0),
+            "remove_branding": bool(profile.get("remove_branding", False)),
         })
 
     return {"items": items, "total": total, "page": page, "has_more": offset + limit < total}
+
+
+def set_remove_branding(user_id: str, remove_branding: bool) -> dict:
+    result = supabase.table("user_profiles") \
+        .update({"remove_branding": remove_branding}) \
+        .eq("user_id", user_id) \
+        .execute()
+    if not result.data:
+        raise ValueError("User profile not found")
+    return {"user_id": user_id, "remove_branding": remove_branding}
 
 
 def list_waitlist() -> list:

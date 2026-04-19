@@ -172,4 +172,6 @@ def validate_permanent_link(username: str, slug: str):
     link, host_user_id = result
     if not link["is_active"]:
         raise HTTPException(status_code=410, detail="This booking link is no longer active")
-    return {**link, "host_user_id": host_user_id}
+    host_profile = service.get_profile_by_user_id(host_user_id)
+    remove_branding = bool(host_profile.get("remove_branding")) if host_profile else False
+    return {**link, "host_user_id": host_user_id, "remove_branding": remove_branding}

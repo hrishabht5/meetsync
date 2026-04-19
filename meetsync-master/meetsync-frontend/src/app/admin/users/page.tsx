@@ -14,6 +14,7 @@ export default function AdminUsersPage() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [impersonating, setImpersonating] = useState<string | null>(null);
+  const [brandingToggles, setBrandingToggles] = useState<Record<string, boolean>>({});
 
   const load = (q: string, p: number) => {
     setLoading(true);
@@ -43,6 +44,21 @@ export default function AdminUsersPage() {
     } catch (e: unknown) {
       alert(errMsg(e));
       setImpersonating(null);
+    }
+  };
+
+  const handleToggleBranding = async (user: AdminUser) => {
+    const next = !user.remove_branding;
+    setBrandingToggles((prev) => ({ ...prev, [user.id]: true }));
+    try {
+      await api.admin.setRemoveBranding(user.id, next);
+      setUsers((prev) =>
+        prev.map((u) => u.id === user.id ? { ...u, remove_branding: next } : u)
+      );
+    } catch (e: unknown) {
+      alert(errMsg(e));
+    } finally {
+      setBrandingToggles((prev) => { const n = { ...prev }; delete n[user.id]; return n; });
     }
   };
 
@@ -84,13 +100,14 @@ export default function AdminUsersPage() {
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Email</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)] text-right">Bookings</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Joined</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)] text-center">White-label</th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody>
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center text-[var(--text-secondary)] text-sm">
+                  <td colSpan={6} className="px-4 py-12 text-center text-[var(--text-secondary)] text-sm">
                     No users found.
                   </td>
                 </tr>
@@ -111,6 +128,27 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="px-4 py-3 text-[var(--text-secondary)] text-xs">
                       {new Date(u.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={u.remove_branding}
+                        disabled={!!brandingToggles[u.id]}
+                        onClick={() => handleToggleBranding(u)}
+                        title={u.remove_branding ? "Branding hidden (premium)" : "Branding visible (click to enable white-label)"}
+                        className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed ${
+                          u.remove_branding
+                            ? "bg-gradient-to-r from-[#3b6ae8] to-[#38bfff]"
+                            : "bg-[var(--bg-card-hover)]"
+                        }`}
+                      >
+                        <span
+                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white border border-gray-300 shadow transition-transform duration-200 ease-in-out mt-[2px] ${
+                            u.remove_branding ? "translate-x-4" : "translate-x-0.5"
+                          }`}
+                        />
+                      </button>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <button

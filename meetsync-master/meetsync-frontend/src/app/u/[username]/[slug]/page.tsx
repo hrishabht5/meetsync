@@ -39,6 +39,7 @@ function PermanentLinkBookingPageInner() {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [consent, setConsent] = useState(false);
   const [hostTz, setHostTz] = useState("");
+  const [removeBranding, setRemoveBranding] = useState(false);
   const guestTz = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone, []);
   const { theme } = useTheme();
 
@@ -52,6 +53,7 @@ function PermanentLinkBookingPageInner() {
         setCoverImageUrl(data.cover_image_url ?? null);
         setBgImageUrl(data.bg_image_url ?? null);
         setAccentColor(data.accent_color ?? null);
+        setRemoveBranding(!!data.remove_branding);
         setHostUserId(data.host_user_id);
         setPermanentLinkId(data.id);
         if (data.custom_fields && data.custom_fields.length > 0) {
@@ -144,7 +146,7 @@ function PermanentLinkBookingPageInner() {
       )}
 
       <div className={isEmbed ? "w-full" : "relative z-10 w-full max-w-md"}>
-        {!isEmbed && (
+        {!isEmbed && !removeBranding && (
           <div className="flex items-center gap-2 mb-8 justify-center">
             <img src={theme === "dark" ? "/logo-dark.png" : "/logo-light.png"} alt="DraftMeet" className="w-8 h-8 rounded-lg glow-brand-sm" />
             <span className="text-lg font-bold text-[var(--text-primary)]">DraftMeet</span>

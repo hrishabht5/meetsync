@@ -45,6 +45,7 @@ function CustomDomainBookingInner({
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [consent, setConsent] = useState(false);
   const [hostTz, setHostTz] = useState("");
+  const [removeBranding, setRemoveBranding] = useState(false);
 
   useEffect(() => {
     if (!domain || !slug) return;
@@ -63,6 +64,7 @@ function CustomDomainBookingInner({
           host_user_id: string;
           id: string;
           custom_fields?: CustomField[];
+          remove_branding?: boolean;
         }>(`profiles/${encodeURIComponent(resolvedUsername)}/${encodeURIComponent(slug)}/validate/`);
       })
       .then((data) => {
@@ -72,6 +74,7 @@ function CustomDomainBookingInner({
         setCoverImageUrl(data.cover_image_url ?? null);
         setBgImageUrl(data.bg_image_url ?? null);
         setAccentColor(data.accent_color ?? null);
+        setRemoveBranding(!!data.remove_branding);
         setPermanentLinkId(data.id);
         if (data.custom_fields && data.custom_fields.length > 0) {
           setCustomFields(data.custom_fields);
@@ -184,7 +187,7 @@ function CustomDomainBookingInner({
       )}
 
       <div className={isEmbed ? "w-full" : "relative z-10 w-full max-w-md"}>
-        {!isEmbed && (
+        {!isEmbed && !removeBranding && (
           <div className="flex items-center gap-2 mb-8 justify-center">
             <img
               src={theme === "dark" ? "/logo-dark.png" : "/logo-light.png"}

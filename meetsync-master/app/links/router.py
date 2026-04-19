@@ -115,10 +115,17 @@ def validate_link(token: str):
         otl = otl_service.validate_otl(token)
         from app.core.config import FRONTEND_URL
         from app.domains.service import get_verified_custom_domain
+        from app.profiles.service import get_profile_by_user_id
         user_id = otl.get("user_id")
         custom_domain = get_verified_custom_domain(user_id) if user_id else None
         base_url = f"https://{custom_domain}" if custom_domain else FRONTEND_URL
         otl["booking_url"] = f"{base_url}/book/{token}"
+        # Include host's branding preference so the booking page can hide the logo
+        if user_id:
+            profile = get_profile_by_user_id(user_id)
+            otl["remove_branding"] = bool(profile.get("remove_branding")) if profile else False
+        else:
+            otl["remove_branding"] = False
         return otl
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

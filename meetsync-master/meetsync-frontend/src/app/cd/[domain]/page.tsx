@@ -58,15 +58,17 @@ export default function CustomDomainProfilePage({
       )}
 
       <div className="relative z-10 w-full max-w-lg pt-12">
-        {/* DraftMeet logo */}
-        <div className="flex items-center gap-2 mb-8 justify-center">
-          <img
-            src={theme === "dark" ? "/logo-dark.png" : "/logo-light.png"}
-            alt="DraftMeet"
-            className="w-8 h-8 rounded-lg glow-brand-sm"
-          />
-          <span className="text-lg font-bold text-[var(--text-primary)]">DraftMeet</span>
-        </div>
+        {/* DraftMeet logo — hidden for white-label premium users */}
+        {!data?.remove_branding && (
+          <div className="flex items-center gap-2 mb-8 justify-center">
+            <img
+              src={theme === "dark" ? "/logo-dark.png" : "/logo-light.png"}
+              alt="DraftMeet"
+              className="w-8 h-8 rounded-lg glow-brand-sm"
+            />
+            <span className="text-lg font-bold text-[var(--text-primary)]">DraftMeet</span>
+          </div>
+        )}
 
         {loading && (
           <div className="flex justify-center py-20"><Spinner size={36} /></div>
