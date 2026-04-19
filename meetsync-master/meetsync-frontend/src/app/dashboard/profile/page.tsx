@@ -42,7 +42,7 @@ export default function ProfilePage() {
     Promise.all([
       api.profiles.getMe(),
       api.profiles.listLinks({ limit: 50 }),
-      api.domains.get(),
+      api.domains.get().catch(() => null),
     ])
       .then(([p, res, domain]) => {
         setProfile(p);
