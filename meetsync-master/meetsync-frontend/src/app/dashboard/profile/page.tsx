@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { api, ProfileResponse, PermanentLinkRow } from "@/lib/api-client";
 import { errMsg } from "@/lib/errors";
 import { Button, Card, Input, SectionHeader, Spinner } from "@/components/ui";
