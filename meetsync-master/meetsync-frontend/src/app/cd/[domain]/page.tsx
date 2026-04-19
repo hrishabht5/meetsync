@@ -3,9 +3,10 @@ import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useTheme } from "@/components/themeProvider";
 import { errMsg } from "@/lib/errors";
-import { Card, Spinner } from "@/components/ui";
+import { Spinner } from "@/components/ui";
 import { ProfileResponse, PermanentLinkRow } from "@/lib/api-client";
 import { publicGet } from "@/lib/public-api";
+import { Avatar } from "@/components/Avatar";
 
 type PageData = ProfileResponse & { links: PermanentLinkRow[] };
 
@@ -22,7 +23,6 @@ export default function CustomDomainProfilePage({
 
   useEffect(() => {
     if (!domain) return;
-    // Resolve domain → username, then load profile
     publicGet<{ username: string }>("domains/resolve", `host=${encodeURIComponent(domain)}`)
       .then(({ username }) =>
         publicGet<PageData>(`profiles/${encodeURIComponent(username)}/`)
@@ -32,14 +32,33 @@ export default function CustomDomainProfilePage({
       .finally(() => setLoading(false));
   }, [domain]);
 
-  return (
-    <main className="min-h-screen flex items-center justify-center px-4 py-12 bg-page-gradient">
-      <div
-        className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[400px] rounded-full blur-[120px] opacity-20 pointer-events-none"
-        style={{ background: "radial-gradient(circle, rgba(59,106,232,0.6) 0%, rgba(56,191,255,0.2) 60%, transparent 100%)" }}
-      />
+  const accentStyle = data?.accent_color
+    ? ({ "--profile-accent": data.accent_color } as React.CSSProperties)
+    : {};
 
-      <div className="relative z-10 w-full max-w-lg">
+  return (
+    <main
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "flex-start",
+        justifyContent: "center",
+        padding: "0 16px 80px",
+        ...(data?.bg_image_url
+          ? { backgroundImage: `url(${data.bg_image_url})`, backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "fixed" }
+          : {}),
+      }}
+      className={data?.bg_image_url ? "" : "bg-page-gradient"}
+    >
+      {!data?.bg_image_url && (
+        <div
+          className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[400px] rounded-full blur-[120px] opacity-20 pointer-events-none"
+          style={{ background: "radial-gradient(circle, rgba(59,106,232,0.6) 0%, rgba(56,191,255,0.2) 60%, transparent 100%)" }}
+        />
+      )}
+
+      <div className="relative z-10 w-full max-w-lg pt-12">
+        {/* DraftMeet logo */}
         <div className="flex items-center gap-2 mb-8 justify-center">
           <img
             src={theme === "dark" ? "/logo-dark.png" : "/logo-light.png"}
@@ -50,61 +69,123 @@ export default function CustomDomainProfilePage({
         </div>
 
         {loading && (
-          <div className="flex justify-center py-20">
-            <Spinner size={36} />
-          </div>
+          <div className="flex justify-center py-20"><Spinner size={36} /></div>
         )}
 
         {!loading && errorMsg && (
           <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-10 text-center glow-brand">
-            <div className="text-5xl mb-4">🔗</div>
-            <p className="font-semibold text-[var(--text-primary)] text-lg">Page Not Found</p>
+            <div className="text-5xl mb-4">👤</div>
+            <p className="font-semibold text-[var(--text-primary)] text-lg">Profile not found</p>
             <p className="text-[var(--text-secondary)] text-sm mt-2">{errorMsg}</p>
           </div>
         )}
 
         {!loading && data && (
-          <div className="flex flex-col gap-5">
-            <div className="text-center">
-              <h1 className="text-2xl font-bold text-[var(--text-primary)]">
-                {data.display_name || data.username}
-              </h1>
+          <div
+            className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden glow-brand"
+            style={accentStyle}
+          >
+            {/* Cover image */}
+            {data.cover_image_url && (
+              <div className="w-full h-36 overflow-hidden">
+                <img
+                  src={data.cover_image_url}
+                  alt="Profile cover"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+
+            {/* Profile header */}
+            <div
+              className={`px-8 pb-6 border-b border-[var(--border)] ${data.cover_image_url ? "pt-5" : "pt-8"}`}
+            >
+              <div className="flex items-center gap-4">
+                <Avatar
+                  src={data.avatar_url}
+                  name={data.display_name ?? data.username}
+                  size={64}
+                  accentColor={data.accent_color}
+                  className="glow-brand-sm"
+                />
+                <div className="min-w-0">
+                  <h1 className="text-xl font-bold text-[var(--text-primary)] truncate">
+                    {data.display_name ?? data.username}
+                  </h1>
+                  <p className="text-sm text-[var(--text-secondary)]">@{data.username}</p>
+                  {data.headline && (
+                    <p className="text-xs mt-1" style={{ color: data.accent_color || "var(--accent)" }}>
+                      {data.headline}
+                    </p>
+                  )}
+                </div>
+              </div>
+
               {data.bio && (
-                <p className="text-sm text-[var(--text-secondary)] mt-2 max-w-sm mx-auto">
-                  {data.bio}
-                </p>
+                <p className="mt-4 text-sm text-[var(--text-secondary)] leading-relaxed">{data.bio}</p>
+              )}
+
+              {(data.website || data.location) && (
+                <div className="mt-3 flex flex-wrap gap-4">
+                  {data.location && (
+                    <span className="text-xs text-[var(--text-secondary)] flex items-center gap-1">
+                      📍 {data.location}
+                    </span>
+                  )}
+                  {data.website && (
+                    <a
+                      href={data.website.startsWith("http") ? data.website : `https://${data.website}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs flex items-center gap-1 transition-colors hover:underline"
+                      style={{ color: data.accent_color || "var(--accent)" }}
+                    >
+                      🔗 {data.website.replace(/^https?:\/\//, "")}
+                    </a>
+                  )}
+                </div>
               )}
             </div>
 
-            {data.links && data.links.length > 0 ? (
-              data.links
-                .filter((l) => l.is_active)
-                .map((link) => (
-                  <Link key={link.id} href={`/${link.slug}`}>
-                    <Card className="p-5 hover:border-[var(--border-accent)] transition-all cursor-pointer group">
-                      <div className="flex items-center justify-between gap-4">
+            {/* Booking links */}
+            <div className="p-6 flex flex-col gap-3">
+              {!data.links || data.links.filter((l) => l.is_active).length === 0 ? (
+                <p className="text-center text-[var(--text-secondary)] text-sm py-6">
+                  No active booking links.
+                </p>
+              ) : (
+                <>
+                  <p className="text-xs text-[var(--text-secondary)] font-semibold uppercase tracking-wider mb-1">
+                    Book a meeting
+                  </p>
+                  {data.links
+                    .filter((l) => l.is_active)
+                    .map((link) => (
+                      <Link
+                        key={link.id}
+                        href={`/${link.slug}`}
+                        className="flex items-center justify-between gap-4 bg-[var(--bg-card-hover)] border border-[var(--border)] hover:border-[var(--border-accent)] hover:bg-[var(--accent)]/8 rounded-xl px-5 py-4 transition-all group"
+                      >
                         <div>
-                          <p className="font-semibold text-[var(--text-primary)] group-hover:text-[var(--accent-cyan)] transition-colors">
+                          <p className="text-sm font-semibold text-[var(--text-primary)] group-hover:text-[var(--accent-cyan)] transition-colors">
                             {link.custom_title || link.event_type}
                           </p>
                           {link.description && (
-                            <p className="text-xs text-[var(--text-secondary)] mt-1 line-clamp-2">
-                              {link.description}
-                            </p>
+                            <p className="text-xs text-[var(--text-secondary)] mt-0.5 line-clamp-1">{link.description}</p>
                           )}
                         </div>
-                        <span className="text-[var(--text-secondary)] group-hover:text-[var(--accent)] transition-colors text-lg flex-shrink-0">
+                        <span
+                          className="text-lg transition-colors flex-shrink-0"
+                          style={{ color: data.accent_color || "var(--accent)" }}
+                        >
                           →
                         </span>
-                      </div>
-                    </Card>
-                  </Link>
-                ))
-            ) : (
-              <Card className="p-8 text-center">
-                <p className="text-[var(--text-secondary)] text-sm">No booking links available.</p>
-              </Card>
-            )}
+                      </Link>
+                    ))}
+                </>
+              )}
+            </div>
           </div>
         )}
       </div>
