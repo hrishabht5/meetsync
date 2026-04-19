@@ -3,9 +3,10 @@ import React, { Suspense } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { api, OTLRow, EVENT_TYPES, CustomField } from "@/lib/api-client";
+import { publicGet, publicPost } from "@/lib/public-api";
 import { useTheme } from "@/components/themeProvider";
 import { errMsg } from "@/lib/errors";
-import { Button, Input, Spinner } from "@/components/ui"; // Input used in booking form
+import { Button, Input, Spinner } from "@/components/ui";
 import { BookingCalendar } from "@/components/BookingCalendar";
 
 type Step = "loading" | "error" | "pick-date" | "pick-slot" | "form" | "success";
@@ -35,11 +36,25 @@ function BookingPageInner() {
   const guestTz = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone, []);
   const { theme } = useTheme();
 
+  const isCustomDomain = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    const host = window.location.hostname;
+    return !host.includes("draftmeet.com") && !host.includes("localhost");
+  }, []);
+
   // Step 1: validate OTL
   useEffect(() => {
     if (!token) return;
-    api.links.validate(token)
-      .then((data) => {
+    const validateFn = async () => {
+      try {
+        let data: OTLRow;
+        if (isCustomDomain) {
+          const domain = typeof window !== "undefined" ? window.location.hostname : "";
+          const qs = new URLSearchParams({ host: domain }).toString();
+          data = await publicGet<OTLRow>(`links/${token}/`, qs);
+        } else {
+          data = await api.links.validate(token);
+        }
         setOtl(data);
         if (data.custom_fields && data.custom_fields.length > 0) {
           setCustomFields(data.custom_fields);
@@ -48,9 +63,13 @@ function BookingPageInner() {
           setCustomAnswers(init);
         }
         setStep("pick-date");
-      })
-      .catch((e: Error) => { setErrorMsg(e.message); setStep("error"); });
-  }, [token]);
+      } catch (e: unknown) {
+        setErrorMsg(errMsg(e));
+        setStep("error");
+      }
+    };
+    validateFn();
+  }, [token, isCustomDomain]);
 
   // Step 2: fetch slots
   const fetchSlots = async (date: string) => {
@@ -59,11 +78,22 @@ function BookingPageInner() {
     setSlots([]);
     setSelectedSlot("");
     try {
-      const res = await api.availability.getSlots(
-        date,
-        otl?.event_type ?? EVENT_TYPES[1],
-        { one_time_link_id: token, timezone: guestTz }
-      );
+      let res: { slots: string[]; timezone: string };
+      if (isCustomDomain) {
+        const qs = new URLSearchParams({
+          date,
+          event_type: otl?.event_type ?? EVENT_TYPES[1],
+          one_time_link_id: token,
+          timezone: guestTz,
+        }).toString();
+        res = await publicGet<{ slots: string[]; timezone: string }>("availability/slots", qs);
+      } else {
+        res = await api.availability.getSlots(
+          date,
+          otl?.event_type ?? EVENT_TYPES[1],
+          { one_time_link_id: token, timezone: guestTz }
+        );
+      }
       setSlots(res.slots);
       setHostTz(res.timezone);
       setStep("pick-slot");
@@ -99,15 +129,31 @@ function BookingPageInner() {
     setSubmitting(true);
     setErrorMsg("");
     try {
-      const booking = await api.bookings.create({
-        guest_name: form.name,
-        guest_email: form.email,
-        scheduled_at: selectedSlot,
-        event_type: otl?.event_type ?? EVENT_TYPES[1],
-        notes: form.notes || undefined,
-        one_time_link_id: token,
-        custom_answers: Object.keys(customAnswers).length > 0 ? customAnswers : undefined,
-      });
+      let booking: { id: string; meet_link?: string; management_token?: string };
+      if (isCustomDomain) {
+        booking = await publicPost<{ id: string; meet_link?: string; management_token?: string }>(
+          "bookings/",
+          {
+            guest_name: form.name,
+            guest_email: form.email,
+            scheduled_at: selectedSlot,
+            event_type: otl?.event_type ?? EVENT_TYPES[1],
+            notes: form.notes || undefined,
+            one_time_link_id: token,
+            custom_answers: Object.keys(customAnswers).length > 0 ? customAnswers : undefined,
+          }
+        );
+      } else {
+        booking = await api.bookings.create({
+          guest_name: form.name,
+          guest_email: form.email,
+          scheduled_at: selectedSlot,
+          event_type: otl?.event_type ?? EVENT_TYPES[1],
+          notes: form.notes || undefined,
+          one_time_link_id: token,
+          custom_answers: Object.keys(customAnswers).length > 0 ? customAnswers : undefined,
+        });
+      }
       setMeetLink(booking.meet_link ?? "");
       setManagementToken(booking.management_token ?? "");
       setStep("success");

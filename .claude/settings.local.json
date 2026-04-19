@@ -31,7 +31,25 @@
       "Bash(CLAUDE_CONFIG_DIR=\"c:/Users/HP/OneDrive/Desktop/meetsync/meetsync-master/.claude\" npx --yes claude-mem install)",
       "Bash(git push *)",
       "Bash(python3 -c \"from enum import Enum; class OTLStatus\\(str, Enum\\): active='active'; print\\(f'f-string: {OTLStatus.active}'\\); print\\(f'str\\(\\): {str\\(OTLStatus.active\\)}'\\); print\\(f'.value: {OTLStatus.active.value}'\\)\")",
-      "Bash(python -c \"from enum import Enum; class OTLStatus\\(str, Enum\\): active='active'; print\\('f-string: ' + str\\(f'{OTLStatus.active}'\\)\\); print\\('str\\(\\): ' + str\\(str\\(OTLStatus.active\\)\\)\\)\")"
+      "Bash(python -c \"from enum import Enum; class OTLStatus\\(str, Enum\\): active='active'; print\\('f-string: ' + str\\(f'{OTLStatus.active}'\\)\\); print\\('str\\(\\): ' + str\\(str\\(OTLStatus.active\\)\\)\\)\")",
+      "Bash(xargs cat *)",
+      "Bash(xargs head *)",
+      "Bash(mkdir -p \"/c/Users/HP/OneDrive/Desktop/meetsync/meetsync-master/meetsync-frontend/src/app/cd/[domain]\")",
+      "Bash(mkdir -p \"/c/Users/HP/OneDrive/Desktop/meetsync/meetsync-master/meetsync-frontend/src/app/cd/[domain]/[slug]\")",
+      "Bash(npx tsc *)",
+      "Bash(npm list *)",
+      "Bash(md-to-pdf --help)",
+      "Bash(md-to-pdf *)",
+      "Bash(npx puppeteer *)",
+      "Read(//c/Program Files/Google/Chrome/Application/**)",
+      "Read(//c/Program Files \\(x86\\)/Google/Chrome/Application/**)",
+      "Bash(git restore *)",
+      "Bash(git -C meetsync-master add meetsync-frontend/src/lib/api-client.ts)",
+      "Bash(git -C meetsync-master commit -m ' *)",
+      "Bash(xargs -I {} find {} -name \"page.tsx\")",
+      "Bash(cat meetsync-frontend/src/app/book/\\\\[token\\\\]/page.tsx)",
+      "Read(//tmp/**)",
+      "Bash(git diff *)"
     ]
   }
 }
