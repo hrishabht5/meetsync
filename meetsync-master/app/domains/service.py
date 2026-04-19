@@ -7,9 +7,10 @@ from app.core.config import supabase
 
 _log = logging.getLogger("draftmeet.domains")
 
-VERCEL_TOKEN      = os.getenv("VERCEL_TOKEN", "")
-VERCEL_PROJECT_ID = os.getenv("VERCEL_PROJECT_ID", "")
-VERCEL_TEAM_ID    = os.getenv("VERCEL_TEAM_ID", "")  # empty for personal accounts
+VERCEL_TOKEN               = os.getenv("VERCEL_TOKEN", "")
+VERCEL_PROJECT_ID          = os.getenv("VERCEL_PROJECT_ID", "")
+VERCEL_FRONTEND_PROJECT_ID = os.getenv("VERCEL_FRONTEND_PROJECT_ID", "")
+VERCEL_TEAM_ID             = os.getenv("VERCEL_TEAM_ID", "")  # empty for personal accounts
 
 _VERCEL_API = "https://api.vercel.com"
 
@@ -22,31 +23,47 @@ def _params() -> dict:
     return {"teamId": VERCEL_TEAM_ID} if VERCEL_TEAM_ID else {}
 
 
-async def add_domain_to_vercel(domain: str) -> bool:
-    """Register domain on the Vercel project. Returns True on success."""
-    if not VERCEL_TOKEN or not VERCEL_PROJECT_ID:
-        _log.warning("VERCEL_TOKEN or VERCEL_PROJECT_ID not set — skipping Vercel domain add")
-        return False
-    async with httpx.AsyncClient(timeout=15.0) as client:
-        resp = await client.post(
-            f"{_VERCEL_API}/v9/projects/{VERCEL_PROJECT_ID}/domains",
-            headers=_headers(),
-            params=_params(),
-            json={"name": domain},
-        )
+async def _add_domain_to_project(client: httpx.AsyncClient, project_id: str, domain: str) -> bool:
+    resp = await client.post(
+        f"{_VERCEL_API}/v9/projects/{project_id}/domains",
+        headers=_headers(),
+        params=_params(),
+        json={"name": domain},
+    )
     if resp.status_code in (200, 201, 409):  # 409 = already added
         return True
-    _log.warning("Vercel add domain failed: %s %s", resp.status_code, resp.text)
+    _log.warning("Vercel add domain failed for project %s: %s %s", project_id, resp.status_code, resp.text)
     return False
 
 
+async def add_domain_to_vercel(domain: str) -> bool:
+    """Register domain on both frontend and backend Vercel projects."""
+    if not VERCEL_TOKEN:
+        _log.warning("VERCEL_TOKEN not set — skipping Vercel domain add")
+        return False
+
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        # Always add to frontend project so custom domain routing works
+        frontend_ok = False
+        if VERCEL_FRONTEND_PROJECT_ID:
+            frontend_ok = await _add_domain_to_project(client, VERCEL_FRONTEND_PROJECT_ID, domain)
+        elif VERCEL_PROJECT_ID:
+            # Fallback if only one project ID is configured
+            frontend_ok = await _add_domain_to_project(client, VERCEL_PROJECT_ID, domain)
+
+        return frontend_ok
+
+
 async def check_domain_verified_on_vercel(domain: str) -> bool:
-    """Return True if Vercel reports the domain as verified (DNS configured correctly)."""
-    if not VERCEL_TOKEN or not VERCEL_PROJECT_ID:
+    """Return True if Vercel reports the domain as verified on the frontend project."""
+    if not VERCEL_TOKEN:
+        return False
+    project_id = VERCEL_FRONTEND_PROJECT_ID or VERCEL_PROJECT_ID
+    if not project_id:
         return False
     async with httpx.AsyncClient(timeout=15.0) as client:
         resp = await client.get(
-            f"{_VERCEL_API}/v9/projects/{VERCEL_PROJECT_ID}/domains/{domain}",
+            f"{_VERCEL_API}/v9/projects/{project_id}/domains/{domain}",
             headers=_headers(),
             params=_params(),
         )
@@ -56,14 +73,21 @@ async def check_domain_verified_on_vercel(domain: str) -> bool:
 
 
 async def remove_domain_from_vercel(domain: str) -> None:
-    if not VERCEL_TOKEN or not VERCEL_PROJECT_ID:
+    if not VERCEL_TOKEN:
         return
     async with httpx.AsyncClient(timeout=15.0) as client:
-        await client.delete(
-            f"{_VERCEL_API}/v9/projects/{VERCEL_PROJECT_ID}/domains/{domain}",
-            headers=_headers(),
-            params=_params(),
-        )
+        if VERCEL_FRONTEND_PROJECT_ID:
+            await client.delete(
+                f"{_VERCEL_API}/v9/projects/{VERCEL_FRONTEND_PROJECT_ID}/domains/{domain}",
+                headers=_headers(),
+                params=_params(),
+            )
+        if VERCEL_PROJECT_ID:
+            await client.delete(
+                f"{_VERCEL_API}/v9/projects/{VERCEL_PROJECT_ID}/domains/{domain}",
+                headers=_headers(),
+                params=_params(),
+            )
 
 
 def get_domain_for_user(user_id: str) -> dict | None:
