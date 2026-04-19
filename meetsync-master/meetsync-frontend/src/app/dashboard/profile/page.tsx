@@ -33,6 +33,7 @@ export default function ProfilePage() {
 
   // Public URL
   const [urlCopied, setUrlCopied]   = useState(false);
+  const [verifiedDomain, setVerifiedDomain] = useState<string | null>(null);
 
   // Danger zone
   const [deleting, setDeleting]     = useState(false);
@@ -41,9 +42,11 @@ export default function ProfilePage() {
     Promise.all([
       api.profiles.getMe(),
       api.profiles.listLinks({ limit: 50 }),
+      api.domains.get(),
     ])
-      .then(([p, res]) => {
+      .then(([p, res, domain]) => {
         setProfile(p);
+        if (domain?.verified && domain.domain) setVerifiedDomain(domain.domain);
         setUsername(p.username);
         setDisplayName(p.display_name ?? "");
         setBio(p.bio ?? "");
@@ -61,7 +64,9 @@ export default function ProfilePage() {
   }, []);
 
   const publicUrl = profile
-    ? `${typeof window !== "undefined" ? window.location.origin : "https://draftmeet.com"}/u/${profile.username}`
+    ? verifiedDomain
+      ? `https://${verifiedDomain}`
+      : `${typeof window !== "undefined" ? window.location.origin : "https://www.draftmeet.com"}/u/${profile.username}`
     : "";
 
   const handleCopyUrl = () => {
