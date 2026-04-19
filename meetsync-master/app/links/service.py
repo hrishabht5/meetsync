@@ -210,4 +210,6 @@ def delete_otl(token: str, user_id: str):
         raise ValueError("Forbidden.")
     if row["status"] == OTLStatus.active:
         raise ValueError("Cannot delete an active link. Revoke it first.")
+    # Nullify FK on bookings before deleting so history is preserved
+    supabase.table("bookings").update({"one_time_link_id": None}).eq("one_time_link_id", token).execute()
     supabase.table("one_time_links").delete().eq("id", token).execute()
