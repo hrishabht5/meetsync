@@ -54,7 +54,18 @@ export function middleware(request: NextRequest) {
   // rewrite it to /cd/[domain]/[...rest] so the custom-domain booking pages
   // handle the resolution. The browser URL stays as the user's custom domain.
   // API routes and Next.js internals are excluded from rewriting.
-  if (!isOwnHost(hostname) && !pathname.startsWith("/api/")) {
+  // Static assets must be served as-is even on custom domains.
+  const isStaticAsset =
+    pathname.startsWith("/_next/") ||
+    pathname.startsWith("/favicon") ||
+    pathname.startsWith("/logo") ||
+    pathname.startsWith("/og-image") ||
+    pathname.startsWith("/robots") ||
+    pathname.startsWith("/sitemap") ||
+    pathname.startsWith("/monitoring") ||
+    pathname.match(/\.(png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf|css|js)$/) !== null;
+
+  if (!isOwnHost(hostname) && !pathname.startsWith("/api/") && !isStaticAsset) {
     const rest = pathname === "/" ? "" : pathname;
     const url = request.nextUrl.clone();
     url.pathname = `/cd/${hostname}${rest}`;
