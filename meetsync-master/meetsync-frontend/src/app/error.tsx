@@ -1,5 +1,6 @@
 "use client";
 import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
 
 interface Props {
   error: Error & { digest?: string };
@@ -8,8 +9,7 @@ interface Props {
 
 export default function GlobalError({ error, reset }: Props) {
   useEffect(() => {
-    // Log to console in dev; swap for a real error reporting service (e.g. Sentry) in prod.
-    console.error("[DraftMeet error boundary]", error);
+    Sentry.captureException(error);
   }, [error]);
 
   return (

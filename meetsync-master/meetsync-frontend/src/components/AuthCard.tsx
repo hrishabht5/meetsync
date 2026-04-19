@@ -32,8 +32,8 @@ export function AuthCard() {
     try {
       await api.auth.logout();
       setIsLoggedIn(false);
-    } catch (e) {
-      console.error("Logout failed", e);
+    } catch {
+      // Logout errors are non-critical
     } finally {
       setLoggingOut(false);
     }

@@ -9,7 +9,11 @@ function getBaseUrl(): string {
     }
   }
 
-  // Default: use env var or localhost
+  // Default: use env var or localhost fallback (warn loudly in production if env var is missing)
+  if (!process.env.NEXT_PUBLIC_API_URL && process.env.NODE_ENV === "production") {
+    // eslint-disable-next-line no-console
+    console.warn("[api-client] NEXT_PUBLIC_API_URL is not set in production — falling back to localhost. Set this env var before deploying.");
+  }
   return (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/$/, "");
 }
 

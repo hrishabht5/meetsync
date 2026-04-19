@@ -82,8 +82,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               try {
                 await api.auth.logout();
                 window.location.href = "/";
-              } catch (e) {
-                console.error("Logout failed", e);
+              } catch {
+                // Logout errors are non-critical; redirect anyway
               }
             }}
             className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-red-500/70 hover:text-red-400 hover:bg-red-500/10 transition-all text-left w-full"

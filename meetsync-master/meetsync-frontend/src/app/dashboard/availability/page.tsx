@@ -34,7 +34,6 @@ export default function AvailabilityPage() {
         setOverrides(o);
       })
       .catch((e: unknown) => {
-        console.error("Failed to load availability:", e);
         alert(errMsg(e, "Failed to load availability"));
       })
       .finally(() => setLoading(false));
