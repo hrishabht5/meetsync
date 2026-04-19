@@ -1,14 +1,28 @@
 // API Client — single module for all calls to the DraftMeet FastAPI backend
-const BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/$/, "");
+function getBaseUrl(): string {
+  // Client-side: detect if on custom domain (avoids hardcoding env vars for each domain)
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    const isCustomDomain = !host.includes("draftmeet.com") && !host.includes("localhost");
+    if (isCustomDomain) {
+      return "/api/public"; // Use the public API proxy for custom domains
+    }
+  }
+
+  // Default: use env var or localhost
+  return (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/$/, "");
+}
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const BASE_URL = getBaseUrl();
+
   // Only set `Content-Type: application/json` when we actually send a request body.
   // Otherwise (especially for GET), it triggers CORS preflight in browsers and can surface as "Failed to fetch".
   const hasBody = options && options.body !== undefined && options.body !== null;
 
   // Normalize headers to a mutable object.
   const headers: Record<string, string> = {};
-  
+
   if (hasBody) {
     headers["Content-Type"] = "application/json";
   }
@@ -26,8 +40,8 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   }
 
   // Ensure trailing slash for all paths to avoid 307 redirects on Render
-  const normalizedPath = path.endsWith("/") || path.includes("?") 
-    ? path 
+  const normalizedPath = path.endsWith("/") || path.includes("?")
+    ? path
     : `${path}/`;
 
   const res = await fetch(`${BASE_URL}${normalizedPath}`, {
@@ -74,7 +88,7 @@ export const api = {
       }
     },
     googleLoginUrl: (mode: "signin" | "connect" = "signin") =>
-      `${BASE_URL}/auth/google/?mode=${mode}`,
+      `${getBaseUrl()}/auth/google/?mode=${mode}`,
     listCalendars: () =>
       request<{ calendars: CalendarOption[] }>("/auth/calendars/"),
     setCalendarPreference: (calendar_id: string) =>
@@ -146,7 +160,7 @@ export const api = {
       ),
     exportCsv: async (status?: string): Promise<void> => {
       const qs = status ? `?status=${status}` : "";
-      const res = await fetch(`${BASE_URL}/bookings/export/${qs}`, {
+      const res = await fetch(`${getBaseUrl()}/bookings/export/${qs}`, {
         credentials: "include",
       });
       if (!res.ok) throw new Error("Export failed");
