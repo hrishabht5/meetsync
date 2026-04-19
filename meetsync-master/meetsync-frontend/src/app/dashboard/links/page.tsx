@@ -737,6 +737,7 @@ function OneTimeLinksTab() {
 // ── Permanent Links Tab ───────────────────────────────────────────────────────
 function PermanentLinksTab() {
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
+  const [verifiedDomain, setVerifiedDomain] = useState<string | null>(null);
   const [items, setItems] = useState<PermanentLinkRow[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
@@ -796,8 +797,11 @@ function PermanentLinksTab() {
         if (hasAny) setShowCreateCustomize(true);
       }
     } catch { /* ignore */ }
-    Promise.all([api.profiles.getMe(), fetchPage(1, "", false)])
-      .then(([p]) => setProfile(p))
+    Promise.all([api.profiles.getMe(), fetchPage(1, "", false), api.domains.get()])
+      .then(([p, , domain]) => {
+        setProfile(p);
+        if (domain?.verified && domain.domain) setVerifiedDomain(domain.domain);
+      })
       .catch((e: unknown) => alert(errMsg(e)));
   }, []);
 
@@ -897,7 +901,11 @@ function PermanentLinksTab() {
 
   const copyLink = (slug: string, id: string) => {
     if (!profile) return;
-    navigator.clipboard.writeText(`${window.location.origin}/u/${profile.username}/${slug}`);
+    const base = verifiedDomain ? `https://${verifiedDomain}` : window.location.origin;
+    const url = verifiedDomain
+      ? `${base}/${slug}`
+      : `${base}/u/${profile.username}/${slug}`;
+    navigator.clipboard.writeText(url);
     setCopied(id);
     setTimeout(() => setCopied(null), 2000);
   };
