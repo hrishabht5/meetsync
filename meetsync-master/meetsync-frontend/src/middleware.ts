@@ -53,7 +53,8 @@ export function middleware(request: NextRequest) {
   // If the request arrives on a hostname that is not our own infrastructure,
   // rewrite it to /cd/[domain]/[...rest] so the custom-domain booking pages
   // handle the resolution. The browser URL stays as the user's custom domain.
-  if (!isOwnHost(hostname)) {
+  // API routes and Next.js internals are excluded from rewriting.
+  if (!isOwnHost(hostname) && !pathname.startsWith("/api/")) {
     const rest = pathname === "/" ? "" : pathname;
     const url = request.nextUrl.clone();
     url.pathname = `/cd/${hostname}${rest}`;
