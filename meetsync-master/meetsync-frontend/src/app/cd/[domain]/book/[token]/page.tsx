@@ -40,10 +40,7 @@ function CustomDomainOTLBookingInner() {
   // Step 1: validate OTL
   useEffect(() => {
     if (!token || !domain) return;
-    const qs = new URLSearchParams({
-      host: domain,
-    }).toString();
-    publicGet<OTLRow>(`links/${token}/`, qs)
+    publicGet<OTLRow>(`links/${token}/`)
       .then((data) => {
         setOtl(data);
         if (data.custom_fields && data.custom_fields.length > 0) {
@@ -55,7 +52,7 @@ function CustomDomainOTLBookingInner() {
         setStep("pick-date");
       })
       .catch((e: Error) => { setErrorMsg(e.message); setStep("error"); });
-  }, [token, domain]);
+  }, [token]);
 
   // Step 2: fetch slots
   const fetchSlots = async (date: string) => {
