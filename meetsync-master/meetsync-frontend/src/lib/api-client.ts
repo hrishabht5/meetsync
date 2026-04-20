@@ -43,10 +43,11 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     }
   }
 
-  // Ensure trailing slash for all paths to avoid 307 redirects on Render
-  const normalizedPath = path.endsWith("/") || path.includes("?")
-    ? path
-    : `${path}/`;
+  // Strip trailing slash — FastAPI routes are defined without them on this deployment.
+  // Sending a trailing slash triggers a 307 redirect which can drop the session cookie on POST.
+  const normalizedPath = path.includes("?")
+    ? path.replace(/\/\?/, "?")   // /links/?search=x → /links?search=x
+    : path.replace(/\/$/, "");    // /auth/logout/ → /auth/logout
 
   const res = await fetch(`${BASE_URL}${normalizedPath}`, {
     ...options,
