@@ -146,7 +146,7 @@ function PermanentLinkBookingPageInner() {
       )}
 
       <div className={isEmbed ? "w-full" : "relative z-10 w-full max-w-md"}>
-        {!isEmbed && !removeBranding && (
+        {!isEmbed && step !== "loading" && !removeBranding && (
           <div className="flex items-center gap-2 mb-8 justify-center">
             <img src={theme === "dark" ? "/logo-dark.png" : "/logo-light.png"} alt="DraftMeet" className="w-8 h-8 rounded-lg glow-brand-sm" />
             <span className="text-lg font-bold text-[var(--text-primary)]">DraftMeet</span>

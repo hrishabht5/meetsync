@@ -187,7 +187,7 @@ function BookingPageInner() {
       )}
 
       <div className={isEmbed ? "w-full" : "relative z-10 w-full max-w-md"}>
-        {!isEmbed && !otl?.remove_branding && (
+        {!isEmbed && otl && !otl.remove_branding && (
           <div className="flex items-center gap-2 mb-8 justify-center">
             <img src={theme === "dark" ? "/logo-dark.png" : "/logo-light.png"} alt="DraftMeet" className="w-8 h-8 rounded-lg glow-brand-sm" />
             <span className="text-lg font-bold text-[var(--text-primary)]">DraftMeet</span>

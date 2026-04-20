@@ -55,7 +55,7 @@ export default function PublicProfilePage() {
 
       <div className="relative z-10 w-full max-w-lg pt-12">
         {/* DraftMeet logo — hidden for white-label premium users */}
-        {!data?.remove_branding && (
+        {data && !data.remove_branding && (
           <div className="flex items-center gap-2 mb-8 justify-center">
             <img
               src={theme === "dark" ? "/logo-dark.png" : "/logo-light.png"}

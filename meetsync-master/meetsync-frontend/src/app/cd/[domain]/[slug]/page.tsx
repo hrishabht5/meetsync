@@ -187,7 +187,7 @@ function CustomDomainBookingInner({
       )}
 
       <div className={isEmbed ? "w-full" : "relative z-10 w-full max-w-md"}>
-        {!isEmbed && !removeBranding && (
+        {!isEmbed && step !== "loading" && !removeBranding && (
           <div className="flex items-center gap-2 mb-8 justify-center">
             <img
               src={theme === "dark" ? "/logo-dark.png" : "/logo-light.png"}
