@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { AuthCard } from "@/components/AuthCard";
@@ -37,7 +38,9 @@ export default function LoginPage() {
         </div>
 
         <div className="w-full max-w-sm">
-          <AuthCard />
+          <Suspense>
+            <AuthCard />
+          </Suspense>
         </div>
 
         <footer className="w-full mt-16 pt-8 border-t border-[var(--border)] flex flex-col sm:flex-row items-center justify-between gap-4 text-[var(--text-secondary)] text-xs">
