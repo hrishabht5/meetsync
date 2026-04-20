@@ -7,6 +7,26 @@ import { DateOverridePicker } from "@/components/DateOverridePicker";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
+function getUtcOffset(tz: string): string {
+  try {
+    const parts = new Intl.DateTimeFormat("en", {
+      timeZone: tz,
+      timeZoneName: "shortOffset",
+    }).formatToParts(new Date());
+    return parts.find((p) => p.type === "timeZoneName")?.value ?? "";
+  } catch {
+    return "";
+  }
+}
+
+const TZ_LIST: { value: string; label: string }[] =
+  typeof Intl.supportedValuesOf === "function"
+    ? Intl.supportedValuesOf("timeZone").map((tz) => ({
+        value: tz,
+        label: `${tz.replace(/_/g, " ")} (${getUtcOffset(tz)})`,
+      }))
+    : [{ value: "Asia/Kolkata", label: "Asia/Kolkata (UTC+5:30)" }];
+
 export default function AvailabilityPage() {
   const [settings, setSettings] = useState<AvailabilitySettingsResponse>({
     working_days: ["Mon", "Tue", "Wed", "Thu", "Fri"],
@@ -216,12 +236,33 @@ export default function AvailabilityPage() {
 
         {/* Timezone */}
         <Card className="p-6">
-          <Input
-            label="Timezone"
-            value={settings.timezone}
-            onChange={(e) => setSettings((s) => ({ ...s, timezone: e.target.value }))}
-            placeholder="e.g. Asia/Kolkata"
-          />
+          <div className="flex items-end justify-between gap-4">
+            <div className="flex flex-col gap-1.5 flex-1">
+              <label className="text-sm font-medium text-[var(--text-primary)]">Timezone</label>
+              <select
+                value={settings.timezone}
+                onChange={(e) => setSettings((s) => ({ ...s, timezone: e.target.value }))}
+                className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
+              >
+                {TZ_LIST.map(({ value, label }) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+              <p className="text-xs text-[var(--text-secondary)]">
+                Your availability times are interpreted in this timezone.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                setSettings((s) => ({ ...s, timezone: browserTz }));
+              }}
+              className="text-xs px-3 py-2.5 rounded-xl ring-1 ring-[var(--border-accent)] text-[var(--accent)] hover:bg-[var(--accent)]/10 transition-all flex-shrink-0 mb-[22px]"
+            >
+              Use my timezone
+            </button>
+          </div>
         </Card>
 
         <div className="flex justify-end">
