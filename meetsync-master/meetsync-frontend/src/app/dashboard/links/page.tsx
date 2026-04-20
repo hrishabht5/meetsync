@@ -248,7 +248,8 @@ function OneTimeLinksTab() {
         if (hasAny) setShowCreateCustomize(true);
       }
     } catch { /* ignore */ }
-    cleanupStaleLinks().then(() => fetchPage(1, "", "", false)).catch((e: unknown) => setError(errMsg(e)));
+    fetchPage(1, "", "", false);
+    cleanupStaleLinks(); // fire-and-forget — don't block the initial list load
   }, []);
 
   // Auto-save questions to localStorage whenever they change

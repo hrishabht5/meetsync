@@ -72,7 +72,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 export const api = {
   auth: {
     status: () =>
-      request<AuthStatus>("/auth/status/"),
+      request<AuthStatus>("/auth/status"),
     signup: (email: string, password: string) =>
       request<{ status: string; user_id: string }>("/auth/signup/", {
         method: "POST",
