@@ -24,8 +24,9 @@ from typing import Any
 from urllib.parse import urlparse
 
 import httpx
-from app.core.config import supabase
+from app.core.config import supabase, SECRET_KEY
 from app.core.logger import logger
+from app.webhooks.crypto import decrypt_secret
 
 
 # ── Signing ───────────────────────────────────────────────
@@ -104,8 +105,13 @@ async def _deliver(endpoint: dict, event_name: str, payload: dict):
         "X-DraftMeet-Delivery":   str(uuid.uuid4()),
         "User-Agent":            "DraftMeet-Webhooks/1.0",
     }
-    if endpoint.get("secret"):
-        headers["X-DraftMeet-Signature"] = _sign_payload(endpoint["secret"], payload_bytes)
+    secret_enc = endpoint.get("secret_enc")
+    if secret_enc:
+        try:
+            raw_secret = decrypt_secret(secret_enc, SECRET_KEY)
+            headers["X-DraftMeet-Signature"] = _sign_payload(raw_secret, payload_bytes)
+        except Exception as dec_err:
+            logger.error("Could not decrypt webhook secret for %s: %s", endpoint["id"], dec_err)
 
     status_code = None
     error_msg   = None
@@ -170,7 +176,7 @@ async def fire_event(event_name: str, data: Any, user_id: str = None):
     """
     # Fetch only this user's active endpoints — avoids full-table scan
     query = supabase.table("webhooks") \
-        .select("id,url,secret,events") \
+        .select("id,url,secret_enc,events") \
         .eq("is_active", True)
     if user_id:
         query = query.eq("user_id", user_id)
