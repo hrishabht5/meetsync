@@ -117,6 +117,12 @@ def upsert_profile(user_id: str, **kwargs) -> dict:
 
 # ── Permanent Links ───────────────────────────────────────────────────────────
 
+def _sanitize_search(raw: str) -> str:
+    """Strip PostgREST filter-syntax metacharacters from search input."""
+    import re as _re
+    return _re.sub(r"[^\w\s\-]", "", raw)[:100]
+
+
 def list_permanent_links(
     user_id: str,
     page: int = 1,
@@ -131,7 +137,9 @@ def list_permanent_links(
         .eq("user_id", user_id)
     )
     if search:
-        query = query.or_(f"slug.ilike.%{search}%,custom_title.ilike.%{search}%")
+        safe = _sanitize_search(search)
+        if safe:
+            query = query.or_(f"slug.ilike.%{safe}%,custom_title.ilike.%{safe}%")
     result = query.order("created_at", desc=True).range(offset, offset + limit - 1).execute()
     total = result.count or 0
     return {"items": result.data or [], "total": total, "page": page, "has_more": offset + limit < total}

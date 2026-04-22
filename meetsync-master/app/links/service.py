@@ -157,6 +157,17 @@ def revoke_otl(token: str):
     supabase.table("one_time_links").update({"status": OTLStatus.revoked}).eq("id", token).execute()
 
 
+def _sanitize_search(raw: str) -> str:
+    """
+    Strip characters that have special meaning in the PostgREST or_() filter
+    syntax (comma separates conditions; period separates column.operator;
+    parentheses group sub-filters). Keeping only word characters, spaces,
+    hyphens, and underscores is safe and covers all legitimate search terms.
+    """
+    import re as _re
+    return _re.sub(r"[^\w\s\-]", "", raw)[:100]
+
+
 def list_otls(
     user_id: str,
     status_filter: Optional[str] = None,
@@ -170,7 +181,11 @@ def list_otls(
     if status_filter:
         query = query.eq("status", status_filter)
     if search:
-        query = query.or_(f"id.ilike.%{search}%,event_type.ilike.%{search}%,custom_title.ilike.%{search}%")
+        safe = _sanitize_search(search)
+        if safe:
+            query = query.or_(
+                f"id.ilike.%{safe}%,event_type.ilike.%{safe}%,custom_title.ilike.%{safe}%"
+            )
     result = query.order("created_at", desc=True).range(offset, offset + limit - 1).execute()
     total = result.count or 0
     base_url = _base_url_for_user(user_id)
