@@ -284,7 +284,7 @@ def disconnect_google(request: Request):
 
 # ── Session management ────────────────────────────────────
 
-@router.post("/logout/")
+@router.post("/logout")
 async def logout(request: Request):
     """Clear session cookie."""
     secure = _is_secure(request)
