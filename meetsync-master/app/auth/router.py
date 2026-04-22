@@ -33,6 +33,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Request, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse
 
 from app.core.config import supabase, FRONTEND_URL, ADMIN_EMAIL, ADMIN_RESTORE_COOKIE
+from app.core.logger import logger
 from app.core.rate_limit import strict_rate_limit
 from app.core.schemas import SignupRequest, LoginRequest, CalendarPreferenceRequest, ForgotPasswordRequest, ResetPasswordRequest
 from app.core.email import send_password_reset_email
@@ -389,8 +390,18 @@ async def delete_account(request: Request):
     # The function is defined in migration_v12.sql.
     try:
         supabase.rpc("delete_user_account", {"target_user_id": user_id}).execute()
-    except Exception:
-        # Fallback: sequential deletes (pre-migration_v12 deployments)
+    except Exception as exc:
+        exc_str = str(exc)
+        # SQLSTATE 42883 = "function does not exist" (pre-migration_v12 deployments).
+        # Only fall back to sequential deletes for that specific error; all other
+        # failures (connection errors, constraint violations, partial transaction
+        # failures) must propagate so the caller knows the deletion failed.
+        if "42883" not in exc_str and "does not exist" not in exc_str.lower():
+            logger.error("delete_user_account RPC failed for user %s: %s", user_id, exc)
+            raise HTTPException(status_code=500, detail="Account deletion failed. Please try again.")
+        logger.warning(
+            "delete_user_account function missing (pre-v12 deployment), falling back to sequential deletes"
+        )
         supabase.table("bookings").delete().eq("user_id", user_id).execute()
         supabase.table("one_time_links").delete().eq("user_id", user_id).execute()
         supabase.table("permanent_links").delete().eq("user_id", user_id).execute()
