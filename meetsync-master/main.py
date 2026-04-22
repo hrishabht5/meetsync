@@ -50,6 +50,19 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
+    """
+    Secondary, process-local rate limiter (200 req/min per IP).
+
+    This guard is intentionally process-local. On Vercel serverless each
+    invocation may run in a fresh process, so the counter resets on cold
+    starts. It still provides meaningful protection in single-process
+    deployments and caps runaway clients within a warm instance.
+
+    Sensitive endpoints (login, signup, booking) additionally use the
+    DB-backed `strict_rate_limit` / `guest_rate_limit` dependencies in
+    app/core/rate_limit.py which ARE durable across process boundaries.
+    """
+
     def __init__(self, app, requests_per_minute: int = 200):
         super().__init__(app)
         self.requests_per_minute = requests_per_minute
