@@ -29,10 +29,28 @@ _guest_fallback: dict[str, list] = defaultdict(list)
 
 
 def _get_client_ip(request: Request) -> str:
-    """Read real client IP — trust X-Forwarded-For set by Vercel/reverse proxy."""
-    forwarded_for = request.headers.get("x-forwarded-for")
+    """
+    Return the real client IP, safe against X-Forwarded-For spoofing.
+
+    Vercel (and most CDN/reverse-proxy setups) appends the verified
+    client IP to X-Forwarded-For. The entries to the left of it are
+    forwarded as-is from the client and can be forged. We therefore
+    use the LAST token, which the outermost trusted proxy wrote.
+
+    Fallback chain:
+      1. x-real-ip  (Vercel sets this to the verified client IP)
+      2. last token of x-forwarded-for (outermost proxy)
+      3. request.client.host (direct connection, e.g. local dev)
+    """
+    real_ip = request.headers.get("x-real-ip", "").strip()
+    if real_ip:
+        return real_ip
+
+    forwarded_for = request.headers.get("x-forwarded-for", "")
     if forwarded_for:
-        return forwarded_for.split(",")[0].strip()
+        # Last token is written by the outermost (trusted) proxy
+        return forwarded_for.split(",")[-1].strip()
+
     return request.client.host if request.client else "127.0.0.1"
 
 

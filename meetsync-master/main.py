@@ -69,13 +69,18 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.ip_requests: defaultdict = defaultdict(list)
 
     async def dispatch(self, request: Request, call_next):
-        # Read real client IP — trust X-Forwarded-For set by Vercel/reverse proxy
-        forwarded_for = request.headers.get("x-forwarded-for")
-        client_ip = (
-            forwarded_for.split(",")[0].strip()
-            if forwarded_for
-            else (request.client.host if request.client else "127.0.0.1")
-        )
+        # Real IP: prefer x-real-ip (Vercel), then last XFF token (outermost
+        # proxy writes it — user-supplied tokens are to the left and spoofable).
+        real_ip = request.headers.get("x-real-ip", "").strip()
+        if real_ip:
+            client_ip = real_ip
+        else:
+            forwarded_for = request.headers.get("x-forwarded-for", "")
+            client_ip = (
+                forwarded_for.split(",")[-1].strip()
+                if forwarded_for
+                else (request.client.host if request.client else "127.0.0.1")
+            )
 
         now = time.time()
         cutoff = now - 60
