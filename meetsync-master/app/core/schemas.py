@@ -391,3 +391,21 @@ class CalendarPreferenceRequest(BaseModel):
         if not _re.fullmatch(r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}", v):
             raise ValueError("Invalid calendar ID — must be 'primary' or a valid calendar email ID")
         return v
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str = Field(min_length=8, max_length=128)
+
+    @field_validator("new_password")
+    @classmethod
+    def password_strength(cls, v: str) -> str:
+        if not _re.search(r"[A-Z]", v):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not _re.search(r"[0-9]", v):
+            raise ValueError("Password must contain at least one number")
+        return v

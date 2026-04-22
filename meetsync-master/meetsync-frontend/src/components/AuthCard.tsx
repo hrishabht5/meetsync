@@ -6,6 +6,7 @@ import { api } from "@/lib/api-client";
 import { Eye, EyeOff } from "lucide-react";
 
 type AuthTab = "login" | "signup";
+type AuthView = "form" | "forgot" | "forgot-sent";
 
 export function AuthCard() {
   const router = useRouter();
@@ -16,11 +17,16 @@ export function AuthCard() {
   const [loggingOut, setLoggingOut] = useState(false);
 
   const [tab, setTab] = useState<AuthTab>("login");
+  const [view, setView] = useState<AuthView>("form");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotSubmitting, setForgotSubmitting] = useState(false);
+  const [forgotError, setForgotError] = useState<string | null>(null);
 
   useEffect(() => {
     api.auth.status()
@@ -42,6 +48,20 @@ export function AuthCard() {
       // non-critical
     } finally {
       setLoggingOut(false);
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotError(null);
+    setForgotSubmitting(true);
+    try {
+      await api.auth.forgotPassword(forgotEmail);
+    } catch {
+      // Always show success to prevent email enumeration on the frontend
+    } finally {
+      setForgotSubmitting(false);
+      setView("forgot-sent");
     }
   };
 
@@ -76,6 +96,76 @@ export function AuthCard() {
           className="px-8 py-3 rounded-2xl bg-[var(--bg-card-hover)] text-[var(--text-primary)] font-semibold text-sm ring-1 ring-[var(--border)] hover:ring-[var(--border-accent)] transition-all disabled:opacity-50"
         >
           {loggingOut ? "Logging out..." : "Logout"}
+        </button>
+      </div>
+    );
+  }
+
+  if (view === "forgot") {
+    return (
+      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-6 text-left flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-base font-semibold text-[var(--text-primary)]">Reset your password</h2>
+          <p className="text-xs text-[var(--text-secondary)]">
+            Enter your email and we&apos;ll send a reset link if an account exists.
+          </p>
+        </div>
+        <form onSubmit={handleForgotPassword} className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="forgot-email" className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wide">
+              Email address
+            </label>
+            <input
+              id="forgot-email"
+              type="email"
+              placeholder="you@company.com"
+              required
+              value={forgotEmail}
+              onChange={(e) => setForgotEmail(e.target.value)}
+              className="w-full px-4 py-2.5 rounded-xl bg-[var(--bg-input)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 focus:border-[var(--accent)]/40 transition-all"
+            />
+          </div>
+          {forgotError && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
+              <span>⚠</span>
+              <span>{forgotError}</span>
+            </div>
+          )}
+          <button
+            type="submit"
+            disabled={forgotSubmitting}
+            className="w-full py-2.5 rounded-xl bg-warm-gradient text-white font-semibold text-sm shadow-lg glow-warm hover:brightness-110 hover:-translate-y-0.5 active:scale-[0.97] active:brightness-95 transition-all duration-150 disabled:opacity-50 flex items-center justify-center"
+          >
+            {forgotSubmitting
+              ? <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+              : "Send reset link"}
+          </button>
+        </form>
+        <button
+          onClick={() => { setView("form"); setForgotError(null); }}
+          className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors text-center"
+        >
+          ← Back to log in
+        </button>
+      </div>
+    );
+  }
+
+  if (view === "forgot-sent") {
+    return (
+      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-6 text-left flex flex-col gap-4">
+        <div className="flex flex-col gap-2">
+          <h2 className="text-base font-semibold text-[var(--text-primary)]">Check your email</h2>
+          <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+            If an account with that email exists, we&apos;ve sent a password reset link.
+            The link expires in 1 hour.
+          </p>
+        </div>
+        <button
+          onClick={() => { setView("form"); setForgotEmail(""); setForgotError(null); }}
+          className="w-full py-2.5 rounded-xl bg-[var(--bg-card-hover)] text-[var(--text-primary)] font-semibold text-sm ring-1 ring-[var(--border)] hover:ring-[var(--border-accent)] transition-all"
+        >
+          Back to log in
         </button>
       </div>
     );
@@ -144,12 +234,13 @@ export function AuthCard() {
               Password{tab === "signup" ? " (min. 8 characters)" : ""}
             </label>
             {tab === "login" && (
-              <span className="text-xs text-[var(--text-secondary)]">
-                Forgot password?{" "}
-                <a href="mailto:support@draftmeet.com" className="text-[var(--accent)] hover:underline">
-                  Contact us
-                </a>
-              </span>
+              <button
+                type="button"
+                onClick={() => { setView("forgot"); setForgotEmail(email); setForgotError(null); }}
+                className="text-xs text-[var(--accent)] hover:underline"
+              >
+                Forgot password?
+              </button>
             )}
           </div>
           <div className="relative">
@@ -173,6 +264,12 @@ export function AuthCard() {
             </button>
           </div>
         </div>
+
+        {tab === "signup" && (
+          <p className="text-xs text-[var(--text-secondary)]">
+            Password must be 8+ characters with at least one uppercase letter and one number.
+          </p>
+        )}
 
         {formError && (
           <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs">

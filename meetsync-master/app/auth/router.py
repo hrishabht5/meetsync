@@ -10,14 +10,18 @@ GET  /auth/status               → account info + whether calendar is connected
 GET  /auth/calendars            → list user's Google Calendars (requires calendar connected)
 PUT  /auth/calendar-preference  → set preferred calendar for new events
 DELETE /auth/disconnect         → remove stored Google tokens (unlinks calendar)
+POST /auth/forgot-password      → send password reset email (always 200)
+POST /auth/reset-password       → consume token + update password
 POST /auth/logout               → clear session cookie
 DELETE /auth/account            → GDPR account deletion
 """
 
+import hashlib
 import hmac
 import logging as _logging
 import secrets
 import uuid
+from datetime import datetime, timezone, timedelta
 
 import bcrypt
 
@@ -25,12 +29,13 @@ import bcrypt
 # runs so response timing doesn't reveal whether an email is registered.
 _DUMMY_HASH = bcrypt.hashpw(b"draftmeet-timing-guard", bcrypt.gensalt(rounds=4)).decode()
 import httpx
-from fastapi import APIRouter, Depends, Request, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, Request, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse
 
 from app.core.config import supabase, FRONTEND_URL, ADMIN_EMAIL, ADMIN_RESTORE_COOKIE
 from app.core.rate_limit import strict_rate_limit
-from app.core.schemas import SignupRequest, LoginRequest, CalendarPreferenceRequest
+from app.core.schemas import SignupRequest, LoginRequest, CalendarPreferenceRequest, ForgotPasswordRequest, ResetPasswordRequest
+from app.core.email import send_password_reset_email
 from app.integrations import google_calendar
 from app.auth.middleware import (
     get_current_user_id,
@@ -280,6 +285,64 @@ def disconnect_google(request: Request):
     user_id = get_current_user_id(request)
     supabase.table("google_tokens").delete().eq("user_id", user_id).execute()
     return {"status": "disconnected"}
+
+
+# ── Password Reset ────────────────────────────────────────
+
+@router.post("/forgot-password")
+async def forgot_password(
+    payload: ForgotPasswordRequest,
+    background_tasks: BackgroundTasks,
+    _=Depends(strict_rate_limit),
+):
+    """Send a password reset email. Always returns 200 to prevent email enumeration."""
+    norm_email = payload.email.lower().strip()
+    result = supabase.table("users").select("id,password_hash").eq("email", norm_email).execute()
+
+    if result.data and result.data[0].get("password_hash"):
+        user_id = result.data[0]["id"]
+        raw_token = secrets.token_urlsafe(32)
+        token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+        expires_at = (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()
+
+        supabase.table("password_reset_tokens").insert({
+            "token_hash": token_hash,
+            "user_id": user_id,
+            "expires_at": expires_at,
+        }).execute()
+
+        reset_url = f"{FRONTEND_URL}/reset-password?token={raw_token}"
+        background_tasks.add_task(send_password_reset_email, norm_email, reset_url)
+
+    return {"status": "ok"}
+
+
+@router.post("/reset-password")
+async def reset_password(payload: ResetPasswordRequest, _=Depends(strict_rate_limit)):
+    """Consume a password reset token and update the user's password."""
+    token_hash = hashlib.sha256(payload.token.encode()).hexdigest()
+
+    # Atomically mark as used — filter on used_at IS NULL prevents double-use race
+    result = (
+        supabase.table("password_reset_tokens")
+        .update({"used_at": datetime.now(timezone.utc).isoformat()})
+        .eq("token_hash", token_hash)
+        .is_("used_at", "null")
+        .execute()
+    )
+
+    if not result.data:
+        raise HTTPException(status_code=400, detail="Invalid or already-used reset link.")
+
+    row = result.data[0]
+    expires_at = datetime.fromisoformat(row["expires_at"].replace("Z", "+00:00"))
+    if datetime.now(timezone.utc) > expires_at:
+        raise HTTPException(status_code=400, detail="Reset link has expired.")
+
+    new_hash = bcrypt.hashpw(payload.new_password.encode(), bcrypt.gensalt()).decode()
+    supabase.table("users").update({"password_hash": new_hash}).eq("id", row["user_id"]).execute()
+
+    return {"status": "ok"}
 
 
 # ── Session management ────────────────────────────────────

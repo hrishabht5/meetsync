@@ -349,6 +349,23 @@ async def send_cancellation_email_to_host(
     )
 
 
+async def send_password_reset_email(email: str, reset_url: str) -> None:
+    body = f"""
+<h2 style="margin:0 0 12px;color:#111827;font-size:22px;font-weight:700;
+           letter-spacing:-0.3px;">Reset your password</h2>
+<p style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.6;">
+  We received a request to reset the password for your DraftMeet account.
+  Click the button below to set a new password. This link expires in 1 hour.
+</p>
+{_btn("Reset Password", reset_url, "#6366f1")}
+<p style="margin:24px 0 0;color:#9ca3af;font-size:13px;line-height:1.6;">
+  If you didn't request a password reset, you can safely ignore this email.
+  Your password won't change.
+</p>
+"""
+    await _send(email, "Reset your DraftMeet password", _base("Password reset", body))
+
+
 async def send_reschedule_notification_to_host(
     host_email: str,
     guest_name: str,
