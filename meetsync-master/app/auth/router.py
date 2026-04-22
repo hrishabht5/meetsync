@@ -158,7 +158,12 @@ async def google_callback(request: Request, code: str = None, error: str = None,
             except Exception:
                 return RedirectResponse(url=f"{FRONTEND_URL}/dashboard/settings?auth_error=not_logged_in")
 
-            google_calendar.store_tokens(session_user_id, token_data)
+            try:
+                google_calendar.store_tokens(session_user_id, token_data)
+            except ValueError:
+                return RedirectResponse(
+                    url=f"{FRONTEND_URL}/dashboard/settings?auth_error=no_refresh_token"
+                )
             _upsert_user(session_user_id, email)
             redirect = RedirectResponse(url=f"{FRONTEND_URL}/dashboard/settings?calendar=connected")
             # Clear the CSRF cookie

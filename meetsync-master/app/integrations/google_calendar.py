@@ -78,8 +78,15 @@ async def exchange_code(code: str) -> dict:
     return resp.json()
 
 
-async def refresh_access_token(refresh_token: str) -> str:
-    """Use stored refresh_token to get a new short-lived access_token."""
+async def refresh_access_token(user_id: str, refresh_token: str) -> str:
+    """
+    Use the stored refresh_token to obtain a new short-lived access_token.
+
+    Raises ValueError (not httpx.HTTPStatusError) so callers can present
+    a human-readable "reconnect your calendar" message instead of a 500.
+    On 400/401 from Google (token revoked or expired) the stored tokens are
+    deleted so auth_status correctly reports calendar_connected=false.
+    """
     async with httpx.AsyncClient(timeout=15.0) as client:
         resp = await client.post(GOOGLE_TOKEN_URL, data={
             "client_id":     GOOGLE_CLIENT_ID,
@@ -87,6 +94,18 @@ async def refresh_access_token(refresh_token: str) -> str:
             "refresh_token": refresh_token,
             "grant_type":    "refresh_token",
         })
+
+    if resp.status_code in (400, 401):
+        # Token has been revoked or expired — clear it so the UI shows
+        # "reconnect" rather than silently failing on every subsequent request.
+        try:
+            supabase.table("google_tokens").delete().eq("user_id", user_id).execute()
+        except Exception:
+            pass
+        raise ValueError(
+            "Google Calendar access was revoked. Please reconnect your Google Calendar in Settings."
+        )
+
     resp.raise_for_status()
     return resp.json()["access_token"]
 
@@ -95,7 +114,7 @@ async def get_valid_access_token(user_id: str) -> str:
     """
     Retrieve stored tokens for a user.
     If the access token is expired, refresh it automatically.
-    Raises ValueError if Google Calendar is not connected.
+    Raises ValueError if Google Calendar is not connected or tokens are revoked.
     """
     try:
         result = supabase.table("google_tokens").select("*").eq("user_id", user_id).single().execute()
@@ -106,13 +125,19 @@ async def get_valid_access_token(user_id: str) -> str:
     if not token_row:
         raise ValueError("Google Calendar is not connected. Please reconnect your Google account in Settings.")
 
+    if not token_row.get("refresh_token"):
+        # Stored without a refresh token — calendar cannot be used
+        supabase.table("google_tokens").delete().eq("user_id", user_id).execute()
+        raise ValueError(
+            "Google Calendar connection is incomplete. Please reconnect your Google Calendar in Settings."
+        )
+
     # Check expiry (store expires_at as ISO string in DB)
     expires_at = datetime.fromisoformat(token_row["expires_at"].replace("Z", "+00:00"))
     if expires_at.tzinfo is None:
         expires_at = expires_at.replace(tzinfo=timezone.utc)
     if datetime.now(timezone.utc) >= expires_at - timedelta(minutes=5):
-        # Refresh token
-        new_access_token = await refresh_access_token(token_row["refresh_token"])
+        new_access_token = await refresh_access_token(user_id, token_row["refresh_token"])
         new_expires_at   = datetime.now(timezone.utc) + timedelta(seconds=3600)
         supabase.table("google_tokens").update({
             "access_token": new_access_token,
@@ -124,12 +149,23 @@ async def get_valid_access_token(user_id: str) -> str:
 
 
 def store_tokens(user_id: str, token_data: dict):
-    """Upsert Google tokens for a user into Supabase."""
+    """
+    Upsert Google tokens for a user into Supabase.
+    Raises ValueError if Google did not return a refresh_token — this
+    happens when the user has already granted consent but access was not
+    re-approved, meaning the existing token may still be valid.
+    """
+    refresh_token = token_data.get("refresh_token")
+    if not refresh_token:
+        raise ValueError(
+            "Google did not return a refresh token. Please revoke DraftMeet's access in your "
+            "Google account settings and reconnect to grant offline access."
+        )
     expires_at = datetime.now(timezone.utc) + timedelta(seconds=token_data.get("expires_in", 3600))
     supabase.table("google_tokens").upsert({
         "user_id":       user_id,
         "access_token":  token_data["access_token"],
-        "refresh_token": token_data.get("refresh_token"),
+        "refresh_token": refresh_token,
         "expires_at":    expires_at.isoformat(),
     }).execute()
 
