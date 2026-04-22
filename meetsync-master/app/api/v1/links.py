@@ -13,35 +13,45 @@ def get_link_status(request: Request, token: str):
     """
     Check the status of a one-time meet link programmatically.
     Returns whether the link is active, used, expired, or revoked.
+
+    Ownership is enforced for every code path — inactive tokens are
+    looked up directly so an unauthenticated (or wrong-user) caller
+    cannot probe the state of a token they do not own.
     """
     user_id = get_current_user_id(request)
-    
+
     try:
         otl = otl_service.validate_otl(token)
-        
+        # Token is active — confirm ownership
         if otl.get("user_id") != user_id:
             raise HTTPException(status_code=403, detail="Forbidden: You do not own this link")
-            
         return {
-            "token": token,
-            "status": "active",
-            "event_type": otl.get("event_type"),
-            "expires_at": otl.get("expires_at"),
-            "custom_fields": otl.get("custom_fields")
+            "token":         token,
+            "status":        "active",
+            "event_type":    otl.get("event_type"),
+            "expires_at":    otl.get("expires_at"),
+            "custom_fields": otl.get("custom_fields"),
         }
-    except ValueError as e:
-        status_reason = "inactive"
-        error_msg = str(e).lower()
-        
-        if "revoked" in error_msg:
-            status_reason = "revoked"
-        elif "expired" in error_msg:
-            status_reason = "expired"
-        elif "used" in error_msg:
-            status_reason = "used"
-            
-        return {
-            "token": token,
-            "status": status_reason,
-            "message": str(e)
-        }
+
+    except HTTPException:
+        raise
+
+    except ValueError:
+        # Token exists but is inactive (expired/used/revoked).
+        # Look up the row directly to enforce ownership before revealing status.
+        from app.core.config import supabase
+        row_result = supabase.table("one_time_links") \
+            .select("status, user_id") \
+            .eq("id", token) \
+            .execute()
+
+        if not row_result.data:
+            # Token doesn't exist at all — return 404 so callers can't enumerate
+            raise HTTPException(status_code=404, detail="Link not found")
+
+        row = row_result.data[0]
+        if row.get("user_id") != user_id:
+            raise HTTPException(status_code=403, detail="Forbidden: You do not own this link")
+
+        status_value = row.get("status", "inactive")
+        return {"token": token, "status": status_value}
