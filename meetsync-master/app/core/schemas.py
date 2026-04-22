@@ -282,9 +282,14 @@ class WebhookCreate(BaseModel):
 
         # Resolve hostname → IP at validation time to block DNS rebinding
         # and private/link-local ranges (IPv4 + IPv6).
+        # socket.gethostbyname has no timeout parameter; run it in a thread
+        # and enforce a 3-second deadline to prevent request stalls.
+        from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
         try:
-            resolved_ip = ipaddress.ip_address(socket.gethostbyname(hostname))
-        except socket.gaierror:
+            with ThreadPoolExecutor(max_workers=1) as ex:
+                future = ex.submit(socket.gethostbyname, hostname)
+                resolved_ip = ipaddress.ip_address(future.result(timeout=3))
+        except (socket.gaierror, FuturesTimeoutError):
             raise ValueError("Webhook URL hostname could not be resolved")
 
         if not resolved_ip.is_global:
