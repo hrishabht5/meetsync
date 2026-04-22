@@ -327,22 +327,38 @@ async def reset_password(payload: ResetPasswordRequest, _=Depends(strict_rate_li
     """Consume a password reset token and update the user's password."""
     token_hash = hashlib.sha256(payload.token.encode()).hexdigest()
 
-    # Atomically mark as used — filter on used_at IS NULL prevents double-use race
-    result = (
+    # Pre-flight check: find the token without consuming it yet.
+    # We must verify expiry BEFORE marking as used so an expired token
+    # is not permanently burned without updating the password.
+    lookup = (
+        supabase.table("password_reset_tokens")
+        .select("token_hash,user_id,expires_at,used_at")
+        .eq("token_hash", token_hash)
+        .execute()
+    )
+    if not lookup.data:
+        raise HTTPException(status_code=400, detail="Invalid or already-used reset link.")
+
+    row = lookup.data[0]
+    if row.get("used_at"):
+        raise HTTPException(status_code=400, detail="Invalid or already-used reset link.")
+
+    expires_at = datetime.fromisoformat(row["expires_at"].replace("Z", "+00:00"))
+    if datetime.now(timezone.utc) > expires_at:
+        raise HTTPException(status_code=400, detail="Reset link has expired.")
+
+    # Atomically mark as used — the conditional WHERE (used_at IS NULL) prevents
+    # a double-use race between the lookup above and this update.
+    consumed = (
         supabase.table("password_reset_tokens")
         .update({"used_at": datetime.now(timezone.utc).isoformat()})
         .eq("token_hash", token_hash)
         .is_("used_at", "null")
         .execute()
     )
-
-    if not result.data:
+    if not consumed.data:
+        # Another concurrent request claimed this token between our SELECT and UPDATE
         raise HTTPException(status_code=400, detail="Invalid or already-used reset link.")
-
-    row = result.data[0]
-    expires_at = datetime.fromisoformat(row["expires_at"].replace("Z", "+00:00"))
-    if datetime.now(timezone.utc) > expires_at:
-        raise HTTPException(status_code=400, detail="Reset link has expired.")
 
     new_hash = bcrypt.hashpw(payload.new_password.encode(), bcrypt.gensalt()).decode()
     supabase.table("users").update({"password_hash": new_hash}).eq("id", row["user_id"]).execute()
