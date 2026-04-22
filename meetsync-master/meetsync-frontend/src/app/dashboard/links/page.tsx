@@ -850,7 +850,7 @@ function PermanentLinksTab() {
       await api.profiles.createLink(payload);
       setSlug("");
       setMeetingTitle("");
-      // Keep customFields + customization — pre-filled for next link
+      setShowCreateModal(false);
       fetchPage(1, search, false);
     } catch (e: unknown) { alert(errMsg(e)); }
     finally { setCreating(false); }
