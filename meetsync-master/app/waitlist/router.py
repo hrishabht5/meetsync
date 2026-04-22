@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, EmailStr
 from app.core.config import supabase
@@ -12,15 +12,21 @@ class WaitlistRequest(BaseModel):
     email: EmailStr
 
 
+def _send_welcome_sync(email: str) -> None:
+    import asyncio
+    asyncio.run(send_waitlist_welcome(email))
+
+
 @router.post("/")
-async def join_waitlist(payload: WaitlistRequest, _=Depends(strict_rate_limit)):
+async def join_waitlist(
+    payload: WaitlistRequest,
+    background_tasks: BackgroundTasks,
+    _=Depends(strict_rate_limit),
+):
     try:
         supabase.table("waitlist").insert({"email": payload.email}).execute()
-        await send_waitlist_welcome(payload.email)
-        return {"status": "ok", "message": "You've been added to the waitlist"}
     except Exception as e:
         err_str = str(e)
-        # Postgres unique violation code
         if "23505" in err_str or "duplicate" in err_str.lower() or "unique" in err_str.lower():
             return JSONResponse(
                 status_code=409,
@@ -30,3 +36,6 @@ async def join_waitlist(payload: WaitlistRequest, _=Depends(strict_rate_limit)):
             status_code=500,
             content={"status": "error", "message": "Failed to join waitlist. Please try again."},
         )
+
+    background_tasks.add_task(_send_welcome_sync, payload.email)
+    return {"status": "ok", "message": "You've been added to the waitlist"}
