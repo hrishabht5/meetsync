@@ -6,6 +6,7 @@ from pydantic import BaseModel
 class BrandingPayload(BaseModel):
     remove_branding: bool
 
+from app.core.logger import logger
 from app.auth.middleware import (
     get_current_user_id,
     make_user_session_cookie_value,
@@ -105,6 +106,12 @@ def impersonate_user(request: Request, user_id: str, admin_id: str = Depends(ver
     # Overwrite main session with target user
     set_session_cookie(response, user_id, secure)
 
+    logger.info(
+        "AUDIT impersonation_start admin_id=%s target_user_id=%s ip=%s",
+        admin_id,
+        user_id,
+        request.client.host if request.client else "unknown",
+    )
     return response
 
 
@@ -161,4 +168,9 @@ def exit_impersonation(request: Request):
         domain=domain,
     )
 
+    logger.info(
+        "AUDIT impersonation_exit admin_id=%s ip=%s",
+        admin_user_id,
+        request.client.host if request.client else "unknown",
+    )
     return response
