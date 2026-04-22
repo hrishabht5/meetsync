@@ -323,6 +323,32 @@ class ProfileUpdate(BaseModel):
     bg_image_url:    Optional[str] = Field(default=None, max_length=500)
     accent_color:    Optional[str] = Field(default=None, max_length=20)
 
+    @field_validator("avatar_url", "cover_image_url", "bg_image_url")
+    @classmethod
+    def image_url_must_be_https(cls, v: Optional[str]) -> Optional[str]:
+        if v is None or v == "":
+            return None
+        try:
+            parsed = urlparse(v)
+        except Exception:
+            raise ValueError("Invalid URL")
+        if parsed.scheme != "https":
+            raise ValueError("Image URL must use HTTPS")
+        return v
+
+    @field_validator("website")
+    @classmethod
+    def website_must_be_http_or_https(cls, v: Optional[str]) -> Optional[str]:
+        if v is None or v == "":
+            return None
+        try:
+            parsed = urlparse(v)
+        except Exception:
+            raise ValueError("Invalid URL")
+        if parsed.scheme not in ("http", "https"):
+            raise ValueError("Website must use http:// or https://")
+        return v
+
 
 class PermanentLinkCreate(LinkCustomization):
     slug:          str
