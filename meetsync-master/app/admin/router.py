@@ -110,10 +110,29 @@ def impersonate_user(request: Request, user_id: str, admin_id: str = Depends(ver
 
 @router.post("/impersonate/exit")
 def exit_impersonation(request: Request):
-    """Restore the admin's original session and clear the restore cookie."""
+    """
+    Restore the admin's original session and clear the restore cookie.
+
+    Auth guard: the restore-cookie value must decode to a valid, HMAC-signed
+    user_id that belongs to the configured admin.  This prevents a CSRF attack
+    where a malicious cross-origin page triggers exit_impersonation and steals
+    the admin session into the attacker's browser — the cookie is samesite=none
+    on HTTPS and would otherwise be included in cross-site requests.
+    """
     restore_value = request.cookies.get(ADMIN_RESTORE_COOKIE)
     if not restore_value:
         raise HTTPException(status_code=400, detail="No active impersonation session")
+
+    # Verify the restore cookie contains a valid, HMAC-signed admin user_id.
+    from app.auth.middleware import _parse_cookie_value
+    admin_user_id = _parse_cookie_value(restore_value)
+    if not admin_user_id:
+        raise HTTPException(status_code=403, detail="Invalid restore session")
+
+    row = supabase.table("users").select("email").eq("id", admin_user_id).execute()
+    admin_email = row.data[0]["email"] if row.data else ""
+    if not ADMIN_EMAIL or not admin_email or admin_email.lower() != ADMIN_EMAIL.lower():
+        raise HTTPException(status_code=403, detail="Restore session is not an admin session")
 
     secure = is_secure(request)
     samesite = "none" if secure else "lax"
