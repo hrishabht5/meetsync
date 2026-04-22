@@ -433,7 +433,11 @@ async def guest_cancel_booking(
     background_tasks.add_task(
         webhook_service.fire_event,
         "booking.cancelled",
-        {**booking, "cancellation_reason": payload.reason or "Cancelled by guest", "cancelled_by": "guest"},
+        {
+            **{k: v for k, v in booking.items() if k != "management_token"},
+            "cancellation_reason": payload.reason or "Cancelled by guest",
+            "cancelled_by": "guest",
+        },
         host_user_id,
     )
 
@@ -703,7 +707,10 @@ async def cancel_booking(request: Request, booking_id: str, payload: BookingCanc
     background_tasks.add_task(
         webhook_service.fire_event,
         "booking.cancelled",
-        {**booking, "cancellation_reason": payload.reason},
+        {
+            **{k: v for k, v in booking.items() if k != "management_token"},
+            "cancellation_reason": payload.reason,
+        },
         user_id,
     )
     return {"status": "cancelled", "booking_id": booking_id}
