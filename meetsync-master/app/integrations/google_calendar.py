@@ -13,7 +13,7 @@ Flow:
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Optional
-from urllib.parse import urlencode
+from urllib.parse import urlencode, quote
 
 import httpx
 from app.core.config import (
@@ -321,7 +321,7 @@ async def create_meet_event(
 
     async with httpx.AsyncClient(timeout=15.0) as client:
         resp = await client.post(
-            f"{CALENDAR_API}/calendars/{calendar_id}/events",
+            f"{CALENDAR_API}/calendars/{quote(calendar_id, safe='')}/events",
             headers={"Authorization": f"Bearer {access_token}"},
             params={"conferenceDataVersion": 1},
             json=event_body,
@@ -348,7 +348,7 @@ async def delete_calendar_event(user_id: str, event_id: str, calendar_id: str = 
     access_token = await get_valid_access_token(user_id)
     async with httpx.AsyncClient(timeout=15.0) as client:
         resp = await client.delete(
-            f"{CALENDAR_API}/calendars/{calendar_id}/events/{event_id}",
+            f"{CALENDAR_API}/calendars/{quote(calendar_id, safe='')}/events/{quote(event_id, safe='')}",
             headers={"Authorization": f"Bearer {access_token}"},
             params={"sendUpdates": "all"},
         )
