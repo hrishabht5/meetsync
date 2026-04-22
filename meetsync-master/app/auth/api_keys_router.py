@@ -22,11 +22,18 @@ class APIKeyResponse(BaseModel):
     is_active: bool
     key: Optional[str] = None
 
+_MAX_API_KEYS = 10
+
+
 @router.post("/", response_model=APIKeyResponse)
 def create_api_key(request: Request, payload: APIKeyCreate):
     """Create a new developer API Key for programmatic access."""
     user_id = get_current_user_id(request)
-    
+
+    existing = supabase.table("api_keys").select("id", count="exact").eq("user_id", user_id).execute()
+    if (existing.count or 0) >= _MAX_API_KEYS:
+        raise HTTPException(status_code=400, detail=f"Maximum of {_MAX_API_KEYS} API keys allowed. Delete an existing key first.")
+
     raw_token = "msk_" + secrets.token_urlsafe(32)
     prefix = raw_token[:8]
     key_hash = hashlib.sha256(raw_token.encode()).hexdigest()
