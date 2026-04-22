@@ -14,11 +14,14 @@ Signature:
 
 import hashlib
 import hmac
+import ipaddress
 import json
+import socket
 import uuid
 import asyncio
 from datetime import datetime, timezone
 from typing import Any
+from urllib.parse import urlparse
 
 import httpx
 from app.core.config import supabase
@@ -33,6 +36,36 @@ def _sign_payload(secret: str, payload: bytes) -> str:
     return f"sha256={mac.hexdigest()}"
 
 
+# ── SSRF guard ─────────────────────────────────────────────
+
+def _assert_url_still_public(url: str) -> None:
+    """
+    Re-resolve the webhook URL hostname at delivery time and reject any
+    address that has become private since registration (DNS rebinding).
+
+    The validator in WebhookCreate already checked this at registration
+    time, but DNS TTLs can change. An attacker can register a URL that
+    resolves to a public IP then switch DNS to an internal address after
+    the one-time validation passes.
+
+    Raises ValueError if the current DNS resolution points to a
+    non-global (private/loopback/link-local) address.
+    """
+    parsed = urlparse(url)
+    hostname = (parsed.hostname or "").lower()
+    if not hostname:
+        raise ValueError(f"Webhook URL has no hostname: {url}")
+    try:
+        resolved_ip = ipaddress.ip_address(socket.gethostbyname(hostname))
+    except socket.gaierror as exc:
+        raise ValueError(f"Webhook hostname {hostname!r} could not be resolved: {exc}")
+    if not resolved_ip.is_global:
+        raise ValueError(
+            f"Webhook URL {hostname!r} now resolves to a non-public address "
+            f"({resolved_ip}) — delivery blocked to prevent SSRF."
+        )
+
+
 # ── Core Dispatcher ───────────────────────────────────────
 
 async def _deliver(endpoint: dict, event_name: str, payload: dict):
@@ -40,6 +73,30 @@ async def _deliver(endpoint: dict, event_name: str, payload: dict):
     Attempt delivery to a single endpoint with up to 3 retries.
     Logs each attempt to webhook_logs in Supabase.
     """
+    # Re-validate that the URL still points to a public host — guards against
+    # DNS rebinding attacks where the hostname resolves public at registration
+    # time but switches to an internal IP at delivery time.
+    try:
+        _assert_url_still_public(endpoint["url"])
+    except ValueError as ssrf_err:
+        logger.error(
+            "Webhook %s blocked: SSRF guard rejected URL at delivery time: %s",
+            endpoint["id"], ssrf_err,
+        )
+        try:
+            supabase.table("webhook_logs").insert({
+                "webhook_id":  endpoint["id"],
+                "event":       event_name,
+                "payload":     payload,
+                "status_code": None,
+                "success":     False,
+                "error":       f"SSRF guard: {ssrf_err}",
+                "attempts":    0,
+            }).execute()
+        except Exception:
+            pass
+        return
+
     payload_bytes = json.dumps(payload, default=str).encode()
     headers = {
         "Content-Type":          "application/json",
