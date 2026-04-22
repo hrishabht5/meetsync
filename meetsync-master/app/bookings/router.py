@@ -65,6 +65,25 @@ def _preferred_calendar_id(host_user_id: str) -> str:
     )
 
 
+def _get_host_config(host_user_id: str):
+    """
+    Fetch availability settings and preferred calendar ID together so
+    callers avoid issuing two sequential queries for the same user.
+    Returns (avail_settings_dict, calendar_id_str).
+    """
+    from app.availability.router import _get_settings
+    avail = _get_settings(host_user_id)
+    cal_row = supabase.table("google_tokens") \
+        .select("preferred_calendar_id") \
+        .eq("user_id", host_user_id) \
+        .execute()
+    calendar_id = (
+        cal_row.data[0].get("preferred_calendar_id") or "primary"
+        if cal_row.data else "primary"
+    )
+    return avail, calendar_id
+
+
 # ═══════════════════════════════════════════════════════════
 #  HOST-AUTHENTICATED ENDPOINTS
 # ═══════════════════════════════════════════════════════════
@@ -126,9 +145,8 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
         raise HTTPException(status_code=400, detail="Cannot book a time in the past.")
 
     # ── 2c. Availability settings guards ─────────────────
-    from app.availability.router import _get_settings
     from zoneinfo import ZoneInfo
-    avail = _get_settings(host_user_id)
+    avail, preferred_cal = _get_host_config(host_user_id)
 
     min_notice_hours = int(avail.get("min_notice_hours") or 0)
     if min_notice_hours > 0:
@@ -172,7 +190,6 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
 
     # ── 3. Create Google Meet event ───────────────────────
     duration = DURATION_MAP.get(payload.event_type, 30)
-    preferred_cal = _preferred_calendar_id(host_user_id)
     display_title = link_custom_title or payload.event_type
 
     # Build calendar description with management link (will be filled after token is generated)
@@ -761,9 +778,8 @@ async def host_reschedule_booking(
         raise HTTPException(status_code=409, detail="This time slot is already taken. Please choose another time.")
 
     # Daily limit guard (check new day, exclude this booking from count)
-    from app.availability.router import _get_settings
     from zoneinfo import ZoneInfo
-    avail = _get_settings(user_id)
+    avail, cal_id = _get_host_config(user_id)
     max_per_day = avail.get("max_bookings_per_day")
     if max_per_day is not None:
         try:
@@ -785,7 +801,6 @@ async def host_reschedule_booking(
             raise HTTPException(status_code=409, detail="That day is fully booked. Please choose a different date.")
 
     old_event_id = booking.get("calendar_event_id")
-    cal_id       = _preferred_calendar_id(user_id)
     duration     = DURATION_MAP.get(booking["event_type"], 30)
     display_title = booking.get("custom_title") or booking["event_type"]
     manage_url   = f"{FRONTEND_URL}/manage/{booking['management_token']}"
