@@ -50,7 +50,7 @@ def get_auth_url(state: str = "signin") -> str:
     state='signin'  → identity-only scopes (email + profile, no calendar)
     state='connect' → calendar scope (+ email so callback can upsert the user row)
     """
-    scopes = SCOPES_CALENDAR if state == "connect" else SCOPES_SIGNIN
+    scopes = SCOPES_CALENDAR if state.startswith("connect") else SCOPES_SIGNIN
     params = {
         "client_id":     GOOGLE_CLIENT_ID,
         "redirect_uri":  GOOGLE_REDIRECT_URI,
@@ -148,7 +148,9 @@ async def list_calendars(user_id: str) -> list[dict]:
             headers={"Authorization": f"Bearer {access_token}"},
         )
     if resp.status_code in (401, 403):
-        raise ValueError("Google Calendar access was denied. Please disconnect and reconnect your Google Calendar in Settings.")
+        # Token is invalid or lacks calendar scope — clear it so calendar_connected returns false
+        supabase.table("google_tokens").delete().eq("user_id", user_id).execute()
+        raise ValueError("Google Calendar access was denied. Please reconnect your Google Calendar in Settings.")
     resp.raise_for_status()
     items = resp.json().get("items", [])
     return [
