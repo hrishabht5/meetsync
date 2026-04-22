@@ -119,6 +119,18 @@ class BookingCreate(BaseModel):
     permanent_link_id:  Optional[str] = None
     custom_answers:     Optional[dict] = None
 
+    @field_validator("custom_answers")
+    @classmethod
+    def custom_answers_size_limit(cls, v: Optional[dict]) -> Optional[dict]:
+        if v is None:
+            return v
+        if len(v) > 50:
+            raise ValueError("custom_answers may not contain more than 50 keys")
+        import json
+        if len(json.dumps(v)) > 8000:
+            raise ValueError("custom_answers payload exceeds the 8 KB limit")
+        return v
+
     @field_validator("event_type")
     @classmethod
     def event_type_must_be_valid(cls, v: str) -> str:
