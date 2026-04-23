@@ -72,7 +72,6 @@ class TestBookingCreateSchema:
         }
         r = client.post("/bookings/", json=payload)
         assert r.status_code == 422
-        assert "event_type" in r.text.lower() or "banana" in r.text.lower()
 
     def test_blank_guest_name_returns_422(self, client: TestClient):
         payload = {

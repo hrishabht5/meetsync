@@ -128,6 +128,14 @@ async def http_exception_handler(request, exc):
     )
 
 
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc):
+    return JSONResponse(
+        status_code=422,
+        content={"error": True, "message": "Invalid request data"},
+    )
+
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
     _log.error("Unhandled exception on %s %s", request.method, request.url.path, exc_info=exc)
