@@ -2,32 +2,53 @@ import hmac
 import hashlib
 from fastapi import HTTPException, Request
 
-from app.core.config import SECRET_KEY
+from app.core.config import SECRET_KEY, supabase
 
 
 COOKIE_NAME = "draftmeet_user"
 
 
-def _sign_user_id(user_id: str) -> str:
-    digest = hmac.new(SECRET_KEY.encode("utf-8"), user_id.encode("utf-8"), hashlib.sha256).hexdigest()
-    return digest
+def _sign_payload(payload: str) -> str:
+    return hmac.new(SECRET_KEY.encode("utf-8"), payload.encode("utf-8"), hashlib.sha256).hexdigest()
 
 
-def _parse_cookie_value(value: str) -> str | None:
+def _get_session_version(user_id: str) -> int:
+    try:
+        result = supabase.table("users").select("session_version").eq("id", user_id).execute()
+        if isinstance(result.data, list) and result.data:
+            v = result.data[0].get("session_version")
+            if isinstance(v, int):
+                return v
+    except Exception:
+        pass
+    return 1
+
+
+def _parse_cookie_value(value: str) -> tuple[str, int] | tuple[None, None]:
     """
-    Cookie format: "<user_id>|<hex_hmac_sha256>"
-    Returns user_id if the signature matches, else None.
+    Cookie format: "{user_id}:{session_version}|{hex_hmac_sha256}"
+    Returns (user_id, session_version) if valid, else (None, None).
     """
     try:
-        user_id, sig = value.split("|", 1)
+        payload, sig = value.split("|", 1)
     except ValueError:
-        return None
-    if not user_id or not sig:
-        return None
-    expected = _sign_user_id(user_id)
+        return None, None
+    if not payload or not sig:
+        return None, None
+    expected = _sign_payload(payload)
     if not hmac.compare_digest(expected, sig):
-        return None
-    return user_id
+        return None, None
+    parts = payload.split(":", 1)
+    if len(parts) != 2:
+        return None, None
+    user_id, ver_str = parts
+    if not user_id:
+        return None, None
+    try:
+        session_version = int(ver_str)
+    except (ValueError, TypeError):
+        return None, None
+    return user_id, session_version
 
 
 def get_current_user_id(request: Request) -> str:
@@ -40,10 +61,6 @@ def get_current_user_id(request: Request) -> str:
     auth_header = request.headers.get("Authorization")
     if auth_header and auth_header.startswith("Bearer "):
         token = auth_header.split(" ")[1]
-
-        import hashlib
-        from app.core.config import supabase
-
         key_hash = hashlib.sha256(token.encode()).hexdigest()
         result = supabase.table("api_keys").select("user_id, is_active").eq("key_hash", key_hash).execute()
 
@@ -58,15 +75,19 @@ def get_current_user_id(request: Request) -> str:
     if not raw:
         raise HTTPException(status_code=401, detail="Not authenticated")
 
-    user_id = _parse_cookie_value(raw)
+    user_id, cookie_version = _parse_cookie_value(raw)
     if not user_id:
         raise HTTPException(status_code=401, detail="Invalid session")
+    if cookie_version != _get_session_version(user_id):
+        raise HTTPException(status_code=401, detail="Session expired")
     return user_id
 
 
 def make_user_session_cookie_value(user_id: str) -> str:
     """Create signed cookie value for a host user."""
-    return f"{user_id}|{_sign_user_id(user_id)}"
+    version = _get_session_version(user_id)
+    payload = f"{user_id}:{version}"
+    return f"{payload}|{_sign_payload(payload)}"
 
 
 def clear_user_session_cookie() -> dict:

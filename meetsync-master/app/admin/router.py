@@ -139,7 +139,7 @@ def exit_impersonation(request: Request, _: None = Depends(_require_same_origin)
 
     # Verify the restore cookie contains a valid, HMAC-signed admin user_id.
     from app.auth.middleware import _parse_cookie_value
-    admin_user_id = _parse_cookie_value(restore_value)
+    admin_user_id, _ = _parse_cookie_value(restore_value)
     if not admin_user_id:
         raise HTTPException(status_code=403, detail="Invalid restore session")
 

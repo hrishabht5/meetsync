@@ -364,7 +364,12 @@ async def reset_password(payload: ResetPasswordRequest, _=Depends(strict_rate_li
         raise HTTPException(status_code=400, detail="Invalid or already-used reset link.")
 
     new_hash = bcrypt.hashpw(payload.new_password.encode(), bcrypt.gensalt()).decode()
-    supabase.table("users").update({"password_hash": new_hash}).eq("id", row["user_id"]).execute()
+    ver_result = supabase.table("users").select("session_version").eq("id", row["user_id"]).execute()
+    cur_ver = (ver_result.data[0].get("session_version") or 1) if ver_result.data else 1
+    supabase.table("users").update({
+        "password_hash": new_hash,
+        "session_version": cur_ver + 1,
+    }).eq("id", row["user_id"]).execute()
 
     return {"status": "ok"}
 
