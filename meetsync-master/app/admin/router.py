@@ -14,10 +14,17 @@ from app.auth.middleware import (
     set_session_cookie,
     cookie_domain,
 )
-from app.core.config import supabase, ADMIN_EMAIL, ADMIN_RESTORE_COOKIE
+from app.core.config import supabase, ADMIN_EMAIL, ADMIN_RESTORE_COOKIE, APP_BASE_URL, FRONTEND_URL
 from app.admin import service
 
 router = APIRouter()
+
+
+def _require_same_origin(request: Request) -> None:
+    """Reject cross-origin POST requests to prevent CSRF on samesite=none cookies."""
+    origin = request.headers.get("origin")
+    if origin and origin.rstrip("/") not in {FRONTEND_URL, APP_BASE_URL}:
+        raise HTTPException(status_code=403, detail="CSRF check failed")
 
 
 def verified_admin(request: Request) -> str:
@@ -74,7 +81,7 @@ def set_user_branding(user_id: str, payload: BrandingPayload, _: str = Depends(v
 # ── Impersonation ─────────────────────────────────────────
 
 @router.post("/impersonate/{user_id}")
-def impersonate_user(request: Request, user_id: str, admin_id: str = Depends(verified_admin)):
+def impersonate_user(request: Request, user_id: str, admin_id: str = Depends(verified_admin), _: None = Depends(_require_same_origin)):
     """
     Set session to target user while saving the admin's original session in a
     restore cookie so they can return to the admin panel.
@@ -116,7 +123,7 @@ def impersonate_user(request: Request, user_id: str, admin_id: str = Depends(ver
 
 
 @router.post("/impersonate/exit")
-def exit_impersonation(request: Request):
+def exit_impersonation(request: Request, _: None = Depends(_require_same_origin)):
     """
     Restore the admin's original session and clear the restore cookie.
 
