@@ -26,10 +26,9 @@ import bcrypt
 
 # Pre-computed hash used when the email doesn't exist — ensures bcrypt always
 # runs so response timing doesn't reveal whether an email is registered.
-# rounds=4 is intentionally low (well below the default of 12) because this
-# hash is only used for timing parity, never for real credential verification.
-# Do NOT raise rounds here; it would slow every failed login by seconds.
-_DUMMY_HASH = bcrypt.hashpw(b"draftmeet-timing-guard", bcrypt.gensalt(rounds=4)).decode()
+# rounds=12 matches real password hashes so checkpw takes the same time
+# for missing accounts as for accounts with wrong passwords.
+_DUMMY_HASH = bcrypt.hashpw(b"draftmeet-timing-guard", bcrypt.gensalt(rounds=12)).decode()
 import httpx
 from fastapi import APIRouter, BackgroundTasks, Depends, Request, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse
