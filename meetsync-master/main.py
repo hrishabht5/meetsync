@@ -48,6 +48,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "frame-ancestors 'none'; "
             "form-action 'none'"
         )
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         return response
 
 
