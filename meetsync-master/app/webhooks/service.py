@@ -106,12 +106,17 @@ async def _deliver(endpoint: dict, event_name: str, payload: dict):
         "User-Agent":            "DraftMeet-Webhooks/1.0",
     }
     secret_enc = endpoint.get("secret_enc")
+    raw_secret = None
     if secret_enc:
         try:
             raw_secret = decrypt_secret(secret_enc, SECRET_KEY)
-            headers["X-DraftMeet-Signature"] = _sign_payload(raw_secret, payload_bytes)
         except Exception as dec_err:
             logger.error("Could not decrypt webhook secret for %s: %s", endpoint["id"], dec_err)
+    elif endpoint.get("secret"):
+        # Fallback: pre-migration row still has plaintext secret; use it until backfilled.
+        raw_secret = endpoint["secret"]
+    if raw_secret:
+        headers["X-DraftMeet-Signature"] = _sign_payload(raw_secret, payload_bytes)
 
     status_code = None
     error_msg   = None
@@ -176,7 +181,7 @@ async def fire_event(event_name: str, data: Any, user_id: str = None):
     """
     # Fetch only this user's active endpoints — avoids full-table scan
     query = supabase.table("webhooks") \
-        .select("id,url,secret_enc,events") \
+        .select("id,url,secret,secret_enc,events") \
         .eq("is_active", True)
     if user_id:
         query = query.eq("user_id", user_id)

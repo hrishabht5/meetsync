@@ -1,0 +1,22 @@
+-- M-5 security: ensure secret_enc column exists and document backfill requirement
+--
+-- schema.sql has `secret TEXT` (plaintext). Migration v23 added secret_enc BYTEA
+-- using pgcrypto, but application code switched to AES-256-GCM (TEXT hex via
+-- app/webhooks/crypto.py). This migration ensures the TEXT column is present for
+-- deployments where v23 was never applied or used BYTEA.
+--
+-- BACKFILL NOTE: existing rows with secret IS NOT NULL and secret_enc IS NULL
+-- will NOT be backfilled here because the AES-256-GCM encryption requires the
+-- application SECRET_KEY at the Python layer. Run the following one-time command
+-- after deployment to backfill those rows:
+--
+--   python -c "
+--   from app.core.config import supabase, SECRET_KEY
+--   from app.webhooks.crypto import encrypt_secret
+--   rows = supabase.table('webhooks').select('id,secret').is_('secret_enc', 'null').not_.is_('secret', 'null').execute().data
+--   for r in rows:
+--       supabase.table('webhooks').update({'secret_enc': encrypt_secret(r['secret'], SECRET_KEY)}).eq('id', r['id']).execute()
+--   print(f'Backfilled {len(rows)} rows')
+--   "
+
+ALTER TABLE webhooks ADD COLUMN IF NOT EXISTS secret_enc TEXT;
