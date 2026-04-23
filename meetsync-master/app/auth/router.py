@@ -417,6 +417,7 @@ async def delete_account(request: Request):
         supabase.table("api_keys").delete().eq("user_id", user_id).execute()
         supabase.table("webhooks").delete().eq("user_id", user_id).execute()
         supabase.table("google_tokens").delete().eq("user_id", user_id).execute()
+        supabase.table("password_reset_tokens").delete().eq("user_id", user_id).execute()
         supabase.table("user_profiles").delete().eq("user_id", user_id).execute()
         supabase.table("users").delete().eq("id", user_id).execute()
 
