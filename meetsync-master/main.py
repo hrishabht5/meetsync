@@ -24,6 +24,8 @@ app = FastAPI(
     title="DraftMeet API",
     description="Scheduling platform with Google Meet, one-time links, and webhooks",
     version="1.0.0",
+    docs_url=None,
+    redoc_url=None,
 )
 
 CLEAN_FRONTEND_URL = FRONTEND_URL.rstrip("/")
