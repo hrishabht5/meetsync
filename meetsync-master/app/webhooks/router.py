@@ -10,7 +10,7 @@ POST /webhooks/test      → send a test event to all endpoints
 
 import secrets
 import uuid
-from fastapi import APIRouter, HTTPException, BackgroundTasks, Request
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Query, Request
 from app.core.config import supabase, SECRET_KEY
 from app.core.schemas import WebhookCreate
 from app.webhooks import service as webhook_service
@@ -88,7 +88,7 @@ def toggle_webhook(request: Request, webhook_id: str):
 
 
 @router.get("/logs")
-def get_webhook_logs(request: Request, limit: int = 50):
+def get_webhook_logs(request: Request, limit: int = Query(default=50, ge=1, le=200)):
     """Recent webhook delivery logs scoped to the authenticated user's webhooks."""
     from app.auth.middleware import get_current_user_id
     user_id = get_current_user_id(request)
