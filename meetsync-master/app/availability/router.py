@@ -153,7 +153,7 @@ async def get_available_slots(
     buffer = settings["buffer_minutes"]
     try:
         tz = ZoneInfo(settings.get("timezone", "UTC"))
-    except:
+    except Exception:
         tz = timezone.utc
 
     # ── Guest timezone: adjust target_date + build day boundaries ──────────

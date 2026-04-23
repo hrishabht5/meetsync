@@ -18,7 +18,6 @@ DELETE /auth/account            → GDPR account deletion
 
 import hashlib
 import hmac
-import logging as _logging
 import secrets
 import uuid
 from datetime import datetime, timezone, timedelta
@@ -27,6 +26,9 @@ import bcrypt
 
 # Pre-computed hash used when the email doesn't exist — ensures bcrypt always
 # runs so response timing doesn't reveal whether an email is registered.
+# rounds=4 is intentionally low (well below the default of 12) because this
+# hash is only used for timing parity, never for real credential verification.
+# Do NOT raise rounds here; it would slow every failed login by seconds.
 _DUMMY_HASH = bcrypt.hashpw(b"draftmeet-timing-guard", bcrypt.gensalt(rounds=4)).decode()
 import httpx
 from fastapi import APIRouter, BackgroundTasks, Depends, Request, HTTPException
@@ -65,7 +67,7 @@ def _ensure_profile(user_id: str, email: str, avatar_url: str | None = None, goo
         from app.profiles.service import ensure_profile_exists
         ensure_profile_exists(user_id, email, avatar_url=avatar_url, google_name=google_name)
     except Exception as e:
-        _logging.warning("Could not create profile for %s: %s", user_id, e)
+        logger.warning("Could not create profile for %s: %s", user_id, e)
 
 
 # ── Google OAuth ──────────────────────────────────────────
@@ -122,7 +124,7 @@ async def google_callback(request: Request, code: str = None, error: str = None,
     received_nonce = parts[1] if len(parts) > 1 else ""
 
     if not stored_nonce or not hmac.compare_digest(stored_nonce, received_nonce):
-        _logging.warning("OAuth CSRF check failed — state mismatch")
+        logger.warning("OAuth CSRF check failed — state mismatch")
         return RedirectResponse(url=f"{FRONTEND_URL}?auth_error=invalid_state")
 
     try:
@@ -188,7 +190,7 @@ async def google_callback(request: Request, code: str = None, error: str = None,
             return redirect
 
     except Exception as e:
-        _logging.warning("Auth callback error: %s", e)
+        logger.warning("Auth callback error: %s", e)
         return RedirectResponse(url=f"{FRONTEND_URL}?auth_error=token_exchange_failed")
 
 
@@ -247,7 +249,7 @@ def auth_status(request: Request):
     calendar_connected = bool(cal_row.data)
     preferred_calendar_id = cal_row.data[0].get("preferred_calendar_id", "primary") if cal_row.data else None
 
-    is_admin = bool(ADMIN_EMAIL) and bool(email) and email.lower() == ADMIN_EMAIL.lower()
+    is_admin = bool(ADMIN_EMAIL and email and email.lower() == ADMIN_EMAIL.lower())
     is_impersonating = ADMIN_RESTORE_COOKIE in request.cookies
 
     return {

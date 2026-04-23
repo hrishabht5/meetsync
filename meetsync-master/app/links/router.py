@@ -9,7 +9,7 @@ DELETE /links/{token}/permanent → hard-delete a non-active link
 POST /links/bulk             → bulk revoke or hard-delete
 """
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel
 from typing import List, Literal
 from app.core.schemas import OTLCreate, OTLUpdate
@@ -57,7 +57,7 @@ def list_links(
     request: Request,
     status: str = None,
     page: int = 1,
-    limit: int = 10,
+    limit: int = Query(default=10, ge=1, le=100),
     search: str = "",
 ):
     """List OTLs with pagination, search, and status filter."""
@@ -102,7 +102,7 @@ def customize_link(request: Request, token: str, payload: OTLUpdate):
     from app.auth.middleware import get_current_user_id
     user_id = get_current_user_id(request)
     try:
-        return otl_service.customize_otl(token, user_id, payload.dict(exclude_none=True))
+        return otl_service.customize_otl(token, user_id, payload.model_dump(exclude_none=True))
     except ValueError as e:
         status_code = 403 if "Forbidden" in str(e) else 400
         raise HTTPException(status_code=status_code, detail=str(e))

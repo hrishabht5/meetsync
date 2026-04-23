@@ -178,7 +178,7 @@ class BookingOutcome(str, Enum):
 
 class BookingSetOutcome(BaseModel):
     outcome:       BookingOutcome
-    outcome_notes: Optional[str] = None
+    outcome_notes: Optional[str] = Field(default=None, max_length=2000)
 
 
 class GuestBookingResponse(BaseModel):

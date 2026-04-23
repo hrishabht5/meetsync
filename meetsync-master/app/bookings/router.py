@@ -14,7 +14,7 @@ PATCH /bookings/manage/{token}/reschedule  → guest-initiated reschedule
 
 import csv
 import io
-import logging
+from app.core.logger import logger
 import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -419,7 +419,7 @@ async def guest_cancel_booking(
                 host_user_id, booking["calendar_event_id"], cal_id
             )
         except Exception as e:
-            logging.warning("Failed to delete GCal event %s: %s", booking["calendar_event_id"], e)
+            logger.warning("Failed to delete GCal event %s: %s", booking["calendar_event_id"], e)
 
     # Update booking status
     supabase.table("bookings").update({
@@ -705,7 +705,7 @@ async def cancel_booking(request: Request, booking_id: str, payload: BookingCanc
                 user_id, booking["calendar_event_id"], cancel_calendar_id
             )
         except Exception as e:
-            logging.warning("Failed to delete GCal event %s: %s", booking["calendar_event_id"], e)
+            logger.warning("Failed to delete GCal event %s: %s", booking["calendar_event_id"], e)
 
     supabase.table("bookings").update({
         "status":            BookingStatus.cancelled,

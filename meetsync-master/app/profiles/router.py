@@ -14,7 +14,7 @@ Authenticated (host):
   DELETE /profiles/me/links/{link_id}          → delete link
 """
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel
 from typing import List
 
@@ -66,7 +66,7 @@ def update_my_profile(request: Request, payload: ProfileUpdate):
 def list_my_links(
     request: Request,
     page: int = 1,
-    limit: int = 10,
+    limit: int = Query(default=10, ge=1, le=100),
     search: str = "",
 ):
     user_id = get_current_user_id(request)
@@ -114,7 +114,7 @@ def customize_permanent_link(request: Request, link_id: str, payload: PermanentL
     """Update description, cover_image_url, and accent_color on a permanent link."""
     user_id = get_current_user_id(request)
     try:
-        return service.customize_permanent_link(user_id, link_id, payload.dict(exclude_none=True))
+        return service.customize_permanent_link(user_id, link_id, payload.model_dump(exclude_none=True))
     except ValueError as e:
         status_code = 403 if "Forbidden" in str(e) else 400
         raise HTTPException(status_code=status_code, detail=str(e))

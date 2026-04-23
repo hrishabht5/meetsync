@@ -113,7 +113,7 @@ app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RateLimitMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[CLEAN_FRONTEND_URL, f"{CLEAN_FRONTEND_URL}/", *_dev_origins],
+    allow_origins=[CLEAN_FRONTEND_URL, *_dev_origins],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization"],
