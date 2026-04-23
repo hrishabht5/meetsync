@@ -340,6 +340,15 @@ class ProfileUpdate(BaseModel):
     bg_image_url:    Optional[str] = Field(default=None, max_length=500)
     accent_color:    Optional[str] = Field(default=None, max_length=20)
 
+    @field_validator("accent_color")
+    @classmethod
+    def accent_color_must_be_hex(cls, v: Optional[str]) -> Optional[str]:
+        if v is None or v == "":
+            return None
+        if not _re.fullmatch(r"#[0-9A-Fa-f]{6}", v):
+            raise ValueError("accent_color must be a 6-digit hex color, e.g. #3B6AE8")
+        return v
+
     @field_validator("avatar_url", "cover_image_url", "bg_image_url")
     @classmethod
     def image_url_must_be_https(cls, v: Optional[str]) -> Optional[str]:
