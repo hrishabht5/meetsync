@@ -20,8 +20,10 @@ from app.core.config import (
     GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET,
     GOOGLE_REDIRECT_URI,
+    SECRET_KEY,
     supabase,
 )
+from app.webhooks.crypto import decrypt_secret, encrypt_secret
 
 # Identity-only scopes — used for Google Sign-In (no calendar access)
 SCOPES_SIGNIN = [
@@ -125,7 +127,18 @@ async def get_valid_access_token(user_id: str) -> str:
     if not token_row:
         raise ValueError("Google Calendar is not connected. Please reconnect your Google account in Settings.")
 
-    if not token_row.get("refresh_token"):
+    stored_refresh_token = (
+        decrypt_secret(token_row["refresh_token_enc"], SECRET_KEY)
+        if token_row.get("refresh_token_enc")
+        else token_row.get("refresh_token")
+    )
+    stored_access_token = (
+        decrypt_secret(token_row["access_token_enc"], SECRET_KEY)
+        if token_row.get("access_token_enc")
+        else token_row.get("access_token")
+    )
+
+    if not stored_refresh_token:
         # Stored without a refresh token — calendar cannot be used
         supabase.table("google_tokens").delete().eq("user_id", user_id).execute()
         raise ValueError(
@@ -137,15 +150,16 @@ async def get_valid_access_token(user_id: str) -> str:
     if expires_at.tzinfo is None:
         expires_at = expires_at.replace(tzinfo=timezone.utc)
     if datetime.now(timezone.utc) >= expires_at - timedelta(minutes=5):
-        new_access_token = await refresh_access_token(user_id, token_row["refresh_token"])
+        new_access_token = await refresh_access_token(user_id, stored_refresh_token)
         new_expires_at   = datetime.now(timezone.utc) + timedelta(seconds=3600)
         supabase.table("google_tokens").update({
-            "access_token": new_access_token,
-            "expires_at":   new_expires_at.isoformat(),
+            "access_token":     new_access_token,
+            "access_token_enc": encrypt_secret(new_access_token, SECRET_KEY),
+            "expires_at":       new_expires_at.isoformat(),
         }).eq("user_id", user_id).execute()
         return new_access_token
 
-    return token_row["access_token"]
+    return stored_access_token
 
 
 def store_tokens(user_id: str, token_data: dict):
@@ -163,10 +177,12 @@ def store_tokens(user_id: str, token_data: dict):
         )
     expires_at = datetime.now(timezone.utc) + timedelta(seconds=token_data.get("expires_in", 3600))
     supabase.table("google_tokens").upsert({
-        "user_id":       user_id,
-        "access_token":  token_data["access_token"],
-        "refresh_token": refresh_token,
-        "expires_at":    expires_at.isoformat(),
+        "user_id":            user_id,
+        "access_token":       token_data["access_token"],
+        "refresh_token":      refresh_token,
+        "access_token_enc":   encrypt_secret(token_data["access_token"], SECRET_KEY),
+        "refresh_token_enc":  encrypt_secret(refresh_token, SECRET_KEY),
+        "expires_at":         expires_at.isoformat(),
     }).execute()
 
 
