@@ -49,5 +49,11 @@ VERCEL_TEAM_ID    = os.getenv("VERCEL_TEAM_ID", "")
 # /admin/* routes and grant access to the admin dashboard.
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "")
 
+# ── Waitlist admin webhook ────────────────────────────────
+# When set, a POST is fired to this URL on every new waitlist signup.
+# Leave empty to disable. WAITLIST_WEBHOOK_SECRET is optional HMAC signing.
+WAITLIST_WEBHOOK_URL    = os.getenv("WAITLIST_WEBHOOK_URL", "")
+WAITLIST_WEBHOOK_SECRET = os.getenv("WAITLIST_WEBHOOK_SECRET", "")
+
 # Cookie name used to save the admin's original session during impersonation.
 ADMIN_RESTORE_COOKIE = "draftmeet_admin_restore"
