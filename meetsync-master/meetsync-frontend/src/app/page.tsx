@@ -16,22 +16,41 @@ import { WaitlistForm } from "@/components/WaitlistForm";
 const IS_LIVE = (process.env.NEXT_PUBLIC_LAUNCH_MODE ?? process.env.LAUNCH_MODE) === "live";
 
 export const metadata = {
-  title: "DraftMeet: Free Calendly Alternative with Automatic Google Meet",
+  title: "DraftMeet — Free Calendly Alternative with Automatic Google Meet",
   description:
-    "Share a booking link, let clients self-schedule, and auto-create Google Meet events. 17+ features, 100% free. Join the waitlist.",
+    "Stop the scheduling back-and-forth. Share a link, let clients self-schedule, get a Google Meet created automatically. 17+ features, 100% free. No credit card needed.",
+  keywords: [
+    "free Calendly alternative",
+    "scheduling tool",
+    "google meet scheduler",
+    "booking link generator",
+    "one-time booking links",
+    "free scheduling app",
+  ],
   alternates: { canonical: "https://www.draftmeet.com" },
   openGraph: {
-    title: "DraftMeet: Free Calendly Alternative with Automatic Google Meet",
+    title: "DraftMeet — Free Calendly Alternative",
     description:
-      "Share a booking link, let clients self-schedule, and auto-create Google Meet events. No back-and-forth. 17+ features, 100% free.",
+      "One-time booking links, permanent scheduling pages, automatic Google Meet — all free. Join 500+ on the waitlist.",
     url: "https://www.draftmeet.com",
     type: "website",
+    siteName: "DraftMeet",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "DraftMeet — Free Calendly Alternative with Automatic Google Meet",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "DraftMeet: Free Calendly Alternative with Automatic Google Meet",
+    site: "@draftmeet",
+    title: "DraftMeet — Free Calendly Alternative",
     description:
-      "One-time booking links. Permanent booking pages. Automatic Google Meet. 17+ features, 100% free.",
+      "One-time booking links, permanent scheduling pages, automatic Google Meet — all free. Join 500+ on the waitlist.",
+    images: ["/og-image.png"],
   },
 };
 

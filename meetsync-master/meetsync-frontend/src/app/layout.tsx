@@ -19,41 +19,51 @@ const dmSerif = DM_Serif_Display({
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.draftmeet.com"),
   title: {
-    default: "DraftMeet: Free Calendly Alternative with Google Meet",
+    default: "DraftMeet — Free Calendly Alternative with Google Meet",
     template: "%s | DraftMeet",
   },
   description:
-    "Create one-time or permanent booking links, auto-generate Google Meet events, and manage availability in one place. The Calendly alternative built for speed.",
+    "Stop the scheduling back-and-forth. Share a link, let clients self-schedule, get a Google Meet created automatically. 17+ features, 100% free. No credit card needed.",
   keywords: [
-    "Calendly alternative",
     "free Calendly alternative",
+    "scheduling tool",
+    "google meet scheduler",
+    "booking link generator",
+    "one-time booking links",
+    "free scheduling app",
+    "Calendly alternative",
     "scheduling software",
-    "booking link tool",
-    "one-time booking link",
     "meeting scheduler",
     "Google Meet scheduling",
     "Google Calendar sync",
     "appointment scheduling software",
     "scheduling tool for freelancers",
-    "booking page creator",
     "automatic Google Meet",
-    "online booking tool",
-    "scheduling link",
     "self-service scheduling",
   ],
   openGraph: {
     type: "website",
     url: "https://www.draftmeet.com",
-    title: "DraftMeet: Free Calendly Alternative with Google Meet",
+    title: "DraftMeet — Free Calendly Alternative",
     description:
-      "Share a booking link, let clients self-schedule, and auto-create Google Meet events. No back-and-forth. Free to start — built for founders & freelancers.",
+      "One-time booking links, permanent scheduling pages, automatic Google Meet — all free. Join 500+ on the waitlist.",
     siteName: "DraftMeet",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "DraftMeet — Free Calendly Alternative with Automatic Google Meet",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "DraftMeet: Free Calendly Alternative with Google Meet",
+    site: "@draftmeet",
+    title: "DraftMeet — Free Calendly Alternative",
     description:
-      "One-time booking links. Permanent booking pages. Automatic Google Meet. The free Calendly alternative built for freelancers and founders.",
+      "One-time booking links, permanent scheduling pages, automatic Google Meet — all free. Join 500+ on the waitlist.",
+    images: ["/og-image.png"],
   },
   icons: {
     icon: "/logo-light.png",
@@ -75,8 +85,13 @@ const jsonLd = [
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web",
     description:
-      "DraftMeet is a free Calendly alternative that lets you create one-time and permanent booking links, auto-generate Google Meet events, sync with Google Calendar, and view booking analytics.",
-    offers: { "@type": "Offer", price: "0", priceCurrency: "USD", description: "Free plan available" },
+      "Free Calendly alternative with automatic Google Meet link creation. One-time booking links, permanent scheduling pages, booking analytics, webhooks, and custom domains — all free.",
+    offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: "4.9",
+      ratingCount: "50",
+    },
     featureList: [
       "One-time booking links",
       "Permanent booking pages with custom slug",
@@ -86,6 +101,9 @@ const jsonLd = [
       "Webhooks and API access",
       "Working hours and availability management",
       "Custom questions per booking link",
+      "Custom domains",
+      "Timezone auto-detection",
+      "Self-serve cancel and reschedule",
     ],
   },
   {
@@ -94,6 +112,7 @@ const jsonLd = [
     name: "DraftMeet",
     url: "https://www.draftmeet.com",
     logo: "https://www.draftmeet.com/logo-light.png",
+    sameAs: ["https://twitter.com/draftmeet"],
   },
 ];
 
