@@ -4,7 +4,12 @@ import {
   Link2, RefreshCw, CalendarCheck, Clock4,
   BarChart3, Webhook, KeyRound, MessageSquare,
   Zap, Shield, Sparkles, ChevronDown,
+  FileText, Timer, Bookmark, CalendarDays,
+  Hourglass, Hash, UserCheck, MapPin,
+  Palette, Layers, Globe, Star,
+  Mail, Bell, TrendingUp, Download, Lock,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { ThemeToggle } from "@/components/themeToggle";
 import { WaitlistForm } from "@/components/WaitlistForm";
 
@@ -13,12 +18,12 @@ const IS_LIVE = (process.env.NEXT_PUBLIC_LAUNCH_MODE ?? process.env.LAUNCH_MODE)
 export const metadata = {
   title: "DraftMeet: Free Calendly Alternative with Automatic Google Meet",
   description:
-    "Create one-time or permanent booking links, auto-generate Google Meet events, and manage availability in one place. The free Calendly alternative built for speed.",
+    "Share a booking link, let clients self-schedule, and auto-create Google Meet events. 17+ features, 100% free. Join the waitlist.",
   alternates: { canonical: "https://www.draftmeet.com" },
   openGraph: {
     title: "DraftMeet: Free Calendly Alternative with Automatic Google Meet",
     description:
-      "Share a booking link, let clients self-schedule, and auto-create Google Meet events. No back-and-forth. Free to start — built for founders & freelancers.",
+      "Share a booking link, let clients self-schedule, and auto-create Google Meet events. No back-and-forth. 17+ features, 100% free.",
     url: "https://www.draftmeet.com",
     type: "website",
   },
@@ -26,7 +31,7 @@ export const metadata = {
     card: "summary_large_image",
     title: "DraftMeet: Free Calendly Alternative with Automatic Google Meet",
     description:
-      "One-time booking links. Permanent booking pages. Automatic Google Meet. The free Calendly alternative for freelancers and founders.",
+      "One-time booking links. Permanent booking pages. Automatic Google Meet. 17+ features, 100% free.",
   },
 };
 
@@ -77,62 +82,110 @@ const faqSchema = {
   ],
 };
 
-const FEATURES = [
+interface FeatureItem {
+  Icon: LucideIcon;
+  title: string;
+  desc: string;
+}
+
+interface FeatureCategory {
+  label: string;
+  accent: string;
+  accentBg: string;
+  dividerColor: string;
+  features: FeatureItem[];
+}
+
+const FEATURE_CATEGORIES: FeatureCategory[] = [
   {
-    Icon: Link2,
-    title: "One-Time Booking Links",
-    desc: "Each link expires after a single booking — zero double-bookings, zero misuse.",
-    color: "rgba(91,53,232,0.12)",
-    iconColor: "#5B35E8",
+    label: "Core Scheduling",
+    accent: "#6366f1",
+    accentBg: "rgba(99,102,241,0.12)",
+    dividerColor: "rgba(99,102,241,0.25)",
+    features: [
+      { Icon: Link2,    title: "One-Time Booking Links",  desc: "Each link expires after one booking. Zero double-bookings." },
+      { Icon: FileText, title: "Permanent Booking Pages", desc: "Reusable page at your custom slug. Share everywhere, forever." },
+      { Icon: Timer,    title: "Multiple Event Types",    desc: "15, 30, 60 min meetings with custom durations per link." },
+    ],
   },
   {
-    Icon: RefreshCw,
-    title: "Permanent Booking Pages",
-    desc: "A reusable page at your own custom slug — share it everywhere, forever.",
-    color: "rgba(59,106,232,0.12)",
-    iconColor: "#3B6AE8",
+    label: "Automatic Google Meet",
+    accent: "#38bfff",
+    accentBg: "rgba(56,191,255,0.10)",
+    dividerColor: "rgba(56,191,255,0.22)",
+    features: [
+      { Icon: CalendarCheck, title: "Google Calendar Sync",       desc: "Real-time availability sync. Auto-creates Google Meet events." },
+      { Icon: Shield,        title: "Double-Booking Prevention",  desc: "Checks DraftMeet + Google Calendar. No conflicts, ever." },
+      { Icon: Bookmark,      title: "Preferred Calendar",         desc: "Choose which Google Calendar receives your events." },
+    ],
   },
   {
-    Icon: CalendarCheck,
-    title: "Google Calendar Sync",
-    desc: "Syncs your real-time availability and auto-creates Google Meet events on every booking.",
-    color: "rgba(56,191,255,0.12)",
-    iconColor: "#38BFFF",
+    label: "Availability Controls",
+    accent: "#a78bfa",
+    accentBg: "rgba(167,139,250,0.10)",
+    dividerColor: "rgba(167,139,250,0.22)",
+    features: [
+      { Icon: Clock4,       title: "Working Hours & Buffers",  desc: "Set days, time shifts, and gaps between meetings." },
+      { Icon: CalendarDays, title: "Date Overrides",           desc: "Block vacation days or set custom hours for specific dates." },
+      { Icon: Hourglass,    title: "Min Notice & Max Advance", desc: "Require lead time. Limit how far ahead guests can book." },
+      { Icon: Hash,         title: "Daily Booking Limits",     desc: "Cap meetings per day. Prevent burnout." },
+    ],
   },
   {
-    Icon: Clock4,
-    title: "Availability Management",
-    desc: "Set working hours, buffer times, and custom date overrides to stay in control.",
-    color: "rgba(91,53,232,0.12)",
-    iconColor: "#5B35E8",
+    label: "Guest Experience",
+    accent: "#22c55e",
+    accentBg: "rgba(34,197,94,0.10)",
+    dividerColor: "rgba(34,197,94,0.22)",
+    features: [
+      { Icon: UserCheck,     title: "No Account Required",          desc: "Guests pick a time and book. No signup needed." },
+      { Icon: MapPin,        title: "Timezone Auto-Detection",      desc: "Slots show in the guest's local time automatically." },
+      { Icon: RefreshCw,     title: "Self-Serve Cancel/Reschedule", desc: "Guests get a magic link to manage their booking." },
+      { Icon: MessageSquare, title: "Custom Questions",             desc: "Collect info before the meeting with custom fields." },
+    ],
   },
   {
-    Icon: BarChart3,
-    title: "Booking Analytics",
-    desc: "Track booking volume, cancellation rates, and top event types over time.",
-    color: "rgba(59,106,232,0.12)",
-    iconColor: "#3B6AE8",
+    label: "Your Brand",
+    accent: "#f59e0b",
+    accentBg: "rgba(245,158,11,0.10)",
+    dividerColor: "rgba(245,158,11,0.22)",
+    features: [
+      { Icon: Palette, title: "Public Profile Pages",  desc: "Bio, avatar, cover image, accent color — fully yours." },
+      { Icon: Layers,  title: "Custom Link Branding",  desc: "Per-link titles, descriptions, cover images, and colors." },
+      { Icon: Globe,   title: "Custom Domains",        desc: "Connect cal.yourbrand.com for a fully branded experience." },
+      { Icon: Star,    title: "White-Label",           desc: "Remove DraftMeet branding entirely (premium)." },
+    ],
   },
   {
-    Icon: Webhook,
-    title: "Webhooks",
-    desc: "Real-time POST notifications on every booking event — connect any tool.",
-    color: "rgba(56,191,255,0.12)",
-    iconColor: "#38BFFF",
+    label: "Email Notifications",
+    accent: "#6366f1",
+    accentBg: "rgba(99,102,241,0.10)",
+    dividerColor: "rgba(99,102,241,0.22)",
+    features: [
+      { Icon: Mail, title: "Instant Confirmations",     desc: "Both host and guest get booking details + Meet link." },
+      { Icon: Bell, title: "Cancel/Reschedule Alerts",  desc: "Automatic emails when anything changes." },
+    ],
   },
   {
-    Icon: KeyRound,
-    title: "API Keys",
-    desc: "Developer-friendly REST API to integrate DraftMeet into your own products.",
-    color: "rgba(91,53,232,0.12)",
-    iconColor: "#5B35E8",
+    label: "Analytics",
+    accent: "#38bfff",
+    accentBg: "rgba(56,191,255,0.10)",
+    dividerColor: "rgba(56,191,255,0.22)",
+    features: [
+      { Icon: BarChart3,  title: "Booking Dashboard", desc: "Volume, cancellation rates, and trend charts over time." },
+      { Icon: TrendingUp, title: "Outcome Tracking",  desc: "Mark meetings completed or no-show. Track your rates." },
+      { Icon: Download,   title: "CSV Export",        desc: "Download all booking data as a spreadsheet." },
+    ],
   },
   {
-    Icon: MessageSquare,
-    title: "Custom Questions",
-    desc: "Collect exactly the guest info you need with per-link custom fields.",
-    color: "rgba(59,106,232,0.12)",
-    iconColor: "#3B6AE8",
+    label: "Developer Tools",
+    accent: "#a78bfa",
+    accentBg: "rgba(167,139,250,0.10)",
+    dividerColor: "rgba(167,139,250,0.22)",
+    features: [
+      { Icon: Webhook,  title: "Webhooks",               desc: "Real-time POST on 6 event types. Connect Zapier, Make, n8n." },
+      { Icon: Lock,     title: "HMAC-SHA256 Signatures", desc: "Tamper-proof webhook payloads. Verify every event." },
+      { Icon: KeyRound, title: "REST API",               desc: "Full API with key auth. Build DraftMeet into your products." },
+    ],
   },
 ];
 
@@ -147,20 +200,25 @@ const STEPS = [
     Icon: CalendarCheck,
     n: "02",
     title: "Guest self-schedules",
-    desc: "They pick from your real-time availability — no account or download needed.",
+    desc: "They pick from your real-time availability. No account or download needed.",
   },
   {
     Icon: Zap,
     n: "03",
     title: "Google Meet created",
-    desc: "A Google Meet event lands in both inboxes automatically. You're ready to go.",
+    desc: "Calendar event + Meet link sent to both inboxes automatically. You're ready to go.",
   },
 ];
 
-const TRUST_PILLS = [
-  { Icon: Shield,   label: "No credit card required" },
-  { Icon: Zap,      label: "Instant Google Meet" },
-  { Icon: Sparkles, label: IS_LIVE ? "Free to start" : "Free early access" },
+const COMPARISON_ROWS: Array<{ feature: string; dm: string; cal: string; calBad: boolean }> = [
+  { feature: "One-time links",            dm: "Free", cal: "Paid",    calBad: true },
+  { feature: "Google Meet auto-creation", dm: "Free", cal: "Paid",    calBad: true },
+  { feature: "Booking analytics",         dm: "Free", cal: "Paid",    calBad: true },
+  { feature: "Custom domains",            dm: "Free", cal: "$$$",     calBad: true },
+  { feature: "Webhooks",                  dm: "Free", cal: "Paid",    calBad: true },
+  { feature: "Guest cancel/reschedule",   dm: "Free", cal: "Limited", calBad: true },
+  { feature: "Custom questions",          dm: "Free", cal: "Paid",    calBad: true },
+  { feature: "Timezone detection",        dm: "Free", cal: "Free",    calBad: false },
 ];
 
 const FAQS = [
@@ -186,10 +244,26 @@ const FAQS = [
   },
 ];
 
+const scrollRevealScript = `
+(function(){
+  if(typeof IntersectionObserver==='undefined')return;
+  var obs=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(!e.isIntersecting)return;
+      var delay=parseInt(e.target.dataset.delay||'0',10);
+      if(delay){setTimeout(function(){e.target.classList.add('is-visible');},delay);}
+      else{e.target.classList.add('is-visible');}
+      obs.unobserve(e.target);
+    });
+  },{threshold:0.08,rootMargin:'0px 0px -24px 0px'});
+  function init(){document.querySelectorAll('.scroll-reveal').forEach(function(el){obs.observe(el);});}
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init);}else{init();}
+})();
+`;
+
 export default function LandingPage() {
   return (
     <>
-      {/* FAQ Schema */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
@@ -198,7 +272,7 @@ export default function LandingPage() {
       <main className="min-h-screen flex flex-col bg-page-gradient overflow-x-hidden">
 
         {/* ── Nav ── */}
-        <nav className="sticky top-0 z-30 flex items-center justify-between px-6 py-4 border-b border-[var(--border)] bg-[var(--bg-page)]/80 backdrop-blur-md animate-fade-in">
+        <nav className="sticky top-0 z-30 flex items-center justify-between px-6 py-4 border-b border-[var(--border)] bg-[var(--bg)]/80 backdrop-blur-md animate-fade-in">
           <div className="flex items-center gap-2.5">
             <Image src="/logo-light.png" alt="DraftMeet logo" width={32} height={32} className="logo-light rounded-lg" priority />
             <Image src="/logo-dark.png"  alt="DraftMeet logo" width={32} height={32} className="logo-dark  rounded-lg" />
@@ -208,48 +282,41 @@ export default function LandingPage() {
         </nav>
 
         {/* ── Hero ── */}
-        <section className="relative flex flex-col lg:flex-row items-center px-6 lg:px-0 py-20 lg:py-0 gap-12 min-h-[92vh]">
+        <section className="relative flex flex-col items-start px-6 lg:px-20 py-20 lg:py-28 gap-8 min-h-[90vh] justify-center overflow-hidden">
           {/* Animated orbs */}
-          <div className="absolute top-[-60px] left-1/2 -translate-x-1/2 w-[800px] h-[600px] rounded-full blur-[160px] pointer-events-none orb-pulse"
-               style={{ background: "radial-gradient(circle, rgba(91,53,232,0.55) 0%, rgba(59,106,232,0.25) 40%, transparent 70%)" }} />
-          <div className="absolute bottom-[10%] right-[10%] w-[400px] h-[400px] rounded-full blur-[140px] pointer-events-none orb-pulse"
-               style={{ background: "radial-gradient(circle, rgba(56,191,255,0.35), transparent 70%)", animationDelay: "2s" }} />
-          <div className="absolute top-[30%] left-[5%] w-[250px] h-[250px] rounded-full blur-[120px] pointer-events-none orb-pulse"
-               style={{ background: "radial-gradient(circle, rgba(91,53,232,0.2), transparent 70%)", animationDelay: "1s" }} />
+          <div
+            className="absolute top-[-60px] left-1/2 -translate-x-1/2 w-[800px] h-[600px] rounded-full blur-[160px] pointer-events-none orb-pulse"
+            style={{ background: "radial-gradient(circle, rgba(99,102,241,0.50) 0%, rgba(56,191,255,0.20) 45%, transparent 70%)" }}
+          />
+          <div
+            className="absolute bottom-[10%] right-[10%] w-[420px] h-[420px] rounded-full blur-[140px] pointer-events-none orb-pulse"
+            style={{ background: "radial-gradient(circle, rgba(56,191,255,0.30), transparent 70%)", animationDelay: "2s" }}
+          />
+          <div
+            className="absolute top-[30%] left-[5%] w-[260px] h-[260px] rounded-full blur-[120px] pointer-events-none orb-pulse"
+            style={{ background: "radial-gradient(circle, rgba(99,102,241,0.18), transparent 70%)", animationDelay: "1s" }}
+          />
 
-          <div className="relative z-10 flex flex-col items-start gap-7 max-w-xl lg:pl-20 lg:w-[55%] text-left">
+          <div className="relative z-10 flex flex-col items-start gap-7 max-w-2xl">
             <span className="animate-scale-in inline-flex items-center gap-2 px-4 py-1.5 rounded-full badge-shimmer text-white text-xs font-semibold tracking-wide shadow-lg">
               <Sparkles size={13} />
               {IS_LIVE ? "Free to start — no credit card" : "Coming Soon — Join the waitlist"}
             </span>
 
-            {/* H1 — primary keyword in first 6 words */}
-            <h1 className="animate-fade-up text-5xl sm:text-6xl lg:text-7xl font-extrabold text-[var(--text-primary)] leading-[1.08] tracking-tight">
-              Smart scheduling links<br />
+            <h1 className="animate-fade-up text-5xl sm:text-6xl lg:text-7xl font-extrabold text-[var(--text-primary)] leading-[1.06] tracking-tight">
+              Smart scheduling links&nbsp;—<br />
               <span className="text-gradient-brand">without the chaos</span>
             </h1>
 
-            {/* LSI-rich subheadline */}
             <p className="animate-fade-up delay-200 text-lg sm:text-xl text-[var(--text-secondary)] leading-relaxed max-w-xl">
               Share a booking link, let clients self-schedule from your real-time availability, and get a Google Meet event created automatically. The{" "}
               <strong className="text-[var(--text-primary)] font-semibold">free Calendly alternative</strong>{" "}
               built for founders, freelancers, and remote teams.
             </p>
 
-            {/* Trust pills */}
-            <div className="animate-fade-up delay-300 flex flex-wrap justify-start gap-3">
-              {TRUST_PILLS.map(({ Icon, label }) => (
-                <span key={label} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-secondary)] text-xs font-medium">
-                  <Icon size={12} className="text-[var(--accent)]" />
-                  {label}
-                </span>
-              ))}
-            </div>
-
-            {/* Hero CTA */}
             <div className="animate-fade-up delay-400 w-full max-w-sm">
               {IS_LIVE ? (
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <Link
                     href="/login"
                     className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-warm-gradient text-white font-semibold text-sm shadow-lg glow-warm hover:brightness-110 hover:-translate-y-0.5 active:scale-[0.97] active:brightness-95 transition-all duration-150"
@@ -273,6 +340,11 @@ export default function LandingPage() {
                 </>
               )}
             </div>
+
+            <p className="animate-fade-up delay-500 text-xs text-[var(--text-secondary)] tracking-wide">
+              <span className="font-semibold text-[var(--accent)]">17+ features</span>
+              {" · "}100% free{" · "}No credit card
+            </p>
           </div>
 
           {/* Scroll indicator */}
@@ -283,47 +355,68 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ── Features ── */}
+        {/* ── Feature Grid ── */}
         <section className="px-6 py-24 max-w-6xl mx-auto w-full">
-          <div className="text-center mb-14 animate-fade-up">
+          <div className="text-center mb-16 scroll-reveal">
             <p className="text-xs font-semibold tracking-widest text-[var(--accent-warm)] uppercase mb-3">Features</p>
-            {/* H2 — secondary keyword */}
             <h2 className="text-3xl sm:text-4xl font-bold text-[var(--text-primary)]">
               Everything you need.{" "}
               <span className="text-gradient-brand">Nothing you don't.</span>
             </h2>
-            <p className="text-[var(--text-secondary)] mt-3 text-base max-w-xl mx-auto">
-              One-time booking links. Permanent scheduling pages. Google Calendar sync. Booking analytics. Webhooks. API keys. All free.
+            <p className="text-[var(--text-secondary)] mt-3 text-base max-w-lg mx-auto">
+              27 features across scheduling, Google Meet, analytics, branding, and developer tools. All free.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {FEATURES.map(({ Icon, title, desc, color, iconColor }, i) => (
-              <div
-                key={title}
-                className="animate-fade-up bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-5 text-left card-glow-hover group cursor-default"
-                style={{ animationDelay: `${0.05 * i}s` }}
-              >
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110 duration-200"
-                  style={{ background: color }}
-                >
-                  <Icon size={20} style={{ color: iconColor }} strokeWidth={1.8} />
+          <div className="flex flex-col gap-14">
+            {FEATURE_CATEGORIES.map((cat) => (
+              <div key={cat.label}>
+                {/* Category header */}
+                <div className="scroll-reveal flex items-center gap-4 mb-6">
+                  <span
+                    className="shrink-0 text-xs font-bold tracking-widest uppercase px-3 py-1 rounded-full"
+                    style={{ background: cat.accentBg, color: cat.accent }}
+                  >
+                    {cat.label}
+                  </span>
+                  <div
+                    className="h-px flex-1"
+                    style={{ background: `linear-gradient(to right, ${cat.dividerColor}, transparent)` }}
+                  />
                 </div>
-                {/* H3 inside feature card */}
-                <h3 className="font-semibold text-[var(--text-primary)] text-sm">{title}</h3>
-                <p className="text-[var(--text-secondary)] text-xs mt-1.5 leading-relaxed">{desc}</p>
+
+                {/* Feature cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {cat.features.map(({ Icon, title, desc }, i) => (
+                    <div
+                      key={title}
+                      className="scroll-reveal bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-5 text-left card-glow-hover group cursor-default"
+                      data-delay={String(i * 70)}
+                    >
+                      <div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110 duration-200"
+                        style={{ background: cat.accentBg }}
+                      >
+                        <Icon size={20} style={{ color: cat.accent }} strokeWidth={1.8} />
+                      </div>
+                      <h3 className="font-semibold text-[var(--text-primary)] text-sm">{title}</h3>
+                      <p className="text-[var(--text-secondary)] text-xs mt-1.5 leading-relaxed">{desc}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
         </section>
 
-        {/* ── How it works ── */}
-        <section className="px-6 py-24 border-y border-[var(--border)]" style={{ background: "var(--bg-deep, var(--bg-card))" }}>
+        {/* ── How it Works ── */}
+        <section
+          className="px-6 py-24 border-y border-[var(--border)]"
+          style={{ background: "var(--bg-deep, var(--bg-card))" }}
+        >
           <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-14 animate-fade-up">
+            <div className="text-center mb-14 scroll-reveal">
               <p className="text-xs font-semibold tracking-widest text-[var(--accent-warm)] uppercase mb-3">How it works</p>
-              {/* H2 — long-tail keyword: "schedule a meeting without back and forth" */}
               <h2 className="text-3xl sm:text-4xl font-bold text-[var(--text-primary)]">
                 Eliminate the back-and-forth in 3 steps
               </h2>
@@ -335,8 +428,15 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 relative">
               <div className="hidden sm:block absolute top-8 left-[calc(16.67%+1rem)] right-[calc(16.67%+1rem)] h-px bg-gradient-to-r from-transparent via-[var(--border-accent)] to-transparent" />
               {STEPS.map(({ Icon, n, title, desc }, i) => (
-                <div key={n} className="animate-fade-up flex flex-col items-center text-center gap-4" style={{ animationDelay: `${0.15 * i}s` }}>
-                  <div className="w-16 h-16 rounded-2xl bg-brand-gradient flex items-center justify-center shadow-lg shadow-[rgba(59,106,232,0.3)] animate-float" style={{ animationDelay: `${i * 0.8}s` }}>
+                <div
+                  key={n}
+                  className="scroll-reveal flex flex-col items-center text-center gap-4"
+                  data-delay={String(150 * i)}
+                >
+                  <div
+                    className="w-16 h-16 rounded-2xl bg-brand-gradient flex items-center justify-center shadow-lg shadow-[rgba(59,106,232,0.3)] animate-float"
+                    style={{ animationDelay: `${i * 0.8}s` }}
+                  >
                     <Icon size={28} className="text-white" strokeWidth={1.8} />
                   </div>
                   <span className="text-xs font-bold tracking-widest text-[var(--accent)] uppercase">{n}</span>
@@ -348,9 +448,56 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* ── Comparison Table ── */}
+        <section className="px-6 py-24 max-w-3xl mx-auto w-full">
+          <div className="text-center mb-14 scroll-reveal">
+            <p className="text-xs font-semibold tracking-widest text-[var(--accent-warm)] uppercase mb-3">vs. the competition</p>
+            <h2 className="text-3xl sm:text-4xl font-bold text-[var(--text-primary)]">
+              DraftMeet vs{" "}
+              <span className="text-gradient-brand">Calendly</span>
+            </h2>
+            <p className="text-[var(--text-secondary)] mt-3 text-base">
+              We give you paid features — for free.
+            </p>
+          </div>
+
+          <div className="scroll-reveal overflow-x-auto rounded-2xl border border-[var(--border)]" style={{ boxShadow: "var(--shadow-card)" }}>
+            <table className="w-full text-sm min-w-[440px]">
+              <thead>
+                <tr className="border-b border-[var(--border)]">
+                  <th className="text-left px-6 py-4 text-[var(--text-secondary)] font-semibold w-1/2">Feature</th>
+                  <th className="px-6 py-4 text-center cmp-dm-header">DraftMeet ✦</th>
+                  <th className="px-6 py-4 text-center text-[var(--text-secondary)] font-semibold">Calendly</th>
+                </tr>
+              </thead>
+              <tbody>
+                {COMPARISON_ROWS.map(({ feature, dm, cal, calBad }, i) => (
+                  <tr
+                    key={feature}
+                    className={`border-b border-[var(--border)] last:border-none transition-colors ${i % 2 !== 0 ? "bg-[var(--bg-deep)]/30" : ""}`}
+                  >
+                    <td className="px-6 py-4 text-[var(--text-primary)] font-medium">{feature}</td>
+                    <td className="px-6 py-4 text-center cmp-dm-cell">
+                      <span className="cmp-check-yes">✓</span>{" "}
+                      <span className="badge-free">{dm}</span>
+                    </td>
+                    <td className="px-6 py-4 text-center text-[var(--text-secondary)]">
+                      {calBad ? (
+                        <span><span className="cmp-check-no">✗</span> {cal}</span>
+                      ) : (
+                        <span><span className="cmp-check-yes">✓</span> {cal}</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
         {/* ── FAQ ── */}
         <section className="px-6 py-24 max-w-3xl mx-auto w-full">
-          <div className="text-center mb-12 animate-fade-up">
+          <div className="text-center mb-12 scroll-reveal">
             <p className="text-xs font-semibold tracking-widest text-[var(--accent-warm)] uppercase mb-3">FAQ</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-[var(--text-primary)]">
               Frequently asked questions
@@ -360,12 +507,16 @@ export default function LandingPage() {
             {FAQS.map(({ q, a }, i) => (
               <details
                 key={q}
-                className="animate-fade-up bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl group overflow-hidden"
-                style={{ animationDelay: `${0.08 * i}s` }}
+                className="scroll-reveal bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl group overflow-hidden"
+                data-delay={String(80 * i)}
               >
                 <summary className="flex items-center justify-between gap-4 px-6 py-4 cursor-pointer list-none font-semibold text-sm text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]">
                   <span>{q}</span>
-                  <ChevronDown size={16} aria-hidden="true" className="shrink-0 text-[var(--text-secondary)] transition-transform duration-200 group-open:rotate-180" />
+                  <ChevronDown
+                    size={16}
+                    aria-hidden="true"
+                    className="shrink-0 text-[var(--text-secondary)] transition-transform duration-200 group-open:rotate-180"
+                  />
                 </summary>
                 <p className="px-6 pb-5 text-sm text-[var(--text-secondary)] leading-relaxed border-t border-[var(--border)] pt-4">
                   {a}
@@ -377,9 +528,11 @@ export default function LandingPage() {
 
         {/* ── Bottom CTA ── */}
         <section className="relative px-6 py-28 flex flex-col items-center gap-7 text-center overflow-hidden border-t border-[var(--border)]">
-          <div className="absolute inset-0 pointer-events-none orb-pulse"
-               style={{ background: "radial-gradient(ellipse at center, rgba(91,53,232,0.08) 0%, transparent 70%)" }} />
-          <div className="relative z-10 flex flex-col items-center gap-7 max-w-xl animate-fade-up">
+          <div
+            className="absolute inset-0 pointer-events-none orb-pulse"
+            style={{ background: "radial-gradient(ellipse at center, rgba(99,102,241,0.08) 0%, transparent 70%)" }}
+          />
+          <div className="relative z-10 flex flex-col items-center gap-7 max-w-xl scroll-reveal">
             <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[var(--bg-card)] border border-[var(--border-accent)] text-[var(--accent)] text-xs font-semibold">
               <Sparkles size={13} />
               {IS_LIVE ? "Free to start" : "Limited early access"}
@@ -403,7 +556,10 @@ export default function LandingPage() {
                   Create free account
                 </Link>
               ) : (
-                <WaitlistForm />
+                <>
+                  <WaitlistForm />
+                  <p className="text-xs text-[var(--text-secondary)] mt-3">No spam, ever.</p>
+                </>
               )}
             </div>
           </div>
@@ -424,6 +580,9 @@ export default function LandingPage() {
           </div>
         </footer>
       </main>
+
+      {/* IntersectionObserver scroll reveal — runs after HTML is parsed */}
+      <script dangerouslySetInnerHTML={{ __html: scrollRevealScript }} />
     </>
   );
 }
