@@ -1,3 +1,5 @@
+import os as _os
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -19,6 +21,12 @@ from app.admin import service
 
 router = APIRouter()
 
+# Optional IP allowlist — set ADMIN_ALLOWED_IPS=1.2.3.4,5.6.7.8 in env.
+# When non-empty, admin endpoints are restricted to the listed IPs only.
+_ADMIN_IPS: frozenset = frozenset(
+    ip.strip() for ip in _os.getenv("ADMIN_ALLOWED_IPS", "").split(",") if ip.strip()
+)
+
 
 def _require_same_origin(request: Request) -> None:
     """Reject cross-origin POST requests to prevent CSRF on samesite=none cookies."""
@@ -29,6 +37,14 @@ def _require_same_origin(request: Request) -> None:
 
 def verified_admin(request: Request) -> str:
     """FastAPI dependency: verify admin once per request, raises 403 if not admin."""
+    if _ADMIN_IPS:
+        client_ip = (
+            request.headers.get("x-real-ip", "").strip()
+            or (request.client.host if request.client else "")
+        )
+        if client_ip not in _ADMIN_IPS:
+            raise HTTPException(status_code=403, detail="Admin access required")
+
     user_id = get_current_user_id(request)
     row = supabase.table("users").select("email").eq("id", user_id).execute()
     email = row.data[0]["email"] if row.data else ""

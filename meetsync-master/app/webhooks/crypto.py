@@ -18,14 +18,20 @@ Storage format (hex-encoded):
 """
 
 import os
-import hashlib
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+from cryptography.hazmat.primitives import hashes
 
 
 def _derive_key(app_secret: str) -> bytes:
-    """Derive a 32-byte AES key from the app SECRET_KEY via SHA-256."""
-    return hashlib.sha256(app_secret.encode()).digest()
+    """Derive a 32-byte AES key via HKDF-SHA256 with domain separation."""
+    return HKDF(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=None,
+        info=b"draftmeet-webhook-secret-encryption",
+    ).derive(app_secret.encode())
 
 
 def encrypt_secret(plaintext: str, app_secret: str) -> str:

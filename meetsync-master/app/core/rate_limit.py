@@ -90,6 +90,7 @@ def strict_rate_limit(request: Request) -> None:
         raise HTTPException(
             status_code=429,
             detail="Too many attempts. Please wait a minute and try again.",
+            headers={"Retry-After": "60"},
         )
 
 
@@ -106,4 +107,5 @@ def guest_rate_limit(request: Request) -> None:
         raise HTTPException(
             status_code=429,
             detail="Too many requests. Please try again later.",
+            headers={"Retry-After": "60"},
         )

@@ -31,15 +31,25 @@ def _generate_token(prefix: str = "lnk") -> str:
     return f"{prefix}_{secrets.token_hex(16)}"
 
 
+_MAX_EXPIRY_HOURS = 8760   # 365 days
+_MAX_EXPIRY_DAYS  = 365
+
+
 def _parse_expiry(expires_in: Optional[str]) -> Optional[datetime]:
     """Convert '24h', '7d', 'never' → datetime or None."""
     if not expires_in or expires_in == "never":
         return None
     if expires_in.endswith("h"):
-        return datetime.now(timezone.utc) + timedelta(hours=int(expires_in[:-1]))
+        hours = int(expires_in[:-1])
+        if hours < 1 or hours > _MAX_EXPIRY_HOURS:
+            raise ValueError(f"Expiry must be between 1h and {_MAX_EXPIRY_HOURS}h")
+        return datetime.now(timezone.utc) + timedelta(hours=hours)
     if expires_in.endswith("d"):
-        return datetime.now(timezone.utc) + timedelta(days=int(expires_in[:-1]))
-    return None
+        days = int(expires_in[:-1])
+        if days < 1 or days > _MAX_EXPIRY_DAYS:
+            raise ValueError(f"Expiry must be between 1 and {_MAX_EXPIRY_DAYS} days")
+        return datetime.now(timezone.utc) + timedelta(days=days)
+    raise ValueError("expires_in must be like '24h', '7d', or 'never'")
 
 
 def _base_url_for_user(user_id: str) -> str:

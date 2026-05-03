@@ -326,7 +326,20 @@ async def create_booking(request: Request, payload: BookingCreate, background_ta
             host_user_id,
         )
 
-    return booking_row
+    return GuestBookingResponse(
+        id=booking_row["id"],
+        guest_name=booking_row["guest_name"],
+        guest_email=booking_row["guest_email"],
+        scheduled_at=booking_row["scheduled_at"],
+        event_type=booking_row["event_type"],
+        custom_title=booking_row.get("custom_title"),
+        status=booking_row["status"],
+        meet_link=booking_row.get("meet_link"),
+        notes=booking_row.get("notes"),
+        custom_answers=booking_row.get("custom_answers"),
+        created_at=booking_row.get("created_at"),
+        management_token=booking_row["management_token"],
+    )
 
 
 @router.get("/")

@@ -3,13 +3,24 @@ import hashlib
 from fastapi import HTTPException, Request
 
 from app.core.config import SECRET_KEY, supabase
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+from cryptography.hazmat.primitives import hashes
 
 
 COOKIE_NAME = "draftmeet_user"
 
+# Derive a dedicated session-signing key from SECRET_KEY using HKDF so that
+# the session key and the webhook AES key never share the same material.
+_SESSION_SIGNING_KEY: bytes = HKDF(
+    algorithm=hashes.SHA256(),
+    length=32,
+    salt=None,
+    info=b"draftmeet-session-signing",
+).derive(SECRET_KEY.encode("utf-8"))
+
 
 def _sign_payload(payload: str) -> str:
-    return hmac.new(SECRET_KEY.encode("utf-8"), payload.encode("utf-8"), hashlib.sha256).hexdigest()
+    return hmac.new(_SESSION_SIGNING_KEY, payload.encode("utf-8"), hashlib.sha256).hexdigest()
 
 
 def _get_session_version(user_id: str) -> int:

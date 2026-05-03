@@ -14,9 +14,7 @@ Signature:
 
 import hashlib
 import hmac
-import ipaddress
 import json
-import socket
 import uuid
 import asyncio
 from datetime import datetime, timezone
@@ -26,6 +24,7 @@ from urllib.parse import urlparse
 import httpx
 from app.core.config import supabase, SECRET_KEY
 from app.core.logger import logger
+from app.core.ssrf import assert_all_addresses_public
 from app.webhooks.crypto import decrypt_secret
 
 
@@ -44,27 +43,13 @@ def _assert_url_still_public(url: str) -> None:
     Re-resolve the webhook URL hostname at delivery time and reject any
     address that has become private since registration (DNS rebinding).
 
-    The validator in WebhookCreate already checked this at registration
-    time, but DNS TTLs can change. An attacker can register a URL that
-    resolves to a public IP then switch DNS to an internal address after
-    the one-time validation passes.
-
-    Raises ValueError if the current DNS resolution points to a
-    non-global (private/loopback/link-local) address.
+    Uses getaddrinfo so both A (IPv4) and AAAA (IPv6) records are checked.
     """
     parsed = urlparse(url)
     hostname = (parsed.hostname or "").lower()
     if not hostname:
         raise ValueError(f"Webhook URL has no hostname: {url}")
-    try:
-        resolved_ip = ipaddress.ip_address(socket.gethostbyname(hostname))
-    except socket.gaierror as exc:
-        raise ValueError(f"Webhook hostname {hostname!r} could not be resolved: {exc}")
-    if not resolved_ip.is_global:
-        raise ValueError(
-            f"Webhook URL {hostname!r} now resolves to a non-public address "
-            f"({resolved_ip}) — delivery blocked to prevent SSRF."
-        )
+    assert_all_addresses_public(hostname)
 
 
 # ── Core Dispatcher ───────────────────────────────────────
@@ -112,9 +97,6 @@ async def _deliver(endpoint: dict, event_name: str, payload: dict):
             raw_secret = decrypt_secret(secret_enc, SECRET_KEY)
         except Exception as dec_err:
             logger.error("Could not decrypt webhook secret for %s: %s", endpoint["id"], dec_err)
-    elif endpoint.get("secret"):
-        # Fallback: pre-migration row still has plaintext secret; use it until backfilled.
-        raw_secret = endpoint["secret"]
     if raw_secret:
         headers["X-DraftMeet-Signature"] = _sign_payload(raw_secret, payload_bytes)
 
@@ -153,12 +135,19 @@ async def _deliver(endpoint: dict, event_name: str, payload: dict):
             "status_code": status_code
         })
 
-    # Log to Supabase for the user dashboard
+    # Log to Supabase for the user dashboard.
+    # Strip PII fields from the stored payload to limit data retention exposure.
+    _PII_FIELDS = {"guest_name", "guest_email", "meet_link"}
+    stored_payload = {k: v for k, v in payload.items() if k != "data"}
+    stored_payload["data"] = {
+        k: v for k, v in payload.get("data", {}).items()
+        if k not in _PII_FIELDS
+    }
     try:
         supabase.table("webhook_logs").insert({
             "webhook_id":  endpoint["id"],
             "event":       event_name,
-            "payload":     payload,
+            "payload":     stored_payload,
             "status_code": status_code,
             "success":     success,
             "error":       error_msg,

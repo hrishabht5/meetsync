@@ -1,6 +1,4 @@
-import ipaddress
 import re as _re
-import socket
 from urllib.parse import urlparse
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional, List
@@ -46,7 +44,6 @@ class AvailabilitySettings(BaseModel):
     slot_duration:   int = 30           # minutes
     buffer_minutes:  int = 15           # gap between meetings
     timezone:        str = "Asia/Kolkata"
-    allow_double_booking: bool = False  # Bypasses checking for conflicts
     default_questions: Optional[List[CustomField]] = None
     min_notice_hours:     int           = 0     # 0 = no minimum
     max_days_ahead:       Optional[int] = None  # None = unlimited
@@ -183,17 +180,18 @@ class BookingSetOutcome(BaseModel):
 
 class GuestBookingResponse(BaseModel):
     """Subset of booking fields safe for unauthenticated guest view."""
-    id:             str
-    guest_name:     str
-    guest_email:    str
-    scheduled_at:   datetime
-    event_type:     str
-    custom_title:   Optional[str] = None
-    status:         str
-    meet_link:      Optional[str] = None
-    notes:          Optional[str] = None
-    custom_answers: Optional[dict] = None
-    created_at:     Optional[datetime] = None
+    id:               str
+    guest_name:       str
+    guest_email:      str
+    scheduled_at:     datetime
+    event_type:       str
+    custom_title:     Optional[str] = None
+    status:           str
+    meet_link:        Optional[str] = None
+    notes:            Optional[str] = None
+    custom_answers:   Optional[dict] = None
+    created_at:       Optional[datetime] = None
+    management_token: Optional[str] = None  # present only on initial creation
 
 
 # ── Booking Page Customization Mixin ─────────────────────
@@ -272,28 +270,21 @@ class WebhookCreate(BaseModel):
         if not hostname:
             raise ValueError("Invalid webhook URL: missing hostname")
 
-        # Static blocklist for known metadata endpoints
+        # Static blocklist for well-known metadata endpoints
         _blocked_hosts = {
             "localhost", "metadata.google.internal",
-            "instance-data",   # AWS legacy
+            "instance-data",  # AWS legacy
         }
         if hostname in _blocked_hosts:
             raise ValueError("Webhook URL must point to a public host")
 
-        # Resolve hostname → IP at validation time to block DNS rebinding
-        # and private/link-local ranges (IPv4 + IPv6).
-        # socket.gethostbyname has no timeout parameter; run it in a thread
-        # and enforce a 3-second deadline to prevent request stalls.
-        from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
+        # Resolve all A and AAAA records at registration time to block DNS
+        # rebinding and private/link-local ranges for both IPv4 and IPv6.
+        from app.core.ssrf import assert_all_addresses_public
         try:
-            with ThreadPoolExecutor(max_workers=1) as ex:
-                future = ex.submit(socket.gethostbyname, hostname)
-                resolved_ip = ipaddress.ip_address(future.result(timeout=3))
-        except (socket.gaierror, FuturesTimeoutError):
-            raise ValueError("Webhook URL hostname could not be resolved")
-
-        if not resolved_ip.is_global:
-            raise ValueError("Webhook URL must point to a publicly routable host")
+            assert_all_addresses_public(hostname)
+        except ValueError as exc:
+            raise ValueError(str(exc))
 
         return v
 
