@@ -103,7 +103,7 @@ export const api = {
         body: JSON.stringify({ token, new_password }),
       }),
     googleLoginUrl: (mode: "signin" | "connect" = "signin") =>
-      `${getBaseUrl()}/auth/google/?mode=${mode}`,
+      `${getBaseUrl()}/auth/google?mode=${mode}`,
     listCalendars: () =>
       request<{ calendars: CalendarOption[] }>("/auth/calendars/"),
     setCalendarPreference: (calendar_id: string) =>

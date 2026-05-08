@@ -123,6 +123,13 @@ async def google_callback(request: Request, code: str = None, error: str = None,
     received_nonce = parts[1] if len(parts) > 1 else ""
 
     if not stored_nonce or not hmac.compare_digest(stored_nonce, received_nonce):
+        # Double-callback guard: if the user already has a valid session (first callback
+        # succeeded and cleared the CSRF cookie), redirect rather than show an error.
+        try:
+            get_current_user_id(request)
+            return RedirectResponse(url=f"{FRONTEND_URL}/dashboard")
+        except Exception:
+            pass
         logger.warning("OAuth CSRF check failed — state mismatch")
         return RedirectResponse(url=f"{FRONTEND_URL}?auth_error=invalid_state")
 
